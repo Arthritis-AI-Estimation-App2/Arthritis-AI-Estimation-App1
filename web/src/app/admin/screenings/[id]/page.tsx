@@ -131,13 +131,13 @@ export default async function AdminScreeningDetailPage({
           <h2 className="font-semibold text-foreground">AI解析情報</h2>
           <dl className="mt-3 space-y-1 text-secondary-foreground">
             <div className="flex gap-3">
-              <dt className="w-24 text-muted-foreground">モデル</dt>
-              <dd className="font-mono text-xs text-foreground">
+              <dt className="w-20 text-muted-foreground">モデル</dt>
+              <dd>
                 {screening.ai_model_version ?? "未提供"}
               </dd>
             </div>
             <div className="flex gap-3">
-              <dt className="w-24 text-muted-foreground">解析日時</dt>
+              <dt className="w-20 text-muted-foreground">解析日時</dt>
               <dd>{screening.analyzed_at ? formatJapanDateTime(screening.analyzed_at) : "-"}</dd>
             </div>
           </dl>
