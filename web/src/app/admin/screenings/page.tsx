@@ -68,8 +68,99 @@ export default async function AdminScreeningsPage({
   const firstResult = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastResult = Math.min(page * pageSize, total);
 
+  const filterForm = (
+    <>
+      <form method="get" className="mt-3 grid items-end gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-3 xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
+        <label className="min-w-0 text-xs font-medium text-muted-foreground">
+          医療機関
+          <select
+            name="clinic"
+            defaultValue={filters.clinicId}
+            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9"
+          >
+            <option value="">すべて</option>
+            {clinics.map((clinic) => (
+              <option key={clinic.id} value={clinic.id}>
+                {clinic.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="min-w-0 text-xs font-medium text-muted-foreground">
+          撮影日（開始）
+          <input
+            type="date"
+            name="from"
+            defaultValue={filters.dateFrom}
+            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9"
+          />
+        </label>
+
+        <label className="min-w-0 text-xs font-medium text-muted-foreground">
+          撮影日（終了）
+          <input
+            type="date"
+            name="to"
+            defaultValue={filters.dateTo}
+            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9"
+          />
+        </label>
+
+        <label className="min-w-0 text-xs font-medium text-muted-foreground">
+          解析ステータス
+          <select
+            name="status"
+            defaultValue={filters.status}
+            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9"
+          >
+            <option value="">すべて</option>
+            {SCREENING_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="min-w-0 text-xs font-medium text-muted-foreground">
+          被験者ID
+          <input
+            type="search"
+            name="subject"
+            defaultValue={filters.subjectId}
+            placeholder="例: keio47"
+            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9 placeholder:text-subtle-foreground"
+          />
+        </label>
+
+        <div className="flex min-h-10 items-center gap-2 lg:min-h-9">
+          <button
+            type="submit"
+            className="inline-flex h-10 shrink-0 items-center rounded-md bg-primary px-3 text-sm lg:h-9 font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+          >
+            絞り込む
+          </button>
+          {hasFilters && (
+            <Link
+              href="/admin/screenings"
+              className="inline-flex h-10 shrink-0 items-center rounded-md px-2 text-xs font-medium text-secondary-foreground hover:bg-surface-hover lg:h-9"
+            >
+              条件をクリア
+            </Link>
+          )}
+        </div>
+      </form>
+      {invalidDateRange && (
+        <p className="mt-3 text-sm font-medium text-danger-foreground" role="alert">
+          撮影日の開始日は、終了日以前の日付を指定してください。
+        </p>
+      )}
+    </>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-foreground">
           全医療機関の撮影・解析データ
@@ -79,122 +170,36 @@ export default async function AdminScreeningsPage({
         </p>
       </div>
 
-      <Card>
-        <CardContent>
-          <details
-            className="group lg:contents"
-            open={hasFilters || invalidDateRange}
-          >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-1 py-1 text-sm font-semibold text-secondary-foreground marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 lg:hidden [&::-webkit-details-marker]:hidden">
-              <span>絞り込み条件</span>
-              <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-primary-subtle-foreground">
-                    {activeFilterCount}件を適用中
-                  </span>
-                )}
-                <svg
-                  aria-hidden="true"
-                  className="h-4 w-4 transition-transform group-open:rotate-180"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
-                </svg>
-              </span>
-            </summary>
+      <div className="rounded-lg border border-border bg-surface p-3">
+        <details
+          className="group lg:hidden"
+          open={hasFilters || invalidDateRange}
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-1 py-1 text-sm font-semibold text-secondary-foreground marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
+            <span>絞り込み条件</span>
+            <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-primary-subtle-foreground">
+                  {activeFilterCount}件を適用中
+                </span>
+              )}
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4 transition-transform group-open:rotate-180"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+              </svg>
+            </span>
+          </summary>
 
-            <form method="get" className="mt-4 grid gap-4 sm:grid-cols-2 lg:mt-0 lg:grid-cols-5">
-              <label className="text-sm font-medium text-secondary-foreground">
-                医療機関
-                <select
-                  name="clinic"
-                  defaultValue={filters.clinicId}
-                  className="mt-1 block w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground"
-                >
-                  <option value="">すべて</option>
-                  {clinics.map((clinic) => (
-                    <option key={clinic.id} value={clinic.id}>
-                      {clinic.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="text-sm font-medium text-secondary-foreground">
-                撮影日（開始）
-                <input
-                  type="date"
-                  name="from"
-                  defaultValue={filters.dateFrom}
-                  className="mt-1 block w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground"
-                />
-              </label>
-
-              <label className="text-sm font-medium text-secondary-foreground">
-                撮影日（終了）
-                <input
-                  type="date"
-                  name="to"
-                  defaultValue={filters.dateTo}
-                  className="mt-1 block w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground"
-                />
-              </label>
-
-              <label className="text-sm font-medium text-secondary-foreground">
-                解析ステータス
-                <select
-                  name="status"
-                  defaultValue={filters.status}
-                  className="mt-1 block w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground"
-                >
-                  <option value="">すべて</option>
-                  {SCREENING_STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="text-sm font-medium text-secondary-foreground">
-                被験者ID
-                <input
-                  type="search"
-                  name="subject"
-                  defaultValue={filters.subjectId}
-                  placeholder="例: keio47"
-                  className="mt-1 block w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground placeholder:text-subtle-foreground"
-                />
-              </label>
-
-              <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-5">
-                <button
-                  type="submit"
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-                >
-                  絞り込む
-                </button>
-                {hasFilters && (
-                  <Link
-                    href="/admin/screenings"
-                    className="rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-surface-hover"
-                  >
-                    条件をクリア
-                  </Link>
-                )}
-              </div>
-            </form>
-            {invalidDateRange && (
-              <p className="mt-3 text-sm font-medium text-danger-foreground" role="alert">
-                撮影日の開始日は、終了日以前の日付を指定してください。
-              </p>
-            )}
-          </details>
-        </CardContent>
-      </Card>
+          {filterForm}
+        </details>
+        <div className="hidden lg:block">{filterForm}</div>
+      </div>
 
       <Card>
         <CardContent>
