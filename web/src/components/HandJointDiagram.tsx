@@ -64,6 +64,7 @@ const HAND_OUTLINE = [
 
 const SVG_WIDTH = 200;
 const SVG_HEIGHT = 220;
+const WRIST_CENTER_X = (73 + 140) / 2;
 
 export default function HandJointDiagram({
   joints,
@@ -184,10 +185,12 @@ export default function HandJointDiagram({
             })}
           </g>
           <text
-            x="100"
+            x={mirror ? SVG_WIDTH - WRIST_CENTER_X : WRIST_CENTER_X}
             y="214"
             textAnchor="middle"
-            fontSize="12"
+            fontSize="10"
+            fontWeight="400"
+            letterSpacing="0.8"
             fill="var(--color-joint-label)"
           >
             {handLabel}
