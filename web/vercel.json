@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "if ! git rev-parse --verify HEAD^ >/dev/null 2>&1; then exit 1; elif git diff --quiet HEAD^ HEAD -- .; then exit 0; else exit 1; fi",
+  "ignoreCommand": "if [ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ]; then exit 1; elif git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- .; then exit 0; else exit 1; fi",
   "functions": {
     "src/app/**/*.{js,ts,jsx,tsx}": {
       "maxDuration": 60

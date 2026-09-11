@@ -6,6 +6,8 @@
 
 このディレクトリが Vercel の Root Directory です。ダッシュボードで Root Directory を `web` にしてください。リポジトリ全体の入口は [../README.md](../README.md) です。
 
+`vercel.json` の `ignoreCommand` は、同じプロジェクト・ブランチの前回成功デプロイのコミット（`VERCEL_GIT_PREVIOUS_SHA`）から `HEAD` までの `web/` の差分でビルドを判断します。複数コミットをまとめて push した場合も、その間の変更を含めて比較します。差分がない場合だけスキップし、SHA が未設定、浅いクローンで比較元が取得できない、Git の比較に失敗した場合はビルドを実行します。
+
 ## 技術スタック
 
 - **フロントエンド**: Next.js (App Router), React, Tailwind CSS
