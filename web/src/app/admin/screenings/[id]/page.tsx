@@ -7,6 +7,7 @@ import RecoverInterruptedScreeningButton from "@/components/RecoverInterruptedSc
 import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import StatusBadge from "@/components/StatusBadge";
 import SubjectAssignmentEditor from "@/components/SubjectAssignmentEditor";
+import CopyJsonButton from "@/components/CopyJsonButton";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import {
@@ -152,12 +153,7 @@ export default async function AdminScreeningDetailPage({
           {rawAiApiResponse ? (
             <>
               <div className="mt-2 flex justify-end">
-                <a
-                  href={`/admin/screenings/${screening.id}/ai-response`}
-                  className="rounded-md border border-border-strong bg-surface px-2 py-1 text-[11px] font-medium text-secondary-foreground hover:bg-surface-hover"
-                >
-                  JSONをダウンロード
-                </a>
+                <CopyJsonButton json={JSON.stringify(rawAiApiResponse, null, 2)} />
               </div>
               <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-surface-muted p-3 font-mono text-[11px] leading-relaxed text-foreground">
                 {JSON.stringify(rawAiApiResponse, null, 2)}
