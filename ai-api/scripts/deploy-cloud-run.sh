@@ -17,6 +17,11 @@ project_id=$1
 supabase_hosts=$2
 secret_name=$3
 service_name=${4:-ra-image-inference}
+# Disable terminal formatting so ANSI styling cannot split the flag name.
+if ! TERM=dumb CLOUDSDK_PAGER=cat CLOUDSDK_CORE_DISABLE_COLOR=1 gcloud run deploy --help 2>/dev/null | grep -F -- '--max=' >/dev/null; then
+  echo "This script requires a gcloud version supporting service-level --max. Update Google Cloud CLI before deploying." >&2
+  exit 2
+fi
 region=asia-northeast1
 repository=ra-inference
 runtime_service_account="${service_name}-runtime@${project_id}.iam.gserviceaccount.com"
@@ -58,10 +63,11 @@ gcloud run deploy "$service_name" \
   --image="$image" \
   --allow-unauthenticated \
   --port=8080 \
-  --cpu=2 \
+  --cpu=8 \
   --memory=4Gi \
   --concurrency=1 \
   --min-instances=0 \
+  --max=2 \
   --max-instances=2 \
   --timeout=60 \
   --cpu-throttling \

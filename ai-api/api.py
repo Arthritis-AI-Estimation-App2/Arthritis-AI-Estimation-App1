@@ -337,7 +337,7 @@ def create_app(
         settings = settings_factory()
         model_version = load_model_version(settings.model_manifest_path)
         require_checkpoint_file(settings.checkpoint_path)
-        torch.set_num_threads(2)
+        torch.set_num_threads(8)
         service = service_factory(settings.checkpoint_path)
         app.state.settings = settings
         app.state.service = service

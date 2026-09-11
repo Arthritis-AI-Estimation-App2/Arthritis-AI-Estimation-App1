@@ -68,7 +68,7 @@ scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co,ANOTHER_PROJECT_REF.supabase.co ra-ai-api-key
 ```
 
-`model/ra_screening_model.pt` が無いと Cloud Build は失敗します。スクリプトは Artifact Registry のリポジトリが無ければ作り、`cloudbuild.yaml` で linux/amd64 イメージに重みを焼き込んで push し、Cloud Run へ出します。Cloud Build は標準の `e2-standard-2` を使い、月 2,500 分の無料枠の対象にします。高性能マシンは指定しません。リージョンは `asia-northeast1`、2 vCPU、4GiB、concurrency 1、0–2 インスタンス、リクエストタイムアウト 60 秒です。プラットフォーム上は未認証で公開し、アプリ側の Bearer キーで守ります。
+`model/ra_screening_model.pt` が無いと Cloud Build は失敗します。スクリプトは Artifact Registry のリポジトリが無ければ作り、`cloudbuild.yaml` で linux/amd64 イメージに重みを焼き込んで push し、Cloud Run へ出します。Cloud Build は標準の `e2-standard-2` を使い、月 2,500 分の無料枠の対象にします。高性能マシンは指定しません。リージョンは `asia-northeast1`、8 vCPU、4GiB、concurrency 1、0–2 インスタンス、リクエストタイムアウト 60 秒です。PyTorch の推論スレッド数は 8 に設定しています。リクエストベース課金で、無料枠内に収まるかは起動時間や解析件数に依存します。プラットフォーム上は未認証で公開し、アプリ側の Bearer キーで守ります。
 
 推論イメージは Artifact Registry の月 0.5GB の無料枠より大きいので、残しておくと保管料がかかります。Cloud Run はデプロイ時にイメージを取り込むため、成功後は `ra-inference` リポジトリごと消します。イメージだけ消すとレイヤーが翌日まで残るためです。起動やスケールはこの取り込み済みのコピーで足り、古い版に戻すときは再ビルドします。次のデプロイでリポジトリは作り直します。デプロイが途中で止まったときのために、直近 1 件を残し、作成から 2 日以上経ったイメージを消すクリーンアップも付けてあります。
 
