@@ -76,7 +76,11 @@ export default function ScreeningResult({
                 : "bg-success text-success-foreground"
             }`}
           >
-            {raDetected === null ? "RAスクリーニング判定 未提供" : raDetected ? "RAスクリーニング陽性" : "RAスクリーニング陰性"}
+            {raDetected === null
+              ? "関節炎スクリーニング判定: 未提供"
+              : raDetected
+                ? "関節炎スクリーニング判定: 陽性"
+                : "関節炎スクリーニング判定: 陰性"}
             <p className="mt-1 text-sm">陽性関節数: {totalPositiveJoints === null ? "未提供" : `${totalPositiveJoints} 箇所`}</p>
             <p className="mt-1 text-xs font-normal opacity-80">
               この判定はスクリーニング結果であり、診断結果ではありません。

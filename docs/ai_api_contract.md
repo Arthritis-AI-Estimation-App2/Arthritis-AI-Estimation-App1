@@ -1,4 +1,4 @@
-# RAスクリーニング REST API 契約（Cloud Run）
+# 関節炎スクリーニング REST API 契約（Cloud Run）
 
 機械可読の正は [`contract/openapi.yaml`](../contract/openapi.yaml) と [`contract/fixtures/`](../contract/fixtures/) です。この文書は同じ契約の解説です。
 
@@ -84,7 +84,7 @@ Next.js側は`cache: "no-store"`を指定し、55秒でリクエストを中断�
 - `total_positive_joints`が手ごとの陽性関節数の合計と一致する
 - `model_version`が文字列の場合は前後の空白を除去して保存する（未提供・空文字は未提供として保存する）
 
-関節詳細が返る場合は、`joint_id`、`joint_name`、`probability`、`positive`を検証し、`MCP1`〜`MCP5`、`PIP2`〜`PIP5`、`IP1 (thumb)`、`Wrist`を既存の手の図へ対応付けて保存します。`ra_detected`はスクリーニングモデルの判定値であり、診断結果ではありません。
+関節詳細が返る場合は、`joint_id`、`joint_name`、`probability`、`positive`を検証し、`MCP1`〜`MCP5`、`PIP2`〜`PIP5`、`IP1 (thumb)`、`Wrist`を既存の手の図へ対応付けて保存します。`ra_detected`は関節炎スクリーニングモデルの判定値を表します。診断結果ではありません。
 
 ### エラーレスポンス
 

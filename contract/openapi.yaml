@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
-  title: RA screening API
+  title: Arthritis screening API
   description: |
     Next.js の analyzeScreening から呼び出す同期 REST API。
     画像本体・患者情報・Supabase のクレデンシャルは受け取らない。
-    ra_detected はスクリーニング判定であり、診断結果ではない。
+    ra_detected は関節炎スクリーニング判定を表す。診断結果ではない。
   version: 1.0.0
 servers:
   - url: "{AI_API_URL}"

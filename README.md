@@ -8,7 +8,7 @@
 |---|---|---|
 | `web/` | Next.js アプリ | Vercel（Root Directory は `web`） |
 | `ai-api/` | FastAPI 推論 API | Cloud Build → Artifact Registry → Cloud Run |
-| `contract/` | `/v1/ra-screening` の OpenAPI と fixtures | — |
+| `contract/` | 関節炎スクリーニング API（`/v1/ra-screening`）の OpenAPI と fixtures | — |
 | `docs/` | 契約の解説 | — |
 
 `web/` は Next.js、`ai-api/` は FastAPI です。契約の正は [`contract/`](./contract/) です。解説は [docs/ai_api_contract.md](./docs/ai_api_contract.md) です。

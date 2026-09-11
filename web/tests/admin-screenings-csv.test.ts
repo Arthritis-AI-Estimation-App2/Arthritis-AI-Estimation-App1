@@ -33,6 +33,7 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
   ]);
 
   assert.ok(csv.startsWith("\uFEFF"));
+  assert.match(csv, /"関節炎スクリーニング判定"/);
   assert.match(csv, /"慶應,病院"/);
   assert.match(csv, /"山田 ""太郎"""/);
   assert.match(csv, /"解析完了","陽性","3","model-v2"/);
