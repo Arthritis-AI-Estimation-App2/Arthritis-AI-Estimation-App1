@@ -68,6 +68,26 @@ export default async function AdminScreeningsPage({
   const firstResult = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastResult = Math.min(page * pageSize, total);
 
+  const rows = screenings.map((s) => {
+    const subject = singleRelation(s.subjects);
+    const profile = singleRelation(s.profiles);
+    const subjectClinic = singleRelation(subject?.clinics);
+    const staffClinic = singleRelation(profile?.clinics);
+
+    return {
+      id: s.id,
+      href: `/admin/screenings/${s.id}`,
+      clinicName: subjectClinic?.name ?? staffClinic?.name ?? "未割り当て",
+      subjectId: s.subject_id ?? "未割当",
+      staffName: profile?.full_name ?? "不明",
+      status: s.status,
+      capturedAt: formatJapanDateTime(s.created_at),
+      inflamedLabel:
+        s.status === "completed" ? `${s.total_inflamed_joints ?? 0} 箇所` : "-",
+      isInterrupted: isStaleProcessing(s.status, s.status_updated_at),
+    };
+  });
+
   const filterForm = (
     <>
       <form method="get" className="mt-3 grid items-end gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-3 xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
@@ -227,73 +247,93 @@ export default async function AdminScreeningsPage({
                 : "撮影データはありません。"}
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-secondary-foreground">
-                <thead className="border-b bg-surface-muted text-xs font-semibold uppercase text-secondary-foreground">
-                  <tr>
-                    <th className="px-4 py-3">医療機関</th>
-                    <th className="px-4 py-3">被験者ID</th>
-                    <th className="px-4 py-3">撮影日時</th>
-                    <th className="px-4 py-3">担当スタッフ</th>
-                    <th className="px-4 py-3">解析ステータス</th>
-                    <th className="px-4 py-3">炎症数</th>
-                    <th className="px-4 py-3">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {screenings.map((s) => {
-                    const subject = singleRelation(s.subjects);
-                    const profile = singleRelation(s.profiles);
-                    const subjectClinic = singleRelation(subject?.clinics);
-                    const staffClinic = singleRelation(profile?.clinics);
-                    const clinicName =
-                      subjectClinic?.name ?? staffClinic?.name ?? "未割り当て";
-                    const subjectId = s.subject_id ?? "未割当";
-                    const staffName = profile?.full_name ?? "不明";
-                    const isInterrupted = isStaleProcessing(
-                      s.status,
-                      s.status_updated_at
-                    );
+            <>
+              <ul className="-mx-5 divide-y divide-border border-y border-border lg:hidden">
+                {rows.map((row) => (
+                  <li key={row.id}>
+                    <Link
+                      href={row.href}
+                      className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-surface-hover"
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <p className="truncate font-medium text-foreground">
+                          {row.clinicName}
+                        </p>
+                        <p className="font-mono text-xs tracking-tight text-secondary-foreground">
+                          被験者ID: {row.subjectId}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {row.capturedAt} / 担当: {row.staffName}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <StatusBadge status={row.status} />
+                          {row.status === "completed" && (
+                            <span className="text-xs text-secondary-foreground">
+                              炎症 {row.inflamedLabel}
+                            </span>
+                          )}
+                        </div>
+                        {row.isInterrupted && (
+                          <p className="text-xs font-medium text-warning-foreground">
+                            中断の可能性
+                          </p>
+                        )}
+                      </div>
+                      <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-link">
+                        結果を見る →
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
 
-                    return (
-                      <tr key={s.id} className="hover:bg-surface-hover">
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full text-left text-sm text-secondary-foreground">
+                  <thead className="border-b bg-surface-muted text-xs font-semibold uppercase text-secondary-foreground">
+                    <tr>
+                      <th className="px-4 py-3">医療機関</th>
+                      <th className="px-4 py-3">被験者ID</th>
+                      <th className="px-4 py-3">撮影日時</th>
+                      <th className="px-4 py-3">担当スタッフ</th>
+                      <th className="px-4 py-3">解析ステータス</th>
+                      <th className="px-4 py-3">炎症数</th>
+                      <th className="px-4 py-3">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {rows.map((row) => (
+                      <tr key={row.id} className="hover:bg-surface-hover">
                         <td className="px-4 py-3 font-medium text-foreground">
-                          {clinicName}
+                          {row.clinicName}
                         </td>
                         <td className="px-4 py-3 font-mono text-xs tracking-tight">
-                          {subjectId}
+                          {row.subjectId}
                         </td>
-                        <td className="px-4 py-3 text-xs">
-                          {formatJapanDateTime(s.created_at)}
-                        </td>
-                        <td className="px-4 py-3 text-xs">{staffName}</td>
+                        <td className="px-4 py-3 text-xs">{row.capturedAt}</td>
+                        <td className="px-4 py-3 text-xs">{row.staffName}</td>
                         <td className="px-4 py-3">
-                          <StatusBadge status={s.status} />
-                          {isInterrupted && (
+                          <StatusBadge status={row.status} />
+                          {row.isInterrupted && (
                             <p className="mt-1 text-xs font-medium text-warning-foreground">
                               中断の可能性
                             </p>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-xs">
-                          {s.status === "completed"
-                            ? `${s.total_inflamed_joints ?? 0} 箇所`
-                            : "-"}
-                        </td>
+                        <td className="px-4 py-3 text-xs">{row.inflamedLabel}</td>
                         <td className="px-4 py-3">
                           <Link
-                            href={`/admin/screenings/${s.id}`}
+                            href={row.href}
                             className="text-xs font-semibold text-link hover:underline"
                           >
                             結果を見る →
                           </Link>
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
 
           {totalPages > 1 && (

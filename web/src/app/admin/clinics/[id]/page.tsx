@@ -19,6 +19,17 @@ export default async function ClinicDetailPage({
 
   const { clinic, staffs, screenings } = detail;
 
+  const screeningRows = screenings.map((s) => ({
+    id: s.id,
+    href: `/admin/screenings/${s.id}`,
+    subjectId: s.subject_id ?? "未割当",
+    staffName: s.staff_name ?? "不明",
+    status: s.status,
+    capturedAt: formatJapanDateTime(s.created_at),
+    inflamedLabel:
+      s.status === "completed" ? `${s.total_inflamed_joints ?? 0} 箇所` : "-",
+  }));
+
   return (
     <div className="space-y-6">
       <div>
@@ -89,47 +100,76 @@ export default async function ClinicDetailPage({
           {screenings.length === 0 ? (
             <p className="text-sm text-muted-foreground">撮影データはありません。</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-secondary-foreground">
-                <thead className="border-b bg-surface-muted text-xs font-semibold uppercase text-secondary-foreground">
-                  <tr>
-                    <th className="px-4 py-3">被験者ID</th>
-                    <th className="px-4 py-3">撮影日時</th>
-                    <th className="px-4 py-3">担当スタッフ</th>
-                    <th className="px-4 py-3">解析ステータス</th>
-                    <th className="px-4 py-3">炎症数</th>
-                    <th className="px-4 py-3">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {screenings.map((s) => (
-                    <tr key={s.id} className="hover:bg-surface-hover">
-                      <td className="px-4 py-3 font-mono text-xs tracking-tight">
-                        {s.subject_id ?? "未割当"}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        {formatJapanDateTime(s.created_at)}
-                      </td>
-                      <td className="px-4 py-3 text-xs">{s.staff_name ?? "不明"}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={s.status} />
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        {s.status === "completed" ? `${s.total_inflamed_joints ?? 0} 箇所` : "-"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/screenings/${s.id}`}
-                          className="text-xs font-semibold text-link hover:underline"
-                        >
-                          結果を見る →
-                        </Link>
-                      </td>
+            <>
+              <ul className="-mx-5 divide-y divide-border border-y border-border lg:hidden">
+                {screeningRows.map((row) => (
+                  <li key={row.id}>
+                    <Link
+                      href={row.href}
+                      className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-surface-hover"
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <p className="font-mono text-sm font-medium tracking-tight text-foreground">
+                          被験者ID: {row.subjectId}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {row.capturedAt} / 担当: {row.staffName}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <StatusBadge status={row.status} />
+                          {row.status === "completed" && (
+                            <span className="text-xs text-secondary-foreground">
+                              炎症 {row.inflamedLabel}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-link">
+                        結果を見る →
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full text-left text-sm text-secondary-foreground">
+                  <thead className="border-b bg-surface-muted text-xs font-semibold uppercase text-secondary-foreground">
+                    <tr>
+                      <th className="px-4 py-3">被験者ID</th>
+                      <th className="px-4 py-3">撮影日時</th>
+                      <th className="px-4 py-3">担当スタッフ</th>
+                      <th className="px-4 py-3">解析ステータス</th>
+                      <th className="px-4 py-3">炎症数</th>
+                      <th className="px-4 py-3">操作</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {screeningRows.map((row) => (
+                      <tr key={row.id} className="hover:bg-surface-hover">
+                        <td className="px-4 py-3 font-mono text-xs tracking-tight">
+                          {row.subjectId}
+                        </td>
+                        <td className="px-4 py-3 text-xs">{row.capturedAt}</td>
+                        <td className="px-4 py-3 text-xs">{row.staffName}</td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={row.status} />
+                        </td>
+                        <td className="px-4 py-3 text-xs">{row.inflamedLabel}</td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={row.href}
+                            className="text-xs font-semibold text-link hover:underline"
+                          >
+                            結果を見る →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
