@@ -225,10 +225,7 @@ export default function HandJointDiagram({
             </p>
           </>
         ) : (
-          <>
-            <p className="text-xs text-muted-foreground">灰色の破線: 結果なし・解析対象外</p>
-            <p className="text-xs text-muted-foreground">関節をタップすると陽性確率が表示されます</p>
-          </>
+          <p className="text-xs text-muted-foreground">関節をタップすると陽性確率が表示されます</p>
         )}
       </div>
     </div>
