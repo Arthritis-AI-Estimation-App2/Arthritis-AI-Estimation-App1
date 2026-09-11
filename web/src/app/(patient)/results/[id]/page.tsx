@@ -3,6 +3,7 @@ import { getScreeningDetail } from "@/app/actions/screenings";
 import ScreeningResult from "@/components/ScreeningResult";
 import SubjectAssignmentEditor from "@/components/SubjectAssignmentEditor";
 import ProcessingStatusRefresh from "@/components/ProcessingStatusRefresh";
+import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
 import { notFound } from "next/navigation";
 
@@ -40,17 +41,20 @@ export default async function ResultPage({
           </p>
         </div>
       )}
-      {isProcessing && (
-        <div className="mb-4 flex items-center gap-3 rounded-xl border border-warning-border bg-warning p-4">
-          {!isInterrupted && (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-accent border-t-transparent" />
-          )}
+      {isProcessing && isInterrupted && (
+        <div className="mb-4 rounded-xl border border-warning-border bg-warning p-4">
           <p className="text-sm text-warning-foreground">
-            {isInterrupted
-              ? "処理が中断している可能性があります。管理者へ復旧を依頼してください。"
-              : "解析中です。この画面は自動的に更新されます。"}
+            処理が中断している可能性があります。管理者へ復旧を依頼してください。
           </p>
         </div>
+      )}
+      {isProcessing && !isInterrupted && (
+        <AnalysisWaitingPanel
+          className="mb-4"
+          phase={screening.status === "analyzing" ? "analyzing" : "uploading"}
+          startedAt={screening.status_updated_at}
+          note="完了するとこの画面は自動的に更新されます"
+        />
       )}
       <ScreeningResult screening={screening} joints={joints} />
       <div className="mt-6">

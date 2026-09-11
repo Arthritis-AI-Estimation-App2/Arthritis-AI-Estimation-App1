@@ -4,6 +4,7 @@ import ScreeningResult from "@/components/ScreeningResult";
 import RetryAnalysisButton from "@/components/RetryAnalysisButton";
 import ProcessingStatusRefresh from "@/components/ProcessingStatusRefresh";
 import RecoverInterruptedScreeningButton from "@/components/RecoverInterruptedScreeningButton";
+import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import StatusBadge from "@/components/StatusBadge";
 import SubjectAssignmentEditor from "@/components/SubjectAssignmentEditor";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
@@ -104,22 +105,21 @@ export default async function AdminScreeningDetailPage({
         </section>
       )}
 
-      {isProcessing && (
+      {isProcessing && isInterrupted && (
         <div className="space-y-3 rounded-xl border border-warning-border bg-warning p-4">
-          <div className="flex items-center gap-3">
-            {!isInterrupted && (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-accent border-t-transparent" />
-            )}
-            <p className="text-sm text-warning-foreground">
-              {isInterrupted
-                ? "最終更新から10分以上経過しているため、処理が中断している可能性があります。"
-                : "解析中です。この画面は自動的に更新されます。"}
-            </p>
-          </div>
-          {isInterrupted && (
-            <RecoverInterruptedScreeningButton screeningId={screening.id} />
-          )}
+          <p className="text-sm text-warning-foreground">
+            最終更新から10分以上経過しているため、処理が中断している可能性があります。
+          </p>
+          <RecoverInterruptedScreeningButton screeningId={screening.id} />
         </div>
+      )}
+
+      {isProcessing && !isInterrupted && (
+        <AnalysisWaitingPanel
+          phase={screening.status === "analyzing" ? "analyzing" : "uploading"}
+          startedAt={screening.status_updated_at}
+          note="完了するとこの画面は自動的に更新されます"
+        />
       )}
 
       {screening.status === "completed" && canRetryAnalysis && (

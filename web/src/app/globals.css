@@ -120,6 +120,28 @@ body {
   @apply bg-background text-foreground antialiased;
 }
 
+/* 解析待ちの表示。完了率は分からないので、終わりを示さない動きにする */
+@keyframes analysis-hand-scan {
+  0% {
+    transform: translateY(-40px);
+  }
+  100% {
+    transform: translateY(204px);
+  }
+}
+
+@layer utilities {
+  .animate-analysis-hand-scan {
+    animation: analysis-hand-scan 3.2s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-analysis-hand-scan {
+    animation: none;
+  }
+}
+
 @layer utilities {
   .pt-safe {
     padding-top: env(safe-area-inset-top, 0px);

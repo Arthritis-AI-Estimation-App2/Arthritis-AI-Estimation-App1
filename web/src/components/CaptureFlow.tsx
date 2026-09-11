@@ -3,9 +3,11 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CameraCapture from "@/components/CameraCapture";
+import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import Button from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { HAND_IMAGES_BUCKET } from "@/lib/storage";
+import type { AnalysisWaitPhase } from "@/lib/analysis-wait";
 import {
   abandonScreeningUpload,
   createScreening,
@@ -131,7 +133,7 @@ export default function CaptureFlow() {
   const [rightImage, setRightImage] = useState<Blob | null>(null);
   const [leftImage, setLeftImage] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState("");
+  const [phase, setPhase] = useState<AnalysisWaitPhase>("creating");
   const [capturedNotice, setCapturedNotice] = useState<"left" | null>(null);
 
   const handleCapture = useCallback(
@@ -176,7 +178,7 @@ export default function CaptureFlow() {
     let imagesCommitted = false;
 
     try {
-      setProgress("記録を作成しています...");
+      setPhase("creating");
       const created = await createScreening();
       if (created.error || !created.screeningId) {
         throw new Error(created.error ?? "記録の作成に失敗");
@@ -189,7 +191,7 @@ export default function CaptureFlow() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("ログインが必要です");
 
-      setProgress("画像をアップロードしています...");
+      setPhase("uploading");
       const ts = Date.now();
       rightPath = user.id + "/" + screeningId + "/right_" + ts + ".jpg";
       leftPath = user.id + "/" + screeningId + "/left_" + ts + ".jpg";
@@ -217,7 +219,7 @@ export default function CaptureFlow() {
       if (updateError) throw new Error(updateError);
       imagesCommitted = true;
 
-      setProgress("画像を解析しています...");
+      setPhase("analyzing");
       const { error: analyzeError } = await analyzeScreening(screeningId);
       if (analyzeError) {
         // 失敗しても画面遷移し、再実行ボタンを表示する
@@ -230,7 +232,7 @@ export default function CaptureFlow() {
       let errorMessage = e instanceof Error ? e.message : "エラーが発生しました";
 
       if (screeningId && !imagesCommitted) {
-        setProgress("一時データを削除しています...");
+        setPhase("cleaning");
         try {
           const cleanup = await abandonScreeningUpload(
             screeningId,
@@ -358,10 +360,17 @@ export default function CaptureFlow() {
       )}
 
       {step === "uploading" && (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-surface p-12">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-secondary-foreground">{progress}</p>
-        </div>
+        <AnalysisWaitingPanel
+          phase={phase}
+          previews={
+            leftImage && rightImage
+              ? [
+                  { label: "左手", blob: leftImage },
+                  { label: "右手", blob: rightImage },
+                ]
+              : undefined
+          }
+        />
       )}
     </div>
   );

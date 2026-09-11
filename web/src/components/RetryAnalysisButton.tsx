@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { retryAnalysis } from "@/app/actions/analyze";
+import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import Button from "@/components/ui/Button";
 
 export default function RetryAnalysisButton({
@@ -40,16 +41,19 @@ export default function RetryAnalysisButton({
     }
   };
 
+  if (loading) {
+    return <AnalysisWaitingPanel phase="analyzing" />;
+  }
+
   return (
     <div className="space-y-2">
       <Button
         onClick={handleRetry}
-        disabled={loading}
         variant={confirmOverwrite ? "secondary" : "primary"}
         size={confirmOverwrite ? "sm" : "md"}
         className={confirmOverwrite ? "" : "w-full"}
       >
-        {loading ? "再解析中..." : "再解析を実行する"}
+        再解析を実行する
       </Button>
       {error && <p className="text-sm text-danger-foreground">{error}</p>}
     </div>
