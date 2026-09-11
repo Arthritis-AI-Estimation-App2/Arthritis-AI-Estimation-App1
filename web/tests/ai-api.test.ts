@@ -78,6 +78,14 @@ test("AI API: v1エンドポイントへ認証付きで画像を入力順に送�
   assert.deepEqual(result.raw_response, validResponse());
 });
 
+test("AI API: 推論時間を詳細画面用の生レスポンスに保持する", async () => {
+  const response = { ...validResponse(), inference_ms: 1234 };
+  const result = await requestAiAnalysis("https://ai.example", "key", IMAGES, {
+    fetchImpl: responseFetch(Response.json(response)),
+  });
+  assert.deepEqual(result.raw_response, response);
+});
+
 test("AI API: 有効化時だけ成功レスポンスをサーバーログへ出力する", async (t) => {
   const previous = process.env.AI_API_LOG_RESPONSE;
   process.env.AI_API_LOG_RESPONSE = "true";

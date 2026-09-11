@@ -199,6 +199,10 @@ components:
       additionalProperties: false
       required: [hands, ra_detected, total_positive_joints]
       properties:
+        inference_ms:
+          type: integer
+          minimum: 0
+          description: 入力した全ての手の解析処理時間（ミリ秒、四捨五入）。前処理・推論・後処理を含み、画像取得・推論ロック待ち・モデル初期化は含まない。旧APIとモックでは省略可能。
         model_version:
           type: string
           description: 未提供または空文字はアプリ側で未提供として保存する

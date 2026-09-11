@@ -469,17 +469,18 @@ def create_app(
                     raise APIError(error.status_code, error.code, error.message, submitted_image.side) from error
         fetch_ms = (time.perf_counter() - fetch_started) * 1000
 
-        inference_started = time.perf_counter()
         hands = []
         with request.app.state.inference_lock:
+            inference_started = time.perf_counter()
             for submitted_image, image in zip(payload.images, images):
                 result = request.app.state.service.predict_from_image(image).to_dict()
                 if result["num_joints_detected"] == 0:
                     raise APIError(422, "NO_HAND_DETECTED", "No hand was detected in the image.", submitted_image.side)
                 hands.append({"side": submitted_image.side, **result})
-        inference_ms = (time.perf_counter() - inference_started) * 1000
+            inference_ms = round((time.perf_counter() - inference_started) * 1000)
         response_body = {
             "model_version": request.app.state.model_version,
+            "inference_ms": inference_ms,
             "hands": hands,
             "ra_detected": any(hand["ra_detected"] for hand in hands),
             "total_positive_joints": sum(hand["num_positive_joints"] for hand in hands),
@@ -489,7 +490,7 @@ def create_app(
             request_id=request.state.request_id,
             response=response_body,
             fetch_ms=round(fetch_ms),
-            inference_ms=round(inference_ms),
+            inference_ms=inference_ms,
             model_version=request.app.state.model_version,
         )
         return response_body

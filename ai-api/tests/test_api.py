@@ -2,6 +2,7 @@ import json
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -141,6 +142,40 @@ def test_one_hand_returns_the_aggregate_shape(monkeypatch):
     assert response.json()["ra_detected"] is True
     assert response.json()["total_positive_joints"] == 2
     assert "image_url" not in response.text
+
+
+@pytest.mark.parametrize("sides", [("left",), ("right", "left")])
+def test_inference_ms_excludes_download_and_lock_wait(monkeypatch, sides):
+    clock = [0.0]
+
+    def download(_):
+        clock[0] += 10
+        return Image.new("RGB", (100, 100))
+
+    class WaitingLock:
+        def __enter__(self):
+            clock[0] += 20
+
+        def __exit__(self, *_):
+            clock[0] += 30
+
+    app, service = make_app(monkeypatch, download=download)
+
+    def predict(image):
+        clock[0] += 0.125
+        return FakeResult(hand_result())
+
+    monkeypatch.setattr(service, "predict_from_image", predict)
+    monkeypatch.setattr(api, "time", SimpleNamespace(perf_counter=lambda: clock[0]))
+    with TestClient(app) as client:
+        app.state.inference_lock = WaitingLock()
+        response = client.post(
+            "/v1/ra-screening", headers={"Authorization": "Bearer test-key"},
+            json=request_payload(*[(side, f"{side}.jpg") for side in sides]),
+        )
+    assert response.status_code == 200
+    assert type(response.json()["inference_ms"]) is int
+    assert response.json()["inference_ms"] == 125 * len(sides)
 
 
 def test_request_and_response_are_logged_with_signed_url(monkeypatch):
