@@ -127,7 +127,11 @@ function ImagePreview({
   );
 }
 
-export default function CaptureFlow() {
+export default function CaptureFlow({
+  allowFileUpload = false,
+}: {
+  allowFileUpload?: boolean;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("left");
   const [rightImage, setRightImage] = useState<Blob | null>(null);
@@ -326,6 +330,7 @@ export default function CaptureFlow() {
                   : undefined
               }
               disabled={capturedNotice != null}
+              allowFileUpload={allowFileUpload}
               onCapture={handleCapture}
             />
             {capturedNotice === "left" && leftImage && (
