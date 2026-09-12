@@ -1,5 +1,7 @@
 "use client";
 
+import StatusBadge from "@/components/StatusBadge";
+import { staffDisplayName } from "@/lib/staff-display-name";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { assignScreeningsToSubject, createSubject } from "@/app/actions/subjects";
@@ -20,6 +22,7 @@ export type UnassignedScreening = Pick<
   Screening,
   "id" | "subject_id" | "created_by" | "status" | "total_inflamed_joints" | "created_at"
 > & {
+  profiles: { full_name: string; deleted_at: string | null } | null;
   joint_results?: GroupingJoint[] | null;
 };
 
@@ -51,7 +54,7 @@ function dateHeading(iso: string) {
 }
 
 function formatTime(iso: string) {
-  return formatJapanTime(iso);
+  return formatJapanTime(iso, true);
 }
 
 function formatRelativeTime(iso: string) {
@@ -217,44 +220,59 @@ export default function SubjectGroupingView({
                       const time = formatTime(sc.created_at);
 
                       return (
-                        <label
+                        <div
                           key={sc.id}
-                          className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                          className={`flex flex-col rounded-lg border transition-colors ${
                             isSelected
                               ? "border-primary bg-primary-subtle"
                               : "border-border bg-surface hover:border-border-strong"
                           }`}
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-base font-semibold tabular-nums text-foreground">{time}</p>
-                              {relative && <p className="text-xs text-muted-foreground">{relative}</p>}
-                            </div>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleScreening(sc.id)}
-                              className="mt-1 h-4 w-4 rounded border-border-strong bg-surface text-primary focus:ring-2 focus:ring-focus focus:ring-offset-2 focus:ring-offset-surface"
-                              aria-label={`${group.label} ${time}の撮影`}
-                            />
-                          </div>
-                          {findings &&
-                            (findings.count === 0 ? (
-                              <p className="mt-2 text-xs text-secondary-foreground">炎症の疑いなし</p>
-                            ) : (
-                              <div className="mt-2 space-y-0.5">
-                                <p className="text-xs font-medium text-foreground">
-                                  炎症 {findings.count}箇所
-                                </p>
-                                {findings.right.length > 0 && (
-                                  <p className="text-xs text-secondary-foreground">右手: {findings.right.join("、")}</p>
-                                )}
-                                {findings.left.length > 0 && (
-                                  <p className="text-xs text-secondary-foreground">左手: {findings.left.join("、")}</p>
-                                )}
+                          <label className="block flex-1 cursor-pointer p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-base font-semibold tabular-nums text-foreground">{time}</p>
+                                {relative && <p className="text-xs text-muted-foreground">{relative}</p>}
                               </div>
-                            ))}
-                        </label>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleScreening(sc.id)}
+                                className="mt-1 h-4 w-4 rounded border-border-strong bg-surface text-primary focus:ring-2 focus:ring-focus focus:ring-offset-2 focus:ring-offset-surface"
+                                aria-label={`${group.label} ${time}の撮影`}
+                              />
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <StatusBadge status={sc.status} />
+                              <span className="text-xs text-muted-foreground">撮影ID: {sc.id.slice(0, 8)}</span>
+                            </div>
+                            <p className="mt-2 break-words text-sm text-secondary-foreground">担当者: {staffDisplayName(sc.profiles)}</p>
+                            {findings &&
+                              (findings.count === 0 ? (
+                                <p className="mt-2 text-xs text-secondary-foreground">炎症の疑いなし</p>
+                              ) : (
+                                <div className="mt-2 space-y-0.5">
+                                  <p className="text-xs font-medium text-foreground">
+                                    炎症 {findings.count}箇所
+                                  </p>
+                                  {findings.right.length > 0 && (
+                                    <p className="text-xs text-secondary-foreground">右手: {findings.right.join("、")}</p>
+                                  )}
+                                  {findings.left.length > 0 && (
+                                    <p className="text-xs text-secondary-foreground">左手: {findings.left.join("、")}</p>
+                                  )}
+                                </div>
+                              ))}
+                          </label>
+                          <a
+                            href={`/results/${sc.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block border-t border-border px-3 py-3 text-sm font-medium text-primary hover:underline"
+                          >
+                            詳細を確認 ↗
+                          </a>
+                        </div>
                       );
                     })}
                   </div>

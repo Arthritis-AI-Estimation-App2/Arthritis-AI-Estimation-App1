@@ -47,8 +47,12 @@ export function formatJapanDateWithWeekday(value: DateTimeValue) {
   });
 }
 
-export function formatJapanTime(value: DateTimeValue) {
-  return format(value, { hour: "2-digit", minute: "2-digit" });
+export function formatJapanTime(value: DateTimeValue, includeSeconds = false) {
+  return format(value, {
+    hour: "2-digit",
+    minute: "2-digit",
+    ...(includeSeconds ? { second: "2-digit" as const } : {}),
+  });
 }
 
 export function japanCalendarDayKey(value: DateTimeValue) {

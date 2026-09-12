@@ -200,7 +200,7 @@ export async function getUnassignedScreenings(page = 1) {
   const { data, error, count } = await supabase
     .from("screenings")
     .select(
-      "id, subject_id, created_by, status, total_inflamed_joints, created_at, joint_results(side, joint_name, is_inflamed)",
+      "id, subject_id, created_by, status, total_inflamed_joints, created_at, profiles:created_by(full_name, deleted_at), joint_results(side, joint_name, is_inflamed)",
       { count: "exact" }
     )
     .is("subject_id", null)
