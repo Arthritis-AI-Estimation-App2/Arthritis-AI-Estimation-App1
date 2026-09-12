@@ -16,7 +16,7 @@ export type AnalysisStepState = "done" | "current" | "pending";
 
 /** Cloud Runのcold startでは30秒ほどかかるため、経過時間で文面を切り替える */
 export const ANALYSIS_WAIT_SLOW_AFTER_MS = 8_000;
-export const ANALYSIS_WAIT_VERY_SLOW_AFTER_MS = 20_000;
+export const ANALYSIS_WAIT_VERY_SLOW_AFTER_MS = 40_000;
 
 export interface AnalysisWaitCopy {
   title: string;
