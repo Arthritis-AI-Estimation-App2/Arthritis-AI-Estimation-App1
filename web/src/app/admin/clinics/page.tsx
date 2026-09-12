@@ -33,18 +33,18 @@ export default async function ClinicsPage() {
                 <ul className="divide-y divide-border">
                   {clinics.map((clinic) => (
                     <li key={clinic.id} className="flex items-center justify-between gap-4 py-3">
-                      <div>
+                      <div className="min-w-0 flex-1 break-words">
                         <Link
                           href={`/admin/clinics/${clinic.id}`}
                           className="font-semibold text-foreground hover:text-primary"
                         >
                           {clinic.name}
                         </Link>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="break-all text-xs text-muted-foreground">
                           ID: {clinic.id} | 登録日: {formatJapanDate(clinic.created_at)}
                         </p>
                       </div>
-                      <Link href={`/admin/clinics/${clinic.id}`}>
+                      <Link href={`/admin/clinics/${clinic.id}`} className="shrink-0 whitespace-nowrap">
                         <Button variant="secondary" size="sm">詳細</Button>
                       </Link>
                     </li>

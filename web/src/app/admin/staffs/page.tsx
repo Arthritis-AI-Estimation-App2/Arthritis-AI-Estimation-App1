@@ -9,14 +9,14 @@ export default async function StaffsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div>
           <h1 className="text-2xl font-bold text-foreground">医療機関のスタッフ一覧</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             登録されている医療機関のスタッフアカウント一覧です。
           </p>
         </div>
-        <Link href="/admin/staffs/new">
+        <Link href="/admin/staffs/new" className="shrink-0 whitespace-nowrap">
           <Button>＋ スタッフアカウント発行</Button>
         </Link>
       </div>
@@ -28,17 +28,17 @@ export default async function StaffsPage() {
           ) : (
             <ul className="divide-y divide-border">
               {staffs.map((staff) => (
-                <li key={staff.id} className="py-3 flex items-center justify-between">
-                  <div>
+                <li key={staff.id} className="flex flex-col items-start justify-between gap-3 py-3 sm:flex-row sm:items-center">
+                  <div className="min-w-0 flex-1 break-words">
                     <p className="font-semibold text-foreground">{staff.full_name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="break-all text-xs text-muted-foreground">
                       {staff.email ?? "メールアドレス未確認"}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       所属: {staff.clinics?.name ?? "未割り当て"} | ロール: {roleLabel(staff.role)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
                     <span className={`inline-block px-2 py-1 text-xs rounded font-semibold ${staff.is_active ? 'bg-success text-success-foreground' : 'bg-danger text-danger-foreground'}`}>
                       {staff.is_active ? "有効" : "無効"}
                     </span>
