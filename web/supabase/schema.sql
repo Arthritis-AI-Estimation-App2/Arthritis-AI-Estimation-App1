@@ -9,12 +9,15 @@ create table if not exists public.clinics (
 );
 
 -- ========== profiles ==========
+-- 管理者はアカウントを削除できるが、撮影データの担当者表示・医療機関の紐付けを保つため、
+-- auth.usersの削除時にprofilesへcascadeさせず、削除済みの墓標行として残す（deleted_at）。
 create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key,
   role text not null check (role in ('admin', 'clinic_staff')),
   full_name text not null,
   clinic_id uuid references public.clinics(id) on delete set null, -- admin の場合は NULL 可
   is_active boolean not null default true,
+  deleted_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -367,7 +370,7 @@ stable
 as $$
   select exists (
     select 1 from profiles
-    where id = auth.uid() and is_active = true
+    where id = auth.uid() and is_active = true and deleted_at is null
   );
 $$;
 
@@ -383,7 +386,7 @@ stable
 as $$
   select exists (
     select 1 from profiles
-    where id = auth.uid() and role = 'admin' and is_active = true
+    where id = auth.uid() and role = 'admin' and is_active = true and deleted_at is null
   );
 $$;
 
@@ -395,7 +398,7 @@ set search_path = public
 stable
 as $$
   select clinic_id from profiles
-  where id = auth.uid() and is_active = true;
+  where id = auth.uid() and is_active = true and deleted_at is null;
 $$;
 
 -- ========== RLS ==========

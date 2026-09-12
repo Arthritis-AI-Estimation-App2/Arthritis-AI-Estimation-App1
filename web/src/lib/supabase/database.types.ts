@@ -92,6 +92,7 @@ export type Database = {
         Row: {
           clinic_id: string | null
           created_at: string
+          deleted_at: string | null
           full_name: string
           id: string
           is_active: boolean
@@ -100,6 +101,7 @@ export type Database = {
         Insert: {
           clinic_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           full_name: string
           id: string
           is_active?: boolean
@@ -108,6 +110,7 @@ export type Database = {
         Update: {
           clinic_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           full_name?: string
           id?: string
           is_active?: boolean

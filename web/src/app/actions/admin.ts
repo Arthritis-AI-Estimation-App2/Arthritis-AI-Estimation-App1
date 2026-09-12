@@ -5,8 +5,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { throwSupabaseError } from "@/lib/supabase/error";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { Role } from "@/lib/types";
 import { validateAccountPassword } from "@/lib/password";
+import { staffDisplayName } from "@/lib/staff-display-name";
 import {
   ADMIN_SCREENINGS_PAGE_SIZE,
   endOfJapanDateExclusive,
@@ -112,6 +114,87 @@ async function createManagedAccount({
   return { error: null, success: true };
 }
 
+/**
+ * アカウントを削除する。撮影・解析データは削除せず、担当者表示・医療機関の紐付け・
+ * 撮影データの提供者追跡（監査目的）を保つため、profilesは氏名を残したまま
+ * 「削除済み」の墓標行として残す（is_active=false, deleted_at設定）。
+ * 画面表示はdeleted_atの有無で「(削除済みユーザー)」に切り替わるため、
+ * 氏名自体をDBから消さなくても表示上は問題ない（staffDisplayName参照）。
+ * メールアドレスを再登録できるようにするため、Authユーザーは実削除する。
+ * 呼び出し元で有効な管理者であることを確認してから使う。
+ */
+async function deleteManagedAccount({
+  currentUserId,
+  accountId,
+  role,
+  accountLabel,
+}: {
+  currentUserId: string;
+  accountId: string;
+  role: Role;
+  accountLabel: string;
+}): Promise<ActionState> {
+  if (accountId === currentUserId) {
+    return { error: "自分自身のアカウントは削除できません", success: false };
+  }
+
+  const supabase = await createClient();
+
+  if (role === "admin") {
+    // 管理者が誰もいなくなると誰もアカウントを管理できなくなるため、最後の1人は削除させない。
+    const { count, error: countError } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "admin")
+      .eq("is_active", true)
+      .is("deleted_at", null)
+      .neq("id", accountId);
+    if (countError) {
+      console.error("管理者数確認エラー:", countError);
+      return { error: "管理者数の確認に失敗しました", success: false };
+    }
+    if (!count) {
+      return { error: "最後の管理者アカウントは削除できません", success: false };
+    }
+  }
+
+  // Service Roleを使う前に、管理者の通常セッションとRLSで削除対象を確認する。
+  const { data: target, error: targetError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", accountId)
+    .eq("role", role)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (targetError) {
+    console.error(`${accountLabel}削除時の確認エラー:`, targetError);
+    return { error: `${accountLabel}の確認に失敗しました`, success: false };
+  }
+  if (!target) return { error: `${accountLabel}が見つかりません`, success: false };
+
+  const { error: tombstoneError } = await supabase
+    .from("profiles")
+    .update({ is_active: false, deleted_at: new Date().toISOString() })
+    .eq("id", accountId)
+    .eq("role", role)
+    .is("deleted_at", null);
+  if (tombstoneError) {
+    console.error(`${accountLabel}削除エラー:`, tombstoneError);
+    return { error: `${accountLabel}の削除に失敗しました`, success: false };
+  }
+
+  // メールアドレスを解放し再登録できるようにするため、Authユーザーは実削除する。
+  // 既に削除済み（再実行）の場合は成功として扱う。
+  const adminClient = createAdminClient();
+  const { error: authError } = await adminClient.auth.admin.deleteUser(accountId);
+  if (authError && authError.status !== 404) {
+    console.error(`${accountLabel}Authユーザー削除エラー:`, authError);
+    return { error: `${accountLabel}の削除に失敗しました`, success: false };
+  }
+
+  return { error: null, success: true };
+}
+
 /** 医療機関の一覧を取得 */
 export async function getClinics() {
   await requireAdmin();
@@ -169,7 +252,9 @@ export async function getClinic(clinicId: string) {
 }
 
 const CLINIC_DETAIL_SCREENING_COLUMNS =
-  "id, subject_id, created_by, status, total_inflamed_joints, created_at, profiles:created_by(full_name)";
+  "id, subject_id, created_by, status, total_inflamed_joints, created_at, profiles:created_by(full_name, deleted_at)";
+
+type ClinicDetailScreeningProfile = { full_name: string; deleted_at: string | null };
 
 type ClinicDetailScreeningRow = {
   id: string;
@@ -178,12 +263,12 @@ type ClinicDetailScreeningRow = {
   status: string;
   total_inflamed_joints: number | null;
   created_at: string;
-  profiles: { full_name: string } | { full_name: string }[] | null;
+  profiles: ClinicDetailScreeningProfile | ClinicDetailScreeningProfile[] | null;
 };
 
 function staffNameFromScreening(row: ClinicDetailScreeningRow) {
   const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-  return profile?.full_name ?? null;
+  return staffDisplayName(profile);
 }
 
 /** 医療機関の詳細（所属スタッフ・撮影データ）を取得 */
@@ -203,7 +288,7 @@ export async function getClinicDetail(clinicId: string) {
   const [staffsResult, assignedResult] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, role, full_name, clinic_id, is_active, created_at")
+      .select("id, role, full_name, clinic_id, is_active, deleted_at, created_at")
       .eq("role", "clinic_staff")
       .eq("clinic_id", clinicId)
       .order("created_at", { ascending: false }),
@@ -223,8 +308,11 @@ export async function getClinicDetail(clinicId: string) {
     throwSupabaseError(assignedResult.error, "撮影・解析データの取得");
   }
 
-  const staffs = staffsResult.data ?? [];
-  const staffIds = staffs.map((staff) => staff.id);
+  const allStaffs = staffsResult.data ?? [];
+  // 削除済みスタッフが未割り当てで撮影した記録も医療機関詳細に残すため、
+  // 未割り当て撮影データの検索対象IDには削除済みスタッフも含める。
+  const staffIds = allStaffs.map((staff) => staff.id);
+  const staffs = allStaffs.filter((staff) => !staff.deleted_at);
 
   const unassignedResult =
     staffIds.length === 0
@@ -317,7 +405,7 @@ export async function updateClinic(
   return { error: null, success: true };
 }
 
-/** 医療機関のスタッフ一覧を取得 */
+/** 医療機関のスタッフ一覧を取得（削除済みアカウントは除く） */
 export async function getStaffs() {
   await requireAdmin();
   const supabase = await createClient();
@@ -325,12 +413,13 @@ export async function getStaffs() {
     .from("profiles")
     .select("id, role, full_name, clinic_id, is_active, created_at, clinics(name)")
     .eq("role", "clinic_staff")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) throwSupabaseError(error, "スタッフ一覧の取得");
   return data ?? [];
 }
 
-/** スタッフ1件を取得 */
+/** スタッフ1件を取得（削除済みアカウントは除く） */
 export async function getStaff(staffId: string) {
   await requireAdmin();
   if (!isValidUuid(staffId)) return null;
@@ -341,6 +430,7 @@ export async function getStaff(staffId: string) {
     .select("id, role, full_name, clinic_id, is_active, created_at, clinics(name)")
     .eq("id", staffId)
     .eq("role", "clinic_staff")
+    .is("deleted_at", null)
     .maybeSingle();
   if (error) throwSupabaseError(error, "スタッフの取得");
   return data;
@@ -387,6 +477,7 @@ export async function updateStaff(
     .select("id, clinic_id")
     .eq("id", staffId)
     .eq("role", "clinic_staff")
+    .is("deleted_at", null)
     .maybeSingle();
   if (existingStaffError) {
     console.error("スタッフ更新時のスタッフ確認エラー:", existingStaffError);
@@ -444,6 +535,7 @@ export async function resetStaffPassword(
     .select("id")
     .eq("id", staffId)
     .eq("role", "clinic_staff")
+    .is("deleted_at", null)
     .maybeSingle();
   if (staffError) {
     console.error("パスワード再設定時のスタッフ確認エラー:", staffError);
@@ -517,7 +609,41 @@ export async function createStaff(
   return result;
 }
 
-/** 管理者一覧を取得（無効なアカウントも含む） */
+/**
+ * 医療機関スタッフアカウントを削除する。
+ * 撮影・解析データは削除せず、担当スタッフ名は「(削除済みユーザー)」と表示する。
+ */
+export async function deleteStaff(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  let current;
+  try {
+    current = await requireAdmin();
+  } catch {
+    return { error: "管理者権限が必要です", success: false };
+  }
+
+  const staffId = getRequiredText(formData, "staff_id");
+  if (!isValidUuid(staffId)) {
+    return { error: "スタッフの指定が不正です", success: false };
+  }
+
+  const result = await deleteManagedAccount({
+    currentUserId: current.userId,
+    accountId: staffId,
+    role: "clinic_staff",
+    accountLabel: "スタッフ",
+  });
+  if (!result.success) return result;
+
+  revalidatePath("/admin/staffs");
+  revalidatePath("/admin/clinics");
+  revalidatePath("/admin/screenings");
+  redirect("/admin/staffs");
+}
+
+/** 管理者一覧を取得（無効なアカウントも含む。削除済みアカウントは除く） */
 export async function getAdmins() {
   await requireAdmin();
   const supabase = await createClient();
@@ -525,12 +651,13 @@ export async function getAdmins() {
     .from("profiles")
     .select("id, full_name, is_active")
     .eq("role", "admin")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) throwSupabaseError(error, "管理者一覧の取得");
   return data ?? [];
 }
 
-/** 管理者1件を取得 */
+/** 管理者1件を取得（削除済みアカウントは除く） */
 export async function getAdmin(adminId: string) {
   await requireAdmin();
   if (!isValidUuid(adminId)) return null;
@@ -540,6 +667,7 @@ export async function getAdmin(adminId: string) {
     .select("id, full_name, is_active")
     .eq("id", adminId)
     .eq("role", "admin")
+    .is("deleted_at", null)
     .maybeSingle();
   if (error) throwSupabaseError(error, "管理者の取得");
   return data;
@@ -570,6 +698,7 @@ export async function updateAdminName(
     .update({ full_name: fullName })
     .eq("id", adminId)
     .eq("role", "admin")
+    .is("deleted_at", null)
     .select("id")
     .maybeSingle();
   if (error) {
@@ -606,6 +735,37 @@ export async function createAdmin(
   });
   if (result.success) revalidatePath("/admin/admins");
   return result;
+}
+
+/**
+ * 管理者アカウントを削除する。自分自身と、最後の1人の管理者は削除できない。
+ */
+export async function deleteAdmin(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  let current;
+  try {
+    current = await requireAdmin();
+  } catch {
+    return { error: "管理者権限が必要です", success: false };
+  }
+
+  const adminId = getRequiredText(formData, "admin_id");
+  if (!isValidUuid(adminId)) {
+    return { error: "管理者の指定が不正です", success: false };
+  }
+
+  const result = await deleteManagedAccount({
+    currentUserId: current.userId,
+    accountId: adminId,
+    role: "admin",
+    accountLabel: "管理者",
+  });
+  if (!result.success) return result;
+
+  revalidatePath("/admin/admins");
+  redirect("/admin/admins");
 }
 
 /** 管理者用：全医療機関の撮影・解析データを検索して1ページ取得 */
@@ -660,7 +820,7 @@ export async function getScreeningsForAdmin(
   let query = supabase
     .from("screenings")
     .select(
-      "id, subject_id, created_by, status, status_updated_at, total_inflamed_joints, ra_detected, ai_model_version, analyzed_at, created_at, subjects(id, clinic_id, clinics(name)), profiles:created_by(full_name, clinic_id, clinics(name)), joint_results(side, joint_name, is_inflamed, confidence_score)",
+      "id, subject_id, created_by, status, status_updated_at, total_inflamed_joints, ra_detected, ai_model_version, analyzed_at, created_at, subjects(id, clinic_id, clinics(name)), profiles:created_by(full_name, deleted_at, clinic_id, clinics(name)), joint_results(side, joint_name, is_inflamed, confidence_score)",
       { count: "exact" }
     );
 

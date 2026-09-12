@@ -22,6 +22,7 @@ test("未ログインの更新ActionはService Roleへ到達しない", async ()
       createAdminClient: () => { adminCalls++; throw new Error("未認証のService Role使用"); },
     },
     "next/cache": { revalidatePath: () => assert.fail("未認証の更新") },
+    "next/navigation": { redirect: () => assert.fail("未認証の更新") },
   };
   const cases = [
     ["screenings", "createScreening", []],
@@ -33,7 +34,7 @@ test("未ログインの更新ActionはService Roleへ到達しない", async ()
     ["subjects", "createSubject", []],
     ["subjects", "assignScreeningsToSubject", ["keio1", [screeningId]]],
     ["subjects", "correctScreeningSubject", [screeningId, "keio1"]],
-    ...["createClinic", "updateClinic", "updateStaff", "updateAdminName", "resetStaffPassword", "createStaff", "createAdmin"]
+    ...["createClinic", "updateClinic", "updateStaff", "updateAdminName", "resetStaffPassword", "createStaff", "createAdmin", "deleteStaff", "deleteAdmin"]
       .map((name) => ["admin", name, [{ error: null, success: false }, new FormData()]]),
   ];
   for (const [file, name, args] of cases) {
@@ -173,6 +174,7 @@ test("管理者名更新: 対象ロールを限定し、表示名だけを更新
   const query = {
     update: (values) => { updates++; assert.deepEqual(values, { full_name: "変更後" }); return query; },
     eq: (key, value) => { filters[key] = value; return query; },
+    is: () => query,
     select: () => query,
     maybeSingle: async () => ({ data: { id: userId }, error: null }),
   };
@@ -181,6 +183,7 @@ test("管理者名更新: 対象ロールを限定し、表示名だけを更新
     "@/lib/auth": { getCurrentUser: async () => ({ userId, profile: { role: "admin", is_active: true } }) },
     "@/lib/supabase/server": { createClient: async () => ({ from: () => query }) },
     "next/cache": { revalidatePath: (...args) => invalidated.push(args) },
+    "next/navigation": { redirect: () => assert.fail("この操作はリダイレクトしない") },
   });
   const form = new FormData();
   form.set("admin_id", userId);

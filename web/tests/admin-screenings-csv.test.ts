@@ -14,7 +14,7 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
       analyzed_at: "2026-09-05T01:02:03.000Z",
       created_at: "2026-09-04T15:00:00.000Z",
       subjects: { clinics: { name: "慶應,病院" } },
-      profiles: { full_name: '山田 "太郎"', clinics: null },
+      profiles: { full_name: '山田 "太郎"', deleted_at: null, clinics: null },
       joint_results: [
         {
           side: "right",
@@ -58,6 +58,7 @@ test("未割当記録はスタッフの医療機関を使用し、数式文字�
       subjects: null,
       profiles: {
         full_name: "=IMPORTXML(A1)",
+        deleted_at: null,
         clinics: { name: "テスト医院" },
       },
       joint_results: [],
@@ -67,4 +68,24 @@ test("未割当記録はスタッフの医療機関を使用し、数式文字�
   assert.match(csv, /"テスト医院","未割当"/);
   assert.match(csv, /"'=IMPORTXML\(A1\)"/);
   assert.match(csv, /"解析失敗","","","",""/);
+});
+
+test("削除済みスタッフの記録は担当スタッフを(削除済みユーザー)と表示する", () => {
+  const csv = buildAdminScreeningsCsv([
+    {
+      id: "screening-3",
+      subject_id: "keio48",
+      status: "completed",
+      total_inflamed_joints: 0,
+      ra_detected: false,
+      ai_model_version: null,
+      analyzed_at: "2026-09-06T00:00:00.000Z",
+      created_at: "2026-09-05T15:00:00.000Z",
+      subjects: { clinics: { name: "テスト医院" } },
+      profiles: { full_name: "山田 太郎", deleted_at: "2026-09-06T00:00:00.000Z", clinics: null },
+      joint_results: [],
+    },
+  ]);
+
+  assert.match(csv, /"\(削除済みユーザー\)"/);
 });

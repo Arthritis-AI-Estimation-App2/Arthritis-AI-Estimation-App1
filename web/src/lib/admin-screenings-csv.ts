@@ -1,4 +1,5 @@
 import { JOINT_LABELS, JOINT_NAMES, type JointName } from "./joints.ts";
+import { staffDisplayName } from "./staff-display-name.ts";
 
 type Relation<T> = T | T[] | null;
 
@@ -16,6 +17,7 @@ type AdminScreeningCsvSource = {
   }>;
   profiles: Relation<{
     full_name: string;
+    deleted_at: string | null;
     clinics: Relation<{ name: string }>;
   }>;
   joint_results: Array<{
@@ -106,7 +108,7 @@ export function buildAdminScreeningsCsv(rows: AdminScreeningCsvSource[]) {
       subjectClinic?.name ?? staffClinic?.name ?? "未割り当て",
       row.subject_id ?? "未割当",
       formatJapanDateTime(row.created_at),
-      profile?.full_name ?? "不明",
+      staffDisplayName(profile),
       STATUS_LABELS[row.status] ?? row.status,
       hasAnalysis
         ? (row.ra_detected ?? (row.total_inflamed_joints ?? 0) > 0)

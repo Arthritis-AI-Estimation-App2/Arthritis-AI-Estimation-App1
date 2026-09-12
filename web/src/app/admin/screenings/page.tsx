@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin-screening-filters";
 import { isStaleProcessing } from "@/lib/screening-staleness";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
+import { staffDisplayName } from "@/lib/staff-display-name";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -79,7 +80,7 @@ export default async function AdminScreeningsPage({
       href: `/admin/screenings/${s.id}`,
       clinicName: subjectClinic?.name ?? staffClinic?.name ?? "未割り当て",
       subjectId: s.subject_id ?? "未割当",
-      staffName: profile?.full_name ?? "不明",
+      staffName: staffDisplayName(profile),
       status: s.status,
       capturedAt: formatJapanDateTime(s.created_at),
       inflamedLabel:

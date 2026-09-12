@@ -16,12 +16,12 @@ export async function getCurrentUser(): Promise<{
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, role, full_name, clinic_id, is_active, created_at")
+    .select("id, role, full_name, clinic_id, is_active, deleted_at, created_at")
     .eq("id", user.id)
     .maybeSingle();
 
   if (error) throwSupabaseError(error, "プロフィールの取得");
-  if (!profile || !profile.is_active) return null;
+  if (!profile || !profile.is_active || profile.deleted_at) return null;
 
   return { userId: user.id, profile };
 }

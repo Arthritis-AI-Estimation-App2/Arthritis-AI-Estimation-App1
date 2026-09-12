@@ -1,6 +1,7 @@
-import { getClinics, getStaff } from "@/app/actions/admin";
+import { deleteStaff, getClinics, getStaff } from "@/app/actions/admin";
 import EditStaffForm from "@/components/EditStaffForm";
 import ResetStaffPasswordForm from "@/components/ResetStaffPasswordForm";
+import DeleteAccountForm from "@/components/DeleteAccountForm";
 import Button from "@/components/ui/Button";
 import { generatePassword } from "@/lib/generate-password";
 import Link from "next/link";
@@ -32,6 +33,12 @@ export default async function EditStaffPage({
       <ResetStaffPasswordForm
         staffId={staff.id}
         initialPassword={generatePassword()}
+      />
+      <DeleteAccountForm
+        action={deleteStaff}
+        idFieldName="staff_id"
+        idFieldValue={staff.id}
+        entityLabel="スタッフ"
       />
     </div>
   );
