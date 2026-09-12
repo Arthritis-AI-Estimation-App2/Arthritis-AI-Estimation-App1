@@ -34,8 +34,20 @@ test("未ログインの更新ActionはService Roleへ到達しない", async ()
     ["subjects", "createSubject", []],
     ["subjects", "assignScreeningsToSubject", ["keio1", [screeningId]]],
     ["subjects", "correctScreeningSubject", [screeningId, "keio1"]],
-    ...["createClinic", "updateClinic", "updateStaff", "updateAdminName", "resetStaffPassword", "createStaff", "createAdmin", "deleteStaff", "deleteAdmin"]
-      .map((name) => ["admin", name, [{ error: null, success: false }, new FormData()]]),
+    ...[
+      "createClinic",
+      "updateClinic",
+      "updateStaff",
+      "updateAdminName",
+      "resetStaffPassword",
+      "updateStaffEmail",
+      "resetAdminPassword",
+      "updateAdminEmail",
+      "createStaff",
+      "createAdmin",
+      "deleteStaff",
+      "deleteAdmin",
+    ].map((name) => ["admin", name, [{ error: null, success: false }, new FormData()]]),
   ];
   for (const [file, name, args] of cases) {
     const actions = loadServerModule(`src/app/actions/${file}.ts`, dependencies);
@@ -197,4 +209,156 @@ test("管理者名更新: 対象ロールを限定し、表示名だけを更新
   assert.equal((await actions.updateAdminName({}, form)).success, true);
   assert.deepEqual(filters, { id: userId, role: "admin" });
   assert.deepEqual(invalidated, [["/admin", "layout"]]);
+});
+
+const otherAdminId = "22222222-2222-4222-8222-222222222222";
+const otherStaffId = "33333333-3333-4333-8333-333333333333";
+
+function loadAdminActionsWithTarget({ found = true } = {}) {
+  const filters = {};
+  const calls = { updateUserById: 0 };
+  const query = {
+    select: () => query,
+    eq: (key, value) => { filters[key] = value; return query; },
+    is: () => query,
+    maybeSingle: async () => ({
+      data: found ? { id: filters.id } : null,
+      error: null,
+    }),
+  };
+  const adminClient = {
+    auth: {
+      admin: {
+        updateUserById: async (id, attributes) => {
+          calls.updateUserById++;
+          calls.lastId = id;
+          calls.lastAttributes = attributes;
+          return { data: { user: { id } }, error: null };
+        },
+      },
+    },
+  };
+  const actions = loadServerModule("src/app/actions/admin.ts", {
+    "@/lib/supabase/admin": { createAdminClient: () => adminClient },
+    "@/lib/auth": {
+      getCurrentUser: async () => ({
+        userId,
+        profile: { role: "admin", is_active: true },
+      }),
+    },
+    "@/lib/supabase/server": { createClient: async () => ({ from: () => query }) },
+    "next/cache": { revalidatePath: () => {} },
+    "next/navigation": { redirect: () => assert.fail("この操作はリダイレクトしない") },
+  });
+  return { actions, filters, calls };
+}
+
+test("管理者メール変更: 自分自身も対象にでき、対象ロールを限定してService Roleを使う", async () => {
+  const { actions, filters, calls } = loadAdminActionsWithTarget();
+
+  const selfForm = new FormData();
+  selfForm.set("admin_id", userId);
+  selfForm.set("email", "new-self@example.com");
+  const selfResult = await actions.updateAdminEmail({}, selfForm);
+  assert.equal(selfResult.success, true);
+  assert.equal(calls.updateUserById, 1);
+  assert.equal(calls.lastId, userId);
+  assert.deepEqual(calls.lastAttributes, {
+    email: "new-self@example.com",
+    email_confirm: true,
+  });
+  assert.deepEqual(filters, { id: userId, role: "admin" });
+
+  const form = new FormData();
+  form.set("admin_id", otherAdminId);
+  form.set("email", "new-admin@example.com");
+  const result = await actions.updateAdminEmail({}, form);
+  assert.equal(result.success, true);
+  assert.equal(calls.updateUserById, 2);
+  assert.equal(calls.lastId, otherAdminId);
+  assert.deepEqual(calls.lastAttributes, {
+    email: "new-admin@example.com",
+    email_confirm: true,
+  });
+  assert.deepEqual(filters, { id: otherAdminId, role: "admin" });
+});
+
+test("管理者パスワード再設定: 自分自身も対象にでき、対象ロールを限定してService Roleを使う", async () => {
+  const { actions, filters, calls } = loadAdminActionsWithTarget();
+
+  const selfForm = new FormData();
+  selfForm.set("admin_id", userId);
+  selfForm.set("password", "new-password-123");
+  const selfResult = await actions.resetAdminPassword({}, selfForm);
+  assert.equal(selfResult.success, true);
+  assert.equal(calls.updateUserById, 1);
+  assert.equal(calls.lastId, userId);
+  assert.deepEqual(calls.lastAttributes, { password: "new-password-123" });
+  assert.deepEqual(filters, { id: userId, role: "admin" });
+
+  const form = new FormData();
+  form.set("admin_id", otherAdminId);
+  form.set("password", "new-password-123");
+  const result = await actions.resetAdminPassword({}, form);
+  assert.equal(result.success, true);
+  assert.equal(calls.updateUserById, 2);
+  assert.equal(calls.lastId, otherAdminId);
+  assert.deepEqual(calls.lastAttributes, { password: "new-password-123" });
+  assert.deepEqual(filters, { id: otherAdminId, role: "admin" });
+});
+
+test("管理者メール変更・パスワード再設定: 対象が見つからない場合はService Roleを使わない", async () => {
+  const emailCase = loadAdminActionsWithTarget({ found: false });
+  const emailForm = new FormData();
+  emailForm.set("admin_id", otherAdminId);
+  emailForm.set("email", "new-admin@example.com");
+  assert.ok((await emailCase.actions.updateAdminEmail({}, emailForm)).error);
+  assert.equal(emailCase.calls.updateUserById, 0);
+
+  const passwordCase = loadAdminActionsWithTarget({ found: false });
+  const passwordForm = new FormData();
+  passwordForm.set("admin_id", otherAdminId);
+  passwordForm.set("password", "new-password-123");
+  assert.ok((await passwordCase.actions.resetAdminPassword({}, passwordForm)).error);
+  assert.equal(passwordCase.calls.updateUserById, 0);
+});
+
+test("スタッフメール変更: 対象ロールを限定してService Roleを使う", async () => {
+  const { actions, filters, calls } = loadAdminActionsWithTarget();
+
+  const form = new FormData();
+  form.set("staff_id", otherStaffId);
+  form.set("email", "new-staff@example.com");
+  const result = await actions.updateStaffEmail({}, form);
+  assert.equal(result.success, true);
+  assert.equal(calls.updateUserById, 1);
+  assert.deepEqual(calls.lastAttributes, {
+    email: "new-staff@example.com",
+    email_confirm: true,
+  });
+  assert.deepEqual(filters, { id: otherStaffId, role: "clinic_staff" });
+});
+
+test("スタッフパスワード再設定: 対象ロールを限定してService Roleを使う", async () => {
+  const { actions, filters, calls } = loadAdminActionsWithTarget();
+
+  const form = new FormData();
+  form.set("staff_id", otherStaffId);
+  form.set("password", "new-password-123");
+  const result = await actions.resetStaffPassword({}, form);
+  assert.equal(result.success, true);
+  assert.equal(calls.updateUserById, 1);
+  assert.deepEqual(calls.lastAttributes, { password: "new-password-123" });
+  assert.deepEqual(filters, { id: otherStaffId, role: "clinic_staff" });
+});
+
+test("メールアドレス変更: 不正な形式は入力検証で拒否し、Service Roleへ到達しない", async () => {
+  const { actions, calls } = loadAdminActionsWithTarget();
+  for (const email of ["", "not-an-email", " "]) {
+    const form = new FormData();
+    form.set("admin_id", otherAdminId);
+    form.set("email", email);
+    assert.ok((await actions.updateAdminEmail({}, form)).error);
+  }
+  assert.equal(calls.updateUserById, 0);
 });

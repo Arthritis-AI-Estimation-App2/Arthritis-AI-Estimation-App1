@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Role } from "@/lib/types";
 import { validateAccountPassword } from "@/lib/password";
+import { validateAccountEmail } from "@/lib/email";
 import { staffDisplayName } from "@/lib/staff-display-name";
 import {
   ADMIN_SCREENINGS_PAGE_SIZE,
@@ -52,6 +53,10 @@ function getAccountCredentials(formData: FormData, nameLabel: string) {
 
   if (!email || !password || !fullName) {
     return { credentials: null, error: "必須項目を入力してください" };
+  }
+  const emailError = validateAccountEmail(email);
+  if (emailError) {
+    return { credentials: null, error: emailError };
   }
   const passwordError = validateAccountPassword(password);
   if (passwordError) {
@@ -193,6 +198,121 @@ async function deleteManagedAccount({
   }
 
   return { error: null, success: true };
+}
+
+/**
+ * 対象アカウントのAuthログインパスワードを再設定する。
+ * Service Roleを使う前に、管理者の通常セッションとRLSで対象アカウントの存在・ロールを確認する。
+ * 呼び出し元で有効な管理者であることを確認してから使う。
+ */
+async function updateManagedAccountPassword({
+  accountId,
+  role,
+  password,
+  accountLabel,
+}: {
+  accountId: string;
+  role: Role;
+  password: string;
+  accountLabel: string;
+}): Promise<ActionState> {
+  const passwordError = validateAccountPassword(password);
+  if (passwordError) return { error: passwordError, success: false };
+
+  const supabase = await createClient();
+  const { data: target, error: targetError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", accountId)
+    .eq("role", role)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (targetError) {
+    console.error(`${accountLabel}パスワード再設定時の確認エラー:`, targetError);
+    return { error: `${accountLabel}の確認に失敗しました`, success: false };
+  }
+  if (!target) return { error: `${accountLabel}が見つかりません`, success: false };
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.updateUserById(accountId, {
+    password,
+  });
+  if (error) {
+    console.error(`${accountLabel}パスワード再設定エラー:`, error);
+    return {
+      error: `${accountLabel}のパスワードの再設定に失敗しました`,
+      success: false,
+    };
+  }
+
+  return { error: null, success: true };
+}
+
+/**
+ * 対象アカウントのAuthログイン用メールアドレスを変更する。
+ * Service Roleを使う前に、管理者の通常セッションとRLSで対象アカウントの存在・ロールを確認する。
+ * 確認メールは送らず即時に切り替える（アカウント発行時のemail_confirmと同様）。
+ * 呼び出し元で有効な管理者であることを確認してから使う。
+ */
+async function updateManagedAccountEmail({
+  accountId,
+  role,
+  email,
+  accountLabel,
+}: {
+  accountId: string;
+  role: Role;
+  email: string;
+  accountLabel: string;
+}): Promise<ActionState> {
+  const emailError = validateAccountEmail(email);
+  if (emailError) return { error: emailError, success: false };
+
+  const supabase = await createClient();
+  const { data: target, error: targetError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", accountId)
+    .eq("role", role)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (targetError) {
+    console.error(`${accountLabel}メール変更時の確認エラー:`, targetError);
+    return { error: `${accountLabel}の確認に失敗しました`, success: false };
+  }
+  if (!target) return { error: `${accountLabel}が見つかりません`, success: false };
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.updateUserById(accountId, {
+    email,
+    email_confirm: true,
+  });
+  if (error) {
+    if (error.code === "email_exists") {
+      return { error: "このメールアドレスは既に使われています", success: false };
+    }
+    console.error(`${accountLabel}メール変更エラー:`, error);
+    return {
+      error: `${accountLabel}のメールアドレスの変更に失敗しました`,
+      success: false,
+    };
+  }
+
+  return { error: null, success: true };
+}
+
+/**
+ * 対象アカウントのAuthログイン用メールアドレスを取得する。
+ * 呼び出し元で対象がCookieセッション＋RLSで確認済みであることを前提とする。
+ */
+async function getAccountEmail(accountId: string): Promise<string | null> {
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient.auth.admin.getUserById(accountId);
+  if (error) {
+    console.error("ログイン用メールアドレスの取得エラー:", error);
+    return null;
+  }
+  return data.user?.email ?? null;
 }
 
 /** 医療機関の一覧を取得 */
@@ -405,7 +525,7 @@ export async function updateClinic(
   return { error: null, success: true };
 }
 
-/** 医療機関のスタッフ一覧を取得（削除済みアカウントは除く） */
+/** 医療機関のスタッフ一覧を取得（削除済みアカウントは除く。ログイン用メールを含む） */
 export async function getStaffs() {
   await requireAdmin();
   const supabase = await createClient();
@@ -416,10 +536,12 @@ export async function getStaffs() {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) throwSupabaseError(error, "スタッフ一覧の取得");
-  return data ?? [];
+  const staffs = data ?? [];
+  const emails = await Promise.all(staffs.map((staff) => getAccountEmail(staff.id)));
+  return staffs.map((staff, index) => ({ ...staff, email: emails[index] }));
 }
 
-/** スタッフ1件を取得（削除済みアカウントは除く） */
+/** スタッフ1件を取得（削除済みアカウントは除く。ログイン用メールを含む） */
 export async function getStaff(staffId: string) {
   await requireAdmin();
   if (!isValidUuid(staffId)) return null;
@@ -433,7 +555,9 @@ export async function getStaff(staffId: string) {
     .is("deleted_at", null)
     .maybeSingle();
   if (error) throwSupabaseError(error, "スタッフの取得");
-  return data;
+  if (!data) return null;
+  const email = await getAccountEmail(data.id);
+  return { ...data, email };
 }
 
 /** スタッフの表示名・所属・有効状態を更新 */
@@ -525,34 +649,41 @@ export async function resetStaffPassword(
   if (!isValidUuid(staffId)) {
     return { error: "スタッフの指定が不正です", success: false };
   }
-  const passwordError = validateAccountPassword(password);
-  if (passwordError) return { error: passwordError, success: false };
 
-  // Service Roleを使う前に、管理者の通常セッションとRLSで対象スタッフを確認する。
-  const supabase = await createClient();
-  const { data: staff, error: staffError } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", staffId)
-    .eq("role", "clinic_staff")
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (staffError) {
-    console.error("パスワード再設定時のスタッフ確認エラー:", staffError);
-    return { error: "スタッフの確認に失敗しました", success: false };
-  }
-  if (!staff) return { error: "スタッフが見つかりません", success: false };
-
-  const adminClient = createAdminClient();
-  const { error } = await adminClient.auth.admin.updateUserById(staffId, {
+  return updateManagedAccountPassword({
+    accountId: staffId,
+    role: "clinic_staff",
     password,
+    accountLabel: "スタッフ",
   });
-  if (error) {
-    console.error("スタッフパスワード再設定エラー:", error);
-    return { error: "パスワードの再設定に失敗しました", success: false };
+}
+
+/** スタッフのログイン用メールアドレスを変更 */
+export async function updateStaffEmail(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { error: "管理者権限が必要です", success: false };
   }
 
-  return { error: null, success: true };
+  const staffId = getRequiredText(formData, "staff_id");
+  const email = getRequiredText(formData, "email");
+
+  if (!isValidUuid(staffId)) {
+    return { error: "スタッフの指定が不正です", success: false };
+  }
+
+  const result = await updateManagedAccountEmail({
+    accountId: staffId,
+    role: "clinic_staff",
+    email,
+    accountLabel: "スタッフ",
+  });
+  if (result.success) revalidatePath(`/admin/staffs/${staffId}/edit`);
+  return result;
 }
 
 /** 医療機関スタッフアカウント発行 */
@@ -643,7 +774,7 @@ export async function deleteStaff(
   redirect("/admin/staffs");
 }
 
-/** 管理者一覧を取得（無効なアカウントも含む。削除済みアカウントは除く） */
+/** 管理者一覧を取得（無効なアカウントも含む。削除済みアカウントは除く。ログイン用メールを含む） */
 export async function getAdmins() {
   await requireAdmin();
   const supabase = await createClient();
@@ -654,10 +785,12 @@ export async function getAdmins() {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
   if (error) throwSupabaseError(error, "管理者一覧の取得");
-  return data ?? [];
+  const admins = data ?? [];
+  const emails = await Promise.all(admins.map((admin) => getAccountEmail(admin.id)));
+  return admins.map((admin, index) => ({ ...admin, email: emails[index] }));
 }
 
-/** 管理者1件を取得（削除済みアカウントは除く） */
+/** 管理者1件を取得（削除済みアカウントは除く。ログイン用メールを含む） */
 export async function getAdmin(adminId: string) {
   await requireAdmin();
   if (!isValidUuid(adminId)) return null;
@@ -670,7 +803,9 @@ export async function getAdmin(adminId: string) {
     .is("deleted_at", null)
     .maybeSingle();
   if (error) throwSupabaseError(error, "管理者の取得");
-  return data;
+  if (!data) return null;
+  const email = await getAccountEmail(data.id);
+  return { ...data, email };
 }
 
 /** 管理者の表示名を更新 */
@@ -710,6 +845,60 @@ export async function updateAdminName(
   // 自分の名前を変更した場合はヘッダーの表示名も更新する。
   revalidatePath("/admin", "layout");
   return { error: null, success: true };
+}
+
+/** 管理者のログイン用メールアドレスを変更する（自分自身も対象にできる）。 */
+export async function updateAdminEmail(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { error: "管理者権限が必要です", success: false };
+  }
+
+  const adminId = getRequiredText(formData, "admin_id");
+  const email = getRequiredText(formData, "email");
+
+  if (!isValidUuid(adminId)) {
+    return { error: "管理者の指定が不正です", success: false };
+  }
+
+  const result = await updateManagedAccountEmail({
+    accountId: adminId,
+    role: "admin",
+    email,
+    accountLabel: "管理者",
+  });
+  if (result.success) revalidatePath(`/admin/admins/${adminId}/edit`);
+  return result;
+}
+
+/** 管理者のログインパスワードを再設定する（自分自身も対象にできる）。 */
+export async function resetAdminPassword(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { error: "管理者権限が必要です", success: false };
+  }
+
+  const adminId = getRequiredText(formData, "admin_id");
+  const password = getPassword(formData);
+
+  if (!isValidUuid(adminId)) {
+    return { error: "管理者の指定が不正です", success: false };
+  }
+
+  return updateManagedAccountPassword({
+    accountId: adminId,
+    role: "admin",
+    password,
+    accountLabel: "管理者",
+  });
 }
 
 /** 管理者アカウント発行 */

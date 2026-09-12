@@ -32,6 +32,9 @@ export default async function StaffsPage() {
                   <div>
                     <p className="font-semibold text-foreground">{staff.full_name}</p>
                     <p className="text-xs text-muted-foreground">
+                      {staff.email ?? "メールアドレス未確認"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
                       所属: {staff.clinics?.name ?? "未割り当て"} | ロール: {roleLabel(staff.role)}
                     </p>
                   </div>

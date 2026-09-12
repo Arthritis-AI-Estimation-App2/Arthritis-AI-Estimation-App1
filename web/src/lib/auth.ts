@@ -5,6 +5,7 @@ import type { Profile } from "@/lib/types";
 /** 現在ログイン中のユーザーとプロフィールを取得 */
 export async function getCurrentUser(): Promise<{
   userId: string;
+  email: string | null;
   profile: Profile;
 } | null> {
   const supabase = await createClient();
@@ -23,5 +24,5 @@ export async function getCurrentUser(): Promise<{
   if (error) throwSupabaseError(error, "プロフィールの取得");
   if (!profile || !profile.is_active || profile.deleted_at) return null;
 
-  return { userId: user.id, profile };
+  return { userId: user.id, email: user.email ?? null, profile };
 }

@@ -1,11 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth";
 import { validatePasswordChange } from "@/lib/password";
+import { validateAccountEmail } from "@/lib/email";
 import { redirect } from "next/navigation";
 
 export type PasswordChangeState = { error: string | null; success: boolean };
+export type EmailChangeState = { error: string | null; success: boolean };
 
 function getPassword(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -125,6 +128,77 @@ export async function changePassword(
   if (updateError) {
     console.error("本人パスワード変更エラー:", updateError);
     return { error: "パスワードの変更に失敗しました", success: false };
+  }
+
+  return { error: null, success: true };
+}
+
+/**
+ * ログイン中の本人が、現在のパスワードを確認したうえでログイン用メールアドレスを変更する。
+ * 確認メールは送らず即時に切り替える（アカウント発行・管理者によるメール変更と同様）。
+ */
+export async function changeEmail(
+  _prevState: EmailChangeState,
+  formData: FormData
+): Promise<EmailChangeState> {
+  const currentPassword = getPassword(formData, "current_password");
+  const newEmailValue = formData.get("new_email");
+  const newEmail = typeof newEmailValue === "string" ? newEmailValue.trim() : "";
+
+  if (!currentPassword || !newEmail) {
+    return { error: "すべての項目を入力してください", success: false };
+  }
+  const emailError = validateAccountEmail(newEmail);
+  if (emailError) return { error: emailError, success: false };
+
+  let current: Awaited<ReturnType<typeof getCurrentUser>>;
+  try {
+    current = await getCurrentUser();
+  } catch (error) {
+    console.error("メールアドレス変更時のプロフィール確認エラー:", error);
+    return { error: "ログイン情報を確認できませんでした。再度ログインしてください", success: false };
+  }
+  if (!current) {
+    return { error: "ログイン情報を確認できませんでした。再度ログインしてください", success: false };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user?.email || user.id !== current.userId) {
+    console.error("メールアドレス変更時のユーザー確認エラー:", userError);
+    return { error: "ログイン情報を確認できませんでした。再度ログインしてください", success: false };
+  }
+
+  if (newEmail === user.email) {
+    return { error: "現在のメールアドレスと同じです", success: false };
+  }
+
+  // 現在のパスワードを使って再認証し、本人による変更であることを確認する。
+  const { data: authData, error: authenticationError } =
+    await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+
+  if (authenticationError || authData.user?.id !== current.userId) {
+    return { error: "現在のパスワードが正しくありません", success: false };
+  }
+
+  const adminClient = createAdminClient();
+  const { error: updateError } = await adminClient.auth.admin.updateUserById(
+    current.userId,
+    { email: newEmail, email_confirm: true }
+  );
+  if (updateError) {
+    if (updateError.code === "email_exists") {
+      return { error: "このメールアドレスは既に使われています", success: false };
+    }
+    console.error("本人メールアドレス変更エラー:", updateError);
+    return { error: "メールアドレスの変更に失敗しました", success: false };
   }
 
   return { error: null, success: true };

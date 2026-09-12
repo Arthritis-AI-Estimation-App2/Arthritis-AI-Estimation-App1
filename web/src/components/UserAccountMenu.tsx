@@ -50,7 +50,7 @@ export default function UserAccountMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLinkItem closeOnClick render={<Link href={passwordHref} />}>
-          パスワード変更
+          アカウント設定
         </DropdownMenuLinkItem>
         <form action={logout}>
           <DropdownMenuItem nativeButton render={<button type="submit" />}>

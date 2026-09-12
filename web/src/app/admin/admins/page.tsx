@@ -10,7 +10,7 @@ export default async function AdminsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">管理者一覧</h1>
-          <p className="mt-1 text-sm text-muted-foreground">すべての管理者アカウントを確認し、表示名を変更できます。</p>
+          <p className="mt-1 text-sm text-muted-foreground">すべての管理者アカウントを確認し、表示名・メールアドレス・パスワードを変更できます。</p>
         </div>
         <Link href="/admin/admins/new"><Button>＋ 管理者アカウント発行</Button></Link>
       </div>
@@ -24,6 +24,7 @@ export default async function AdminsPage() {
                 <li key={admin.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <p className="break-words font-semibold text-foreground">{admin.full_name}</p>
+                    <p className="break-all text-xs text-muted-foreground">{admin.email ?? "メールアドレス未確認"}</p>
                     <p className="break-all text-xs text-muted-foreground">ID: {admin.id}</p>
                   </div>
                   <div className="flex items-center gap-3">

@@ -1,6 +1,7 @@
-import { deleteStaff, getClinics, getStaff } from "@/app/actions/admin";
+import { deleteStaff, getClinics, getStaff, resetStaffPassword, updateStaffEmail } from "@/app/actions/admin";
 import EditStaffForm from "@/components/EditStaffForm";
-import ResetStaffPasswordForm from "@/components/ResetStaffPasswordForm";
+import ChangeAccountEmailForm from "@/components/ChangeAccountEmailForm";
+import ResetAccountPasswordForm from "@/components/ResetAccountPasswordForm";
 import DeleteAccountForm from "@/components/DeleteAccountForm";
 import Button from "@/components/ui/Button";
 import { generatePassword } from "@/lib/generate-password";
@@ -22,7 +23,7 @@ export default async function EditStaffPage({
         <div>
           <h1 className="text-2xl font-bold text-foreground">スタッフ情報を編集</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            表示名、所属医療機関、有効状態、パスワードを変更します。
+            表示名、所属医療機関、有効状態、ログイン用メールアドレス、パスワードを変更します。
           </p>
         </div>
         <Link href="/admin/staffs">
@@ -30,9 +31,19 @@ export default async function EditStaffPage({
         </Link>
       </div>
       <EditStaffForm staff={staff} clinics={clinics} />
-      <ResetStaffPasswordForm
-        staffId={staff.id}
+      <ChangeAccountEmailForm
+        action={updateStaffEmail}
+        idFieldName="staff_id"
+        idFieldValue={staff.id}
+        currentEmail={staff.email}
+        entityLabel="スタッフ"
+      />
+      <ResetAccountPasswordForm
+        action={resetStaffPassword}
+        idFieldName="staff_id"
+        idFieldValue={staff.id}
         initialPassword={generatePassword()}
+        entityLabel="スタッフ"
       />
       <DeleteAccountForm
         action={deleteStaff}
