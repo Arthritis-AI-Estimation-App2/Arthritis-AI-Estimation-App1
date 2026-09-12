@@ -28,6 +28,11 @@ test("未ログインの更新ActionはService Roleへ到達しない", async ()
     ["screenings", "createScreening", []],
     ["screenings", "updateScreeningImages", [screeningId, ...paths]],
     ["screenings", "abandonScreeningUpload", [screeningId, paths]],
+    ["screenings", "deleteScreeningAsAdmin", [{ error: null, success: false }, (() => {
+      const form = new FormData();
+      form.set("screening_id", screeningId);
+      return form;
+    })()]],
     ["analyze", "analyzeScreening", [screeningId]],
     ["analyze", "retryAnalysis", [screeningId]],
     ["analyze", "markInterruptedScreeningFailed", [screeningId]],
@@ -122,6 +127,7 @@ function cleanupFixture({
     "@/lib/supabase/server": { createClient: async () => sessionClient },
     "@/lib/supabase/admin": { createAdminClient: () => { adminCalls++; return adminClient; } },
     "next/cache": { revalidatePath: () => {} },
+    "next/navigation": { redirect: () => assert.fail("後片付けはリダイレクトしない") },
   });
   return {
     run: (requestedPaths = paths) => actions.abandonScreeningUpload(screeningId, requestedPaths),
@@ -177,6 +183,185 @@ test("後片付け: 無効ユーザー・参照不可・他作成者・解析開
     assert.ok((await fixture.run([path])).error);
     assert.equal(fixture.adminCalls, 0);
   }
+});
+
+const adminId = userId;
+const creatorId = "44444444-4444-4444-8444-444444444444";
+const adminDeletePaths = ["right_1.jpg", "left_1.jpg"].map(
+  (file) => `${creatorId}/${screeningId}/${file}`
+);
+
+function adminDeleteForm(id = screeningId) {
+  const form = new FormData();
+  form.set("screening_id", id);
+  return form;
+}
+
+function adminDeleteFixture({
+  role = "admin",
+  active = true,
+  screening = {
+    id: screeningId,
+    created_by: creatorId,
+    subject_id: null,
+    right_image_url: adminDeletePaths[0],
+    left_image_url: adminDeletePaths[1],
+  },
+  savedPaths = adminDeletePaths,
+  storageError = null,
+  expectedPaths = adminDeletePaths,
+} = {}) {
+  const files = new Set(savedPaths);
+  const events = [];
+  const redirected = [];
+  let deleted = false;
+  let adminCalls = 0;
+  const sessionClient = {
+    auth: { getUser: async () => ({ data: { user: { id: adminId } } }) },
+    from: (table) => {
+      const query = {
+        select: () => query,
+        eq: () => query,
+        maybeSingle: async () => ({
+          data: table === "profiles"
+            ? { id: adminId, role, clinic_id: null, is_active: active }
+            : screening,
+          error: null,
+        }),
+      };
+      return query;
+    },
+  };
+  const adminClient = {
+    storage: {
+      from: (bucket) => {
+        assert.equal(bucket, "hand-images");
+        return {
+          remove: async (requestedPaths) => {
+            events.push("remove");
+            assert.deepEqual(requestedPaths, expectedPaths);
+            if (storageError) return { data: null, error: storageError };
+            const removed = requestedPaths.filter((path) => files.delete(path));
+            return { data: removed.map((name) => ({ name })), error: null };
+          },
+        };
+      },
+    },
+    from: (table) => {
+      assert.equal(table, "screenings");
+      const filters = {};
+      const query = {
+        delete: () => query,
+        eq: (column, value) => { filters[column] = value; return query; },
+        select: () => query,
+        maybeSingle: async () => {
+          assert.deepEqual(filters, { id: screeningId });
+          events.push("delete");
+          deleted = true;
+          return { data: { id: screeningId }, error: null };
+        },
+      };
+      return query;
+    },
+  };
+  const actions = loadServerModule("src/app/actions/screenings.ts", {
+    "@/lib/supabase/server": { createClient: async () => sessionClient },
+    "@/lib/supabase/admin": { createAdminClient: () => { adminCalls++; return adminClient; } },
+    "next/cache": { revalidatePath: () => {} },
+    "next/navigation": { redirect: (path) => { redirected.push(path); } },
+  });
+  return {
+    run: (form = adminDeleteForm()) =>
+      actions.deleteScreeningAsAdmin({ error: null, success: false }, form),
+    files,
+    events,
+    redirected,
+    get deleted() { return deleted; },
+    get adminCalls() { return adminCalls; },
+  };
+}
+
+test("管理者削除: スタッフはService Roleへ到達しない", async () => {
+  const fixture = adminDeleteFixture({ role: "clinic_staff" });
+  assert.ok((await fixture.run()).error);
+  assert.equal(fixture.adminCalls, 0);
+  assert.equal(fixture.deleted, false);
+});
+
+test("管理者削除: 画像を削除してから撮影記録を削除する", async () => {
+  const fixture = adminDeleteFixture();
+  await fixture.run();
+  assert.equal(fixture.files.size, 0);
+  assert.equal(fixture.deleted, true);
+  assert.deepEqual(fixture.events, ["remove", "delete"]);
+  assert.deepEqual(fixture.redirected, ["/admin/screenings"]);
+});
+
+test("管理者削除: Storage削除失敗時は画像と撮影記録を残す", async (t) => {
+  t.mock.method(console, "error", () => {});
+  const fixture = adminDeleteFixture({ storageError: { message: "storage unavailable" } });
+  assert.ok((await fixture.run()).error);
+  assert.equal(fixture.deleted, false);
+  assert.equal(fixture.files.size, 2);
+  assert.deepEqual(fixture.events, ["remove"]);
+  assert.deepEqual(fixture.redirected, []);
+});
+
+test("管理者削除: 解析中・完了済みでも削除できる", async () => {
+  for (const status of ["analyzing", "completed"]) {
+    const fixture = adminDeleteFixture({
+      screening: {
+        id: screeningId,
+        created_by: creatorId,
+        subject_id: null,
+        status,
+        right_image_url: adminDeletePaths[0],
+        left_image_url: adminDeletePaths[1],
+      },
+    });
+    await fixture.run();
+    assert.equal(fixture.deleted, true, status);
+    assert.deepEqual(fixture.events, ["remove", "delete"]);
+  }
+});
+
+test("管理者削除: 参照不可・不正パス・不正IDを拒否する", async () => {
+  for (const options of [
+    { screening: null },
+    {
+      screening: {
+        id: screeningId,
+        created_by: creatorId,
+        subject_id: null,
+        right_image_url: `other-user/${screeningId}/right_1.jpg`,
+        left_image_url: adminDeletePaths[1],
+      },
+    },
+  ]) {
+    const fixture = adminDeleteFixture(options);
+    assert.ok((await fixture.run()).error);
+    assert.equal(fixture.adminCalls, 0);
+    assert.equal(fixture.deleted, false);
+  }
+
+  const fixture = adminDeleteFixture();
+  assert.ok((await fixture.run(adminDeleteForm("not-a-uuid"))).error);
+  assert.equal(fixture.adminCalls, 0);
+});
+
+test("管理者削除: 作成者が空でも正規の画像パスなら削除できる", async () => {
+  const fixture = adminDeleteFixture({
+    screening: {
+      id: screeningId,
+      created_by: null,
+      subject_id: null,
+      right_image_url: adminDeletePaths[0],
+      left_image_url: adminDeletePaths[1],
+    },
+  });
+  await fixture.run();
+  assert.equal(fixture.deleted, true);
+  assert.deepEqual(fixture.events, ["remove", "delete"]);
 });
 
 test("管理者名更新: 対象ロールを限定し、表示名だけを更新する", async () => {

@@ -28,7 +28,7 @@
 ## 手画像と解析
 
 - Screeningの状態遷移（`uploading` → `analyzing` → `completed`／`failed`）を壊さない。解析失敗時は`failed`へ更新し、再解析できる状態を維持する。
-- 手画像は非公開Storageに保存する。画面参照（Signed URLを含む）は本部管理者のみ。スタッフは撮影時のアップロードと、アップロード失敗時の削除だけができる。解析用Signed URLは、認可済みのServer ActionからService Roleで発行し、ブラウザには返さない。
+- 手画像は非公開Storageに保存する。画面参照（Signed URLを含む）は本部管理者のみ。スタッフは撮影時のアップロードと、アップロード失敗時の削除だけができる。管理者は認可済みのServer ActionからService Roleで撮影記録と手画像を完全物理削除できる。解析用Signed URLは、認可済みのServer ActionからService Roleで発行し、ブラウザには返さない。
 - アプリが生成・登録・削除する画像パスは`{userId}/{screeningId}/right_<timestamp>.jpg`または`left_<timestamp>.jpg`形式に限定する。ファイル名の形式はアプリ側で検証し、StorageのSQLには重複定義しない。
 - AI解析は共有APIキーをBearerトークンとして`AI_API_URL/v1/ra-screening`を呼び出す。未設定時はサーバー側モックを使う。
 - AIレスポンスは入力した手の件数・順序・sideの一意性、確率と関節数の範囲、手ごとの結果と全体集計の整合性を検証してから保存する。関節詳細がある場合は、対応表に従って既存の手の図の関節名へ変換する。

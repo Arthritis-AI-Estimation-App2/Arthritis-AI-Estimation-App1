@@ -852,6 +852,7 @@ if (!enabled) {
           "@/lib/supabase/server": { createClient: async () => staffA },
           "@/lib/supabase/admin": { createAdminClient: () => adminApi },
           "next/cache": { revalidatePath: () => {} },
+          "next/navigation": { redirect: () => {} },
         });
         for (const saveRightImage of [true, false]) {
           const screening = await adminApi.from("screenings")
@@ -878,6 +879,135 @@ if (!enabled) {
           assert.ifError(images.error);
           assert.deepEqual(images.data, [], "画像が残らないこと");
         }
+      });
+
+      await t.test("管理者の通常クライアントでは解析開始後の記録と画像を直接削除できない", async () => {
+        const screening = await adminApi.from("screenings")
+          .insert({ created_by: staffAId, status: "uploading" })
+          .select("id").single();
+        assert.ifError(screening.error);
+        createdScreeningIds.push(screening.data.id);
+        const path = `${staffAId}/${screening.data.id}/right_1.jpg`;
+        createdStoragePaths.push(path);
+        const upload = await staffA.storage.from("hand-images").upload(
+          path, new Blob(["test"], { type: "image/jpeg" }), { contentType: "image/jpeg" }
+        );
+        assert.ifError(upload.error);
+        const startAnalysis = await adminApi
+          .from("screenings")
+          .update({
+            status: "analyzing",
+            right_image_url: path,
+          })
+          .eq("id", screening.data.id);
+        assert.ifError(startAnalysis.error);
+
+        const remove = await admin.storage.from("hand-images").remove([path]);
+        assert.ok(
+          remove.error || remove.data?.length === 0,
+          "管理者の通常クライアントによる画像削除は反映されないこと"
+        );
+        const imageAfterDirectDelete = await adminApi.storage.from("hand-images").download(path);
+        assert.ifError(imageAfterDirectDelete.error);
+
+        const deleted = await admin.from("screenings").delete().eq("id", screening.data.id).select("id");
+        assert.equal(deleted.data?.length ?? 0, 0, "管理者の通常クライアントによる記録削除は拒否すること");
+        const remains = await adminApi.from("screenings").select("id").eq("id", screening.data.id).single();
+        assert.ifError(remains.error);
+      });
+
+      await t.test("スタッフの完全削除Actionは拒否され記録と画像が残る", async () => {
+        const screening = await adminApi.from("screenings")
+          .insert({ created_by: staffAId, status: "uploading" })
+          .select("id").single();
+        assert.ifError(screening.error);
+        createdScreeningIds.push(screening.data.id);
+        const imagePaths = ["right_1.jpg", "left_1.jpg"].map(
+          (name) => `${staffAId}/${screening.data.id}/${name}`
+        );
+        createdStoragePaths.push(...imagePaths);
+        for (const path of imagePaths) {
+          const upload = await staffA.storage.from("hand-images").upload(
+            path, new Blob(["test"], { type: "image/jpeg" }), { contentType: "image/jpeg" }
+          );
+          assert.ifError(upload.error);
+        }
+        const complete = await adminApi.from("screenings").update({
+          status: "completed",
+          right_image_url: imagePaths[0],
+          left_image_url: imagePaths[1],
+        }).eq("id", screening.data.id);
+        assert.ifError(complete.error);
+
+        const actions = loadServerModule("src/app/actions/screenings.ts", {
+          "@/lib/supabase/server": { createClient: async () => staffA },
+          "@/lib/supabase/admin": { createAdminClient: () => {
+            throw new Error("スタッフ削除でService Roleを使ってはいけない");
+          } },
+          "next/cache": { revalidatePath: () => {} },
+          "next/navigation": { redirect: () => assert.fail("スタッフ削除はリダイレクトしない") },
+        });
+        const form = new FormData();
+        form.set("screening_id", screening.data.id);
+        const result = await actions.deleteScreeningAsAdmin({ error: null, success: false }, form);
+        assert.ok(result.error, "スタッフの完全削除は拒否すること");
+
+        const remaining = await adminApi.from("screenings").select("id").eq("id", screening.data.id).maybeSingle();
+        assert.ifError(remaining.error);
+        assert.ok(remaining.data, "スタッフ拒否後も撮影記録が残ること");
+        const images = await adminApi.storage.from("hand-images").list(`${staffAId}/${screening.data.id}`);
+        assert.ifError(images.error);
+        assert.equal(images.data?.length ?? 0, 2, "スタッフ拒否後も画像が残ること");
+      });
+
+      await t.test("管理者の完全削除Actionは完了済み記録と画像を残さない", async () => {
+        const screening = await adminApi.from("screenings")
+          .insert({ created_by: staffAId, status: "uploading" })
+          .select("id").single();
+        assert.ifError(screening.error);
+        createdScreeningIds.push(screening.data.id);
+        const imagePaths = ["right_1.jpg", "left_1.jpg"].map(
+          (name) => `${staffAId}/${screening.data.id}/${name}`
+        );
+        createdStoragePaths.push(...imagePaths);
+        for (const path of imagePaths) {
+          const upload = await staffA.storage.from("hand-images").upload(
+            path, new Blob(["test"], { type: "image/jpeg" }), { contentType: "image/jpeg" }
+          );
+          assert.ifError(upload.error);
+        }
+        const complete = await adminApi.from("screenings").update({
+          status: "completed",
+          right_image_url: imagePaths[0],
+          left_image_url: imagePaths[1],
+        }).eq("id", screening.data.id);
+        assert.ifError(complete.error);
+        const joint = await adminApi.from("joint_results").insert({
+          screening_id: screening.data.id,
+          side: "right",
+          joint_name: "thumbIP",
+        });
+        assert.ifError(joint.error);
+
+        const actions = loadServerModule("src/app/actions/screenings.ts", {
+          "@/lib/supabase/server": { createClient: async () => admin },
+          "@/lib/supabase/admin": { createAdminClient: () => adminApi },
+          "next/cache": { revalidatePath: () => {} },
+          "next/navigation": { redirect: () => {} },
+        });
+        const form = new FormData();
+        form.set("screening_id", screening.data.id);
+        await actions.deleteScreeningAsAdmin({ error: null, success: false }, form);
+
+        const remaining = await adminApi.from("screenings").select("id").eq("id", screening.data.id).maybeSingle();
+        assert.ifError(remaining.error);
+        assert.equal(remaining.data, null);
+        const joints = await adminApi.from("joint_results").select("id").eq("screening_id", screening.data.id);
+        assert.ifError(joints.error);
+        assert.equal(joints.data?.length ?? 0, 0, "関節結果が残らないこと");
+        const images = await adminApi.storage.from("hand-images").list(`${staffAId}/${screening.data.id}`);
+        assert.ifError(images.error);
+        assert.deepEqual(images.data, [], "画像が残らないこと");
       });
 
       await t.test("無効化済みスタッフはDBとStorageにアクセスできない", async () => {

@@ -4,10 +4,23 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { throwSupabaseError } from "@/lib/supabase/error";
 import { getCurrentUser } from "@/lib/auth";
-import { isScreeningImagePath } from "@/lib/screening-image-path";
+import {
+  isScreeningImagePath,
+  screeningImageCreatorId,
+} from "@/lib/screening-image-path";
 import { HAND_IMAGES_BUCKET } from "@/lib/storage";
 import { tryCreateSignedHandImageUrls } from "@/lib/supabase/signed-hand-images";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+type ActionState = { error: string | null; success: boolean };
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUuid(value: string) {
+  return UUID_PATTERN.test(value);
+}
 
 /** 新規スクリーニング記録を作成（status: uploading） */
 export async function createScreening(subjectId?: string): Promise<{
@@ -196,6 +209,109 @@ export async function abandonScreeningUpload(
   revalidatePath("/");
   revalidatePath("/grouping");
   return { error: null };
+}
+
+/**
+ * 管理者が撮影記録と手画像を完全物理削除する。
+ * 認可・パス検証の後だけService Roleを使い、画像削除に失敗したら行は残す。
+ */
+export async function deleteScreeningAsAdmin(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const current = await getCurrentUser();
+  if (!current) return { error: "ログインが必要です", success: false };
+  if (current.profile.role !== "admin") {
+    return { error: "撮影・解析データの削除は管理者のみ実行できます", success: false };
+  }
+
+  const screeningIdValue = formData.get("screening_id");
+  const screeningId =
+    typeof screeningIdValue === "string" ? screeningIdValue.trim() : "";
+  if (!isValidUuid(screeningId)) {
+    return { error: "スクリーニング記録の指定が不正です", success: false };
+  }
+
+  const supabase = await createClient();
+  const { data: screening, error: screeningError } = await supabase
+    .from("screenings")
+    .select("id, created_by, subject_id, right_image_url, left_image_url")
+    .eq("id", screeningId)
+    .maybeSingle();
+
+  if (screeningError) {
+    console.error("管理者削除時のスクリーニング確認エラー:", screeningError);
+    return { error: "スクリーニング記録の確認に失敗しました", success: false };
+  }
+  if (!screening) {
+    return { error: "スクリーニング記録が見つかりません", success: false };
+  }
+
+  const paths = [
+    ...new Set(
+      [screening.right_image_url, screening.left_image_url].filter(
+        (path): path is string => Boolean(path)
+      )
+    ),
+  ];
+
+  let creatorId = screening.created_by;
+  if (paths.length > 0) {
+    if (!creatorId) {
+      const extracted = paths.map((path) =>
+        screeningImageCreatorId(path, screeningId)
+      );
+      const uniqueCreators = new Set(extracted);
+      if (extracted.some((id) => !id) || uniqueCreators.size !== 1) {
+        return { error: "画像パスが不正です", success: false };
+      }
+      creatorId = extracted[0];
+    }
+    if (!creatorId) {
+      return { error: "画像パスが不正です", success: false };
+    }
+    const imageOwnerId = creatorId;
+    if (
+      paths.some((path) => !isScreeningImagePath(path, imageOwnerId, screeningId))
+    ) {
+      return { error: "画像パスが不正です", success: false };
+    }
+  }
+
+  // 認可・パスの検証後だけService Roleを使う。
+  // 管理者の通常クライアントにもscreenings削除と完了後の画像削除は付与しない。
+  const adminClient = createAdminClient();
+  if (paths.length > 0) {
+    const { error: storageError } = await adminClient.storage
+      .from(HAND_IMAGES_BUCKET)
+      .remove(paths);
+    if (storageError) {
+      console.error("管理者のスクリーニング画像削除エラー:", storageError);
+      return { error: "手画像の削除に失敗しました", success: false };
+    }
+  }
+
+  const { data: deletedScreening, error: deleteError } = await adminClient
+    .from("screenings")
+    .delete()
+    .eq("id", screeningId)
+    .select("id")
+    .maybeSingle();
+
+  if (deleteError) {
+    console.error("管理者のスクリーニング削除エラー:", deleteError);
+    return { error: "スクリーニング記録の削除に失敗しました", success: false };
+  }
+  if (!deletedScreening) {
+    return { error: "このスクリーニングを削除できませんでした", success: false };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/screenings");
+  revalidatePath(`/admin/screenings/${screeningId}`);
+  revalidatePath(`/results/${screeningId}`);
+  if (screening.subject_id) revalidatePath(`/subjects/${screening.subject_id}`);
+  redirect("/admin/screenings");
 }
 
 /** 直近のスクリーニング履歴を取得 */

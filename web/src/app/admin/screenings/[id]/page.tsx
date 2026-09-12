@@ -7,6 +7,7 @@ import RecoverInterruptedScreeningButton from "@/components/RecoverInterruptedSc
 import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import StatusBadge from "@/components/StatusBadge";
 import SubjectAssignmentEditor from "@/components/SubjectAssignmentEditor";
+import DeleteScreeningForm from "@/components/DeleteScreeningForm";
 import CopyJsonButton from "@/components/CopyJsonButton";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
@@ -178,6 +179,7 @@ export default async function AdminScreeningDetailPage({
         currentSubjectId={screening.subject_id}
         subjects={subjects}
       />
+      <DeleteScreeningForm screeningId={screening.id} />
     </div>
   );
 }
