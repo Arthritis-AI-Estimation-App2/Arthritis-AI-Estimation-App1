@@ -53,7 +53,7 @@ export default function ScreeningResult({
                   <img
                     src={url}
                     alt={`${label}画像`}
-                    className="aspect-[3/4] w-full rounded-lg border border-border object-cover"
+                    className="aspect-[3/4] w-full rounded-lg border border-border bg-surface-muted object-contain"
                   />
                 ) : (
                   <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-dashed border-border bg-surface-muted text-xs text-subtle-foreground">

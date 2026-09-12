@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, type ChangeEvent } from "react";
 import Button from "@/components/ui/Button";
+import { cameraCrop } from "@/lib/camera-crop";
 import {
   DEBUG_UPLOAD_DECODE_FAILED_MESSAGE,
   rejectDebugUploadImage,
@@ -21,18 +22,20 @@ interface CameraCaptureProps {
 const MAX_EDGE = 1280;
 const JPEG_QUALITY = 0.8;
 
-/** 画像を最大辺1280px・JPEG品質0.8に圧縮 */
+/** 表示中の映像範囲を切り出し、最大辺1280px・JPEG品質0.8に圧縮 */
 async function compressImage(source: HTMLVideoElement): Promise<Blob> {
+  const viewport = source.getBoundingClientRect();
+  const crop = cameraCrop(source.videoWidth, source.videoHeight, viewport.width, viewport.height);
   const canvas = document.createElement("canvas");
   const scale = Math.min(
     1,
-    MAX_EDGE / Math.max(source.videoWidth, source.videoHeight)
+    MAX_EDGE / Math.max(crop.width, crop.height)
   );
-  canvas.width = source.videoWidth * scale;
-  canvas.height = source.videoHeight * scale;
+  canvas.width = Math.max(1, Math.round(crop.width * scale));
+  canvas.height = Math.max(1, Math.round(crop.height * scale));
 
   const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -82,7 +85,6 @@ export default function CameraCapture({
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          setReady(true);
         }
       } catch {
         setError("カメラにアクセスできません。設定からカメラのアクセスを許可してください。");
@@ -203,7 +205,9 @@ export default function CameraCapture({
         autoPlay
         playsInline
         muted
-        className="absolute inset-0 h-full w-full object-cover"
+        onLoadedData={() => setReady(true)}
+        onEmptied={() => setReady(false)}
+        className="absolute inset-0 h-full w-full object-cover object-center"
       />
       {/* 5:8 を保ちつつ、タブレットでは手のガイドとして過大にならないよう上限を設ける */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 pb-24 pt-14">

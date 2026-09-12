@@ -69,7 +69,7 @@ function HandCapturedNotice({
       <img
         ref={imageRef}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-40"
+        className="absolute inset-0 h-full w-full object-contain opacity-40"
       />
       <div className="relative rounded-xl bg-surface px-6 py-5 text-center">
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -111,7 +111,7 @@ function ImagePreview({
       <img
         ref={imageRef}
         alt={label}
-        className="aspect-[3/4] w-full rounded-lg object-cover"
+        className="aspect-[3/4] w-full rounded-lg bg-surface-muted object-contain"
       />
       <p className="mt-1 text-sm text-secondary-foreground">{label}</p>
       <Button

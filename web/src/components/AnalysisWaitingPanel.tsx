@@ -166,7 +166,7 @@ function PreviewThumbnail({ blob, label }: { blob: Blob; label: string }) {
       <img
         ref={imageRef}
         alt={`${label}の撮影画像`}
-        className="h-16 w-12 rounded-md border border-border object-cover"
+        className="h-16 w-12 rounded-md border border-border bg-surface-muted object-contain"
       />
       <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
     </div>
