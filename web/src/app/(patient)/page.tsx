@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getRecentScreenings } from "@/app/actions/screenings";
 import StatusBadge from "@/components/StatusBadge";
+import NavigationHint from "@/components/ui/NavigationHint";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 
@@ -94,7 +95,7 @@ export default async function ClinicStaffHomePage() {
                 <li key={s.id}>
                   <Link
                     href={`/results/${s.id}`}
-                    className="flex items-center justify-between px-5 py-4 hover:bg-surface-hover"
+                    className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
                   >
                     <div className="space-y-1">
                       {s.subject_id ? (
@@ -104,13 +105,16 @@ export default async function ClinicStaffHomePage() {
                       )}
                       <p className="text-xs text-muted-foreground">{formatDate(s.created_at)}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {s.status === "completed" && (
-                        <span className="text-xs font-medium text-secondary-foreground">
-                          陽性関節数: {s.total_inflamed_joints}箇所
-                        </span>
-                      )}
-                      <StatusBadge status={s.status} />
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {s.status === "completed" && (
+                          <span className="text-xs font-medium text-secondary-foreground">
+                            陽性関節数: {s.total_inflamed_joints}箇所
+                          </span>
+                        )}
+                        <StatusBadge status={s.status} />
+                      </div>
+                      <NavigationHint>詳細</NavigationHint>
                     </div>
                   </Link>
                 </li>

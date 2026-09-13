@@ -1,3 +1,4 @@
+import NavigationHint from "@/components/ui/NavigationHint";
 import { getClinicDetail } from "@/app/actions/admin";
 import StatusBadge from "@/components/StatusBadge";
 import Button from "@/components/ui/Button";
@@ -124,9 +125,7 @@ export default async function ClinicDetailPage({
                           )}
                         </div>
                       </div>
-                      <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-link">
-                        結果を見る →
-                      </span>
+                      <NavigationHint>詳細</NavigationHint>
                     </Link>
                   </li>
                 ))}
@@ -141,19 +140,14 @@ export default async function ClinicDetailPage({
                       <th className="px-4 py-3">担当スタッフ</th>
                       <th className="px-4 py-3">解析ステータス</th>
                       <th className="px-4 py-3">陽性関節数</th>
-                      <th className="px-4 py-3">操作</th>
+                      <th className="px-4 py-3"><span className="sr-only">詳細</span></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {screeningRows.map((row) => (
                       <tr key={row.id} className="relative transition-colors hover:bg-surface-hover">
                         <td className="px-4 py-3 font-mono text-xs tracking-tight">
-                          <Link
-                            href={row.href}
-                            className="after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-focus"
-                          >
-                            {row.subjectId}
-                          </Link>
+                          {row.subjectId}
                         </td>
                         <td className="px-4 py-3 text-xs">{row.capturedAt}</td>
                         <td className="px-4 py-3 text-xs">{row.staffName}</td>
@@ -161,8 +155,14 @@ export default async function ClinicDetailPage({
                           <StatusBadge status={row.status} />
                         </td>
                         <td className="px-4 py-3 text-xs">{row.inflamedLabel}</td>
-                        <td className="px-4 py-3 text-xs font-semibold text-link">
-                          結果を見る →
+                        <td className="px-4 py-3 text-right">
+                          <Link
+                            href={row.href}
+                            aria-label={`被験者ID ${row.subjectId}、${row.capturedAt}の撮影記録の詳細を見る`}
+                            className="after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-focus"
+                          >
+                            <NavigationHint>詳細</NavigationHint>
+                          </Link>
                         </td>
                       </tr>
                     ))}

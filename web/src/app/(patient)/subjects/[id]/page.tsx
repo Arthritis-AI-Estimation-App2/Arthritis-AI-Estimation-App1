@@ -1,3 +1,4 @@
+import NavigationHint from "@/components/ui/NavigationHint";
 import { getSubjectDetail } from "@/app/actions/subjects";
 import PaginationNav from "@/components/PaginationNav";
 import StatusBadge from "@/components/StatusBadge";
@@ -80,7 +81,7 @@ export default async function SubjectDetailPage({
                     </div>
                     <div className="flex items-center gap-2">
                       <StatusBadge status={s.status} />
-                      <span className="text-xs text-link">詳細 →</span>
+                      <NavigationHint>詳細</NavigationHint>
                     </div>
                   </Link>
                 </li>

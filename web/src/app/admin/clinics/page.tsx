@@ -1,3 +1,4 @@
+import NavigationHint from "@/components/ui/NavigationHint";
 import { getClinics } from "@/app/actions/admin";
 import NewClinicForm from "@/components/NewClinicForm";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -42,9 +43,7 @@ export default async function ClinicsPage() {
                             ID: {clinic.id} | 登録日: {formatJapanDate(clinic.created_at)}
                           </p>
                         </div>
-                        <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-link">
-                          詳細 →
-                        </span>
+                        <NavigationHint>詳細</NavigationHint>
                       </Link>
                     </li>
                   ))}

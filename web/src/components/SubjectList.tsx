@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
+import NavigationHint from "@/components/ui/NavigationHint";
 import PaginationNav from "@/components/PaginationNav";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import type { Subject } from "@/lib/types";
@@ -85,9 +86,7 @@ export default function SubjectList({
                         {formatJapanDateTime(sub.created_at)}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs font-semibold text-link">
-                      判定履歴を見る →
-                    </span>
+                    <NavigationHint>判定履歴を見る</NavigationHint>
                   </Link>
                 </li>
               ))}
