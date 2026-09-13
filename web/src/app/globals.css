@@ -189,8 +189,8 @@ body {
     padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
   }
 
-  /* 下部ナビの高さ（5rem）＋ホームインジケータ */
+  /* 下部ナビの高さ（3rem）＋境界線＋ホームインジケータ */
   .pb-nav-safe {
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(3rem + 1px + env(safe-area-inset-bottom, 0px));
   }
 }

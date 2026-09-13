@@ -40,7 +40,7 @@ export default function PatientBottomNav() {
               key={href}
               href={href}
               aria-current={isCurrent ? "page" : undefined}
-              className={`flex min-h-14 min-w-0 flex-1 items-center justify-center px-1 py-2 text-center text-sm leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus ${
+              className={`flex min-h-12 min-w-0 flex-1 items-center justify-center px-1 py-2 text-center text-sm leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus ${
                 isCurrent
                   ? "bg-primary-subtle font-semibold text-primary"
                   : "text-secondary-foreground hover:bg-surface-hover"
