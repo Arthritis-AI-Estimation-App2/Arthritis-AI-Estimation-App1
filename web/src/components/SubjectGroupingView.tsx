@@ -295,7 +295,7 @@ export default function SubjectGroupingView({
       </Card>
 
       {selectedCount > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(4.0625rem+env(safe-area-inset-bottom,0px))] z-20 border-t border-border bg-surface shadow-[0_-4px_12px_rgb(0_0_0/0.08)] sm:bottom-[calc(2.75rem+env(safe-area-inset-bottom,0px))]">
+        <div className="fixed inset-x-0 bottom-[calc(3rem+1px+env(safe-area-inset-bottom,0px))] z-20 border-t border-border bg-surface shadow-[0_-4px_12px_rgb(0_0_0/0.08)]">
           <div className="mx-auto flex max-w-4xl flex-col gap-3 px-safe-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-foreground">
