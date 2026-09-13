@@ -37,6 +37,8 @@ export default async function ResultPage({
           screeningId={screening.id}
           currentSubjectId={screening.subject_id}
           subjects={subjects}
+          capturedAt={screening.created_at}
+          status={screening.status}
         />
       </div>
       {screening.status === "failed" && (
@@ -63,7 +65,7 @@ export default async function ResultPage({
           note="完了するとこの画面は自動的に更新されます"
         />
       )}
-      <ScreeningResult screening={screening} joints={joints} />
+      <ScreeningResult screening={screening} joints={joints} hideCapturedAt />
 
     </div>
   );

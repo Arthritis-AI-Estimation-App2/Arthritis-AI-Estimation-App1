@@ -3,7 +3,7 @@ import type { Screening, ScreeningStatus } from "@/lib/types";
 const STATUS_CONFIG: Record<ScreeningStatus, { label: string; className: string }> = {
   uploading: { label: "アップロード中", className: "bg-info text-info-foreground" },
   analyzing: { label: "解析中", className: "bg-warning text-warning-foreground" },
-  completed: { label: "完了", className: "bg-success text-success-foreground" },
+  completed: { label: "解析完了", className: "bg-success text-success-foreground" },
   failed: { label: "失敗", className: "bg-danger text-danger-foreground" },
 };
 

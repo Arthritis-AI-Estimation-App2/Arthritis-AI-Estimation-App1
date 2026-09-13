@@ -5,12 +5,16 @@ import { useRouter } from "next/navigation";
 import { correctScreeningSubject, createSubject } from "@/app/actions/subjects";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import type { Subject } from "@/lib/types";
+import StatusBadge from "@/components/StatusBadge";
+import { formatJapanDateTime } from "@/lib/japan-date-time";
+import type { Screening, Subject } from "@/lib/types";
 
 interface Props {
   screeningId: string;
   currentSubjectId: string | null;
   subjects: Subject[];
+  capturedAt?: string;
+  status?: Screening["status"];
 }
 
 function subjectLabel(subjectId: string | null) {
@@ -21,6 +25,8 @@ export default function SubjectAssignmentEditor({
   screeningId,
   currentSubjectId,
   subjects,
+  capturedAt,
+  status,
 }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -75,7 +81,7 @@ export default function SubjectAssignmentEditor({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className={editing ? "" : "border-b-0"}>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <CardTitle className="text-xs text-muted-foreground">被験者ID</CardTitle>
@@ -87,6 +93,14 @@ export default function SubjectAssignmentEditor({
             </Button>
           )}
         </div>
+        {capturedAt && status && (
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+            <p className="text-xs text-muted-foreground">
+              撮影日時: {formatJapanDateTime(capturedAt)}
+            </p>
+            <StatusBadge status={status} />
+          </div>
+        )}
       </CardHeader>
       {editing && <CardContent className="space-y-4">
 

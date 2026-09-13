@@ -56,7 +56,6 @@ export default function ScreeningResult({
               : raDetected
                 ? "関節炎スクリーニング判定: 陽性"
                 : "関節炎スクリーニング判定: 陰性"}
-            <p className="mt-1 text-sm">陽性関節数: {totalPositiveJoints === null ? "未提供" : `${totalPositiveJoints} 箇所`}</p>
             <p className="mt-1 text-xs font-normal opacity-80">
               この判定はスクリーニング結果であり、診断結果ではありません。
             </p>
@@ -99,6 +98,14 @@ export default function ScreeningResult({
               保存された解析情報の一部を表示できません。
             </p>
           )}
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-bold text-foreground">関節別の解析結果</h2>
+            <p className="text-sm text-secondary-foreground">
+              陽性関節数: <span className="font-semibold text-foreground">
+                {totalPositiveJoints === null ? "未提供" : `${totalPositiveJoints} 箇所`}
+              </span>
+            </p>
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {handImages.map(({ side, label }) => {
               const summary = summaries.hands[side];
