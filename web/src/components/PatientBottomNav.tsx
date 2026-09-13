@@ -7,18 +7,18 @@ const NAV_ITEMS = [
   { href: "/", label: "ホーム", matches: (pathname: string) => pathname === "/" },
   {
     href: "/capture",
-    label: "撮影する",
+    label: "撮影",
     matches: (pathname: string) =>
       pathname.startsWith("/capture") || pathname.startsWith("/results"),
   },
   {
     href: "/grouping",
-    label: "被験者ID紐付け",
+    label: "紐付け",
     matches: (pathname: string) => pathname.startsWith("/grouping"),
   },
   {
     href: "/subjects",
-    label: "被験者ID一覧",
+    label: "被験者一覧",
     matches: (pathname: string) => pathname.startsWith("/subjects"),
   },
 ];
@@ -46,15 +46,7 @@ export default function PatientBottomNav() {
                   : "text-secondary-foreground hover:bg-surface-hover"
               }`}
             >
-              {href === "/grouping" ? (
-                <span>
-                  <span className="whitespace-nowrap">被験者ID</span>
-                  <br className="sm:hidden" />
-                  <span className="whitespace-nowrap">紐付け</span>
-                </span>
-              ) : (
-                label
-              )}
+              <span className="whitespace-nowrap">{label}</span>
             </Link>
           );
         })}
