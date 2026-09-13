@@ -32,22 +32,25 @@ export default function ClinicStaffChrome({
       >
         <div
           className={`mx-auto grid max-w-4xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-safe-4 ${
-            isCapture ? "py-2" : "py-3"
+            isCapture ? "py-1" : "py-1.5"
           }`}
         >
-          <div className="min-w-0">
-            <Link href="/" className="flex min-h-11 items-center font-bold text-primary">
-              <span className="truncate">関節炎スクリーニング</span>
-            </Link>
+          <Link
+            href="/"
+            className="flex min-h-11 min-w-0 flex-col justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <span className="truncate text-sm font-bold leading-5 text-primary sm:text-base">
+              関節炎スクリーニング
+            </span>
             {!isCapture && (
-              <p className="truncate text-xs text-muted-foreground" title={clinicName}>
+              <span className="truncate text-xs leading-4 text-muted-foreground" title={clinicName}>
                 {clinicName}
-              </p>
+              </span>
             )}
-          </div>
+          </Link>
           <UserAccountMenu
             displayName={userName}
-            roleLabel={`医療機関スタッフ · ${clinicName}`}
+            roleLabel={clinicName}
             passwordHref="/account/password"
           />
         </div>
