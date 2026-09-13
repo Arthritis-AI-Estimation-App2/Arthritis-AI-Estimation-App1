@@ -16,9 +16,6 @@ export default function ChangePasswordPage({
           ← 戻る
         </Link>
         <h1 className="mt-3 text-2xl font-bold text-foreground">アカウント設定</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          セキュリティ確認のため、メールアドレス・パスワードのいずれも現在のパスワードの入力が必要です。
-        </p>
       </div>
       <ChangeEmailForm currentEmail={currentEmail} />
       <ChangePasswordForm />

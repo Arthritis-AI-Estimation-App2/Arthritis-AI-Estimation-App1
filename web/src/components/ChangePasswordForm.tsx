@@ -8,7 +8,7 @@ import {
 } from "@/lib/password";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { Card, CardContent } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 const INITIAL_STATE = { error: null, success: false };
 
@@ -22,6 +22,9 @@ export default function ChangePasswordForm() {
 
   return (
     <Card>
+      <CardHeader>
+        <CardTitle>パスワードを変更</CardTitle>
+      </CardHeader>
       <CardContent>
         <form ref={formRef} action={formAction} className="space-y-4">
           <Input
