@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/grouping",
-    label: "ID紐付け",
+    label: "被験者ID紐付け",
     matches: (pathname: string) => pathname.startsWith("/grouping"),
   },
   {
@@ -40,13 +40,21 @@ export default function PatientBottomNav() {
               key={href}
               href={href}
               aria-current={isCurrent ? "page" : undefined}
-              className={`flex-1 py-3 text-center text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus ${
+              className={`flex min-h-14 min-w-0 flex-1 items-center justify-center px-1 py-2 text-center text-sm leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus ${
                 isCurrent
                   ? "bg-primary-subtle font-semibold text-primary"
                   : "text-secondary-foreground hover:bg-surface-hover"
               }`}
             >
-              {label}
+              {href === "/grouping" ? (
+                <span>
+                  <span className="whitespace-nowrap">被験者ID</span>
+                  <br className="sm:hidden" />
+                  <span className="whitespace-nowrap">紐付け</span>
+                </span>
+              ) : (
+                label
+              )}
             </Link>
           );
         })}
