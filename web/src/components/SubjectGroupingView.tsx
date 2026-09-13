@@ -1,6 +1,7 @@
 "use client";
 
 import StatusBadge from "@/components/StatusBadge";
+import GroupingScreeningDetail from "@/components/GroupingScreeningDetail";
 import { staffDisplayName } from "@/lib/staff-display-name";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -267,14 +268,7 @@ export default function SubjectGroupingView({
                                 </div>
                               ))}
                           </label>
-                          <a
-                            href={`/results/${sc.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block border-t border-border px-3 py-3 text-sm font-medium text-primary hover:underline"
-                          >
-                            詳細を確認 ↗
-                          </a>
+                          <GroupingScreeningDetail screeningId={sc.id} />
                         </div>
                       );
                     })}
