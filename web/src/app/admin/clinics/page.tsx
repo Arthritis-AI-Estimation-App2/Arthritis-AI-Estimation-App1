@@ -1,6 +1,5 @@
 import { getClinics } from "@/app/actions/admin";
 import NewClinicForm from "@/components/NewClinicForm";
-import Button from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { formatJapanDate } from "@/lib/japan-date-time";
 import Link from "next/link";
@@ -32,20 +31,20 @@ export default async function ClinicsPage() {
               ) : (
                 <ul className="divide-y divide-border">
                   {clinics.map((clinic) => (
-                    <li key={clinic.id} className="flex items-center justify-between gap-4 py-3">
-                      <div className="min-w-0 flex-1 break-words">
-                        <Link
-                          href={`/admin/clinics/${clinic.id}`}
-                          className="font-semibold text-foreground hover:text-primary"
-                        >
-                          {clinic.name}
-                        </Link>
-                        <p className="break-all text-xs text-muted-foreground">
-                          ID: {clinic.id} | 登録日: {formatJapanDate(clinic.created_at)}
-                        </p>
-                      </div>
-                      <Link href={`/admin/clinics/${clinic.id}`} className="shrink-0 whitespace-nowrap">
-                        <Button variant="secondary" size="sm">詳細</Button>
+                    <li key={clinic.id}>
+                      <Link
+                        href={`/admin/clinics/${clinic.id}`}
+                        className="-mx-2 flex items-center justify-between gap-4 rounded-lg px-2 py-3 transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                      >
+                        <div className="min-w-0 flex-1 break-words">
+                          <p className="font-semibold text-foreground">{clinic.name}</p>
+                          <p className="break-all text-xs text-muted-foreground">
+                            ID: {clinic.id} | 登録日: {formatJapanDate(clinic.created_at)}
+                          </p>
+                        </div>
+                        <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-link">
+                          詳細 →
+                        </span>
                       </Link>
                     </li>
                   ))}

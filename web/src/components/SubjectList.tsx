@@ -73,19 +73,21 @@ export default function SubjectList({
           ) : (
             <ul className="divide-y divide-border">
               {subjects.map((sub) => (
-                <li key={sub.id} className="py-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-foreground">被験者ID: {sub.id}</p>
-                    <p className="text-xs text-muted-foreground">
-                      判定記録件数: {sub.screening_count}件 | 作成日時:{" "}
-                      {formatJapanDateTime(sub.created_at)}
-                    </p>
-                  </div>
+                <li key={sub.id}>
                   <Link
                     href={`/subjects/${sub.id}`}
-                    className="shrink-0 text-xs font-semibold text-link hover:text-link-hover"
+                    className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                   >
-                    判定履歴を見る →
+                    <div>
+                      <p className="font-semibold text-foreground">被験者ID: {sub.id}</p>
+                      <p className="text-xs text-muted-foreground">
+                        判定記録件数: {sub.screening_count}件 | 作成日時:{" "}
+                        {formatJapanDateTime(sub.created_at)}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs font-semibold text-link">
+                      判定履歴を見る →
+                    </span>
                   </Link>
                 </li>
               ))}
