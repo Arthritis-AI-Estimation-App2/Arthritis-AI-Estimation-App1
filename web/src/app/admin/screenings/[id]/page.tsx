@@ -1,3 +1,4 @@
+import { staffDisplayName } from "@/lib/staff-display-name";
 import { getSubjectsForScreeningCorrection } from "@/app/actions/subjects";
 import { getScreeningDetail } from "@/app/actions/screenings";
 import ScreeningResult from "@/components/ScreeningResult";
@@ -56,12 +57,20 @@ export default async function AdminScreeningDetailPage({
           <StatusBadge status={screening.status} />
         </div>
         <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+          <p>医療機関: {screening.subjects?.clinics?.name ?? screening.profiles?.clinics?.name ?? "不明"}</p>
+          <p>担当者: {staffDisplayName(screening.profiles)}</p>
           <p>撮影日時: {formatJapanDateTime(screening.created_at)}</p>
           <p>
-            撮影ID: <span className="font-mono tracking-tight">{screening.id}</span>
+            撮影ID: <span className="break-all font-mono tracking-tight">{screening.id}</span>
           </p>
         </div>
       </div>
+
+      <SubjectAssignmentEditor
+        screeningId={screening.id}
+        currentSubjectId={screening.subject_id}
+        subjects={subjects}
+      />
 
       {screening.status === "failed" && (
         <div className="space-y-3 rounded-xl border border-danger-border bg-danger p-4">
@@ -124,6 +133,13 @@ export default async function AdminScreeningDetailPage({
         />
       )}
 
+      <ScreeningResult
+        screening={screening}
+        joints={joints}
+        images={images}
+        hideCapturedAt
+      />
+
       {screening.status === "completed" && canRetryAnalysis && (
         <RetryAnalysisButton screeningId={screening.id} confirmOverwrite />
       )}
@@ -143,42 +159,28 @@ export default async function AdminScreeningDetailPage({
               <dd>{screening.analyzed_at ? formatJapanDateTime(screening.analyzed_at) : "-"}</dd>
             </div>
           </dl>
+          <details className="mt-4 border-t border-border pt-4 text-xs text-secondary-foreground">
+            <summary className="cursor-pointer font-medium text-muted-foreground">
+              AI画像解析 レスポンスデータ
+            </summary>
+            {rawAiApiResponse ? (
+              <>
+                <div className="mt-2 flex justify-end">
+                  <CopyJsonButton json={JSON.stringify(rawAiApiResponse, null, 2)} />
+                </div>
+                <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-surface-muted p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                  {JSON.stringify(rawAiApiResponse, null, 2)}
+                </pre>
+              </>
+            ) : (
+              <p className="mt-2 text-muted-foreground">
+                この解析のAPIレスポンスは保存されていません。
+              </p>
+            )}
+          </details>
         </section>
       )}
 
-      {screening.status === "completed" && (
-        <details className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-secondary-foreground">
-          <summary className="cursor-pointer font-medium text-muted-foreground">
-            AI画像解析 レスポンスデータ
-          </summary>
-          {rawAiApiResponse ? (
-            <>
-              <div className="mt-2 flex justify-end">
-                <CopyJsonButton json={JSON.stringify(rawAiApiResponse, null, 2)} />
-              </div>
-              <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-surface-muted p-3 font-mono text-[11px] leading-relaxed text-foreground">
-                {JSON.stringify(rawAiApiResponse, null, 2)}
-              </pre>
-            </>
-          ) : (
-            <p className="mt-2 text-muted-foreground">
-              この解析のAPIレスポンスは保存されていません。
-            </p>
-          )}
-        </details>
-      )}
-
-      <ScreeningResult
-        screening={screening}
-        joints={joints}
-        images={images}
-        hideCapturedAt
-      />
-      <SubjectAssignmentEditor
-        screeningId={screening.id}
-        currentSubjectId={screening.subject_id}
-        subjects={subjects}
-      />
       <DeleteScreeningForm screeningId={screening.id} />
     </div>
   );

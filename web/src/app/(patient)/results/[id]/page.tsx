@@ -32,6 +32,13 @@ export default async function ResultPage({
     <div>
       {isProcessing && <ProcessingStatusRefresh />}
       <h2 className="mb-4 text-lg font-bold">判定結果</h2>
+      <div className="mb-4">
+        <SubjectAssignmentEditor
+          screeningId={screening.id}
+          currentSubjectId={screening.subject_id}
+          subjects={subjects}
+        />
+      </div>
       {screening.status === "failed" && (
         <div className="mb-4 space-y-3 rounded-xl border border-danger-border bg-danger p-4">
           <p className="text-sm text-danger-foreground">
@@ -57,13 +64,7 @@ export default async function ResultPage({
         />
       )}
       <ScreeningResult screening={screening} joints={joints} />
-      <div className="mt-6">
-        <SubjectAssignmentEditor
-          screeningId={screening.id}
-          currentSubjectId={screening.subject_id}
-          subjects={subjects}
-        />
-      </div>
+
     </div>
   );
 }

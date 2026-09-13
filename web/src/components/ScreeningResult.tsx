@@ -42,31 +42,6 @@ export default function ScreeningResult({
         </div>
       )}
 
-      {hasImages && (
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <h3 className="mb-3 text-sm font-semibold text-secondary-foreground">撮影画像</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {handImages.map(({ side, label, url }) => (
-              <div key={side} className="text-center">
-                {url ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={url}
-                    alt={`${label}画像`}
-                    className="aspect-[3/4] w-full rounded-lg border border-border bg-surface-muted object-contain"
-                  />
-                ) : (
-                  <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-dashed border-border bg-surface-muted text-xs text-subtle-foreground">
-                    画像なし
-                  </div>
-                )}
-                <p className="mt-1.5 text-xs font-medium text-secondary-foreground">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {screening.status === "completed" && (
         <>
           <div
@@ -86,7 +61,39 @@ export default function ScreeningResult({
               この判定はスクリーニング結果であり、診断結果ではありません。
             </p>
           </div>
+        </>
+      )}
 
+      {hasImages && (
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <h3 className="mb-3 text-sm font-semibold text-secondary-foreground">撮影画像</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {handImages.map(({ side, label, url }) => (
+              <div key={side} className="w-full text-center">
+                {url ? (
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="block text-link hover:underline">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`${label}画像`}
+                    className="aspect-[3/4] w-full rounded-lg border border-border bg-surface-muted object-contain"
+                  />
+                  <span className="mt-1 block text-xs">拡大表示 ↗</span>
+                  </a>
+                ) : (
+                  <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-dashed border-border bg-surface-muted text-xs text-subtle-foreground">
+                    画像なし
+                  </div>
+                )}
+                <p className="mt-1.5 text-xs font-medium text-secondary-foreground">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {screening.status === "completed" && (
+        <>
           {summaries.invalid && (
             <p role="alert" className="rounded-xl border border-warning-border bg-warning p-4 text-sm text-warning-foreground">
               保存された解析情報の一部を表示できません。
@@ -151,6 +158,7 @@ export default function ScreeningResult({
           </div>
         </>
       )}
+
     </div>
   );
 }

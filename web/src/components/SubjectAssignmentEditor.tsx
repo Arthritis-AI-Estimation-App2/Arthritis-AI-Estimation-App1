@@ -77,16 +77,18 @@ export default function SubjectAssignmentEditor({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle>被験者IDの紐付け</CardTitle>
+          <div className="min-w-0">
+            <CardTitle className="text-xs text-muted-foreground">被験者ID</CardTitle>
+            <p className="mt-1 break-all text-sm text-foreground">{subjectLabel(currentSubjectId)}</p>
+          </div>
           {!editing && (
-            <Button type="button" variant="secondary" size="sm" onClick={() => setEditing(true)}>
+            <Button type="button" variant="secondary" size="sm" className="shrink-0 whitespace-nowrap" onClick={() => setEditing(true)}>
               {currentSubjectId ? "修正・解除" : "紐付け"}
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="font-mono text-sm text-foreground">{subjectLabel(currentSubjectId)}</p>
+      {editing && <CardContent className="space-y-4">
 
         {editing && (
           <div className="space-y-3 rounded-lg border border-warning-border bg-warning p-3">
@@ -154,7 +156,7 @@ export default function SubjectAssignmentEditor({
             </div>
           </div>
         )}
-      </CardContent>
+      </CardContent>}
     </Card>
   );
 }
