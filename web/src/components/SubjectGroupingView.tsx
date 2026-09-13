@@ -329,7 +329,7 @@ export default function SubjectGroupingView({
                   ? "紐付け中..."
                   : selectedSubjectId
                     ? `${selectedSubjectId}へ${selectedCount}件を紐付け`
-                    : "紐付け先を選択"}
+                    : "被験者IDを選択"}
               </Button>
             </div>
           </div>
