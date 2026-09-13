@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/DropdownMenu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { requestCaptureLeave } from "@/lib/capture-leave-request";
 
 function isCurrentPasswordPage(pathname: string, passwordHref: string) {
   return pathname === passwordHref || pathname.startsWith(`${passwordHref}/`);
@@ -25,6 +26,16 @@ export default function UserAccountMenu({
 }) {
   const pathname = usePathname();
   const isCurrent = isCurrentPasswordPage(pathname, passwordHref);
+  const isCapture = pathname.startsWith("/capture");
+
+  const handleLogoutClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isCapture) return;
+
+    const handled = requestCaptureLeave(() => {
+      void logout();
+    });
+    if (handled) event.preventDefault();
+  };
 
   return (
     <DropdownMenu modal={false}>
@@ -53,7 +64,11 @@ export default function UserAccountMenu({
           アカウント設定
         </DropdownMenuLinkItem>
         <form action={logout}>
-          <DropdownMenuItem nativeButton render={<button type="submit" />}>
+          <DropdownMenuItem
+            nativeButton
+            render={<button type="submit" />}
+            onClick={handleLogoutClick}
+          >
             ログアウト
           </DropdownMenuItem>
         </form>

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CameraCapture from "@/components/CameraCapture";
+import CaptureLeaveGuard from "@/components/CaptureLeaveGuard";
 import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import Button from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
@@ -14,14 +15,11 @@ import {
   updateScreeningImages,
 } from "@/app/actions/screenings";
 import { analyzeScreening } from "@/app/actions/analyze";
-
-type Step = "right" | "left" | "confirm" | "uploading";
-
-const STEPS = [
-  { key: "left", label: "左手の撮影" },
-  { key: "right", label: "右手の撮影" },
-  { key: "confirm", label: "確認" },
-] as const;
+import {
+  CAPTURE_STEPS,
+  getCaptureStepStates,
+  type CaptureStep,
+} from "@/lib/capture-step";
 
 function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -133,7 +131,7 @@ export default function CaptureFlow({
   allowFileUpload?: boolean;
 }) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("left");
+  const [step, setStep] = useState<CaptureStep>("left");
   const [rightImage, setRightImage] = useState<Blob | null>(null);
   const [leftImage, setLeftImage] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +167,15 @@ export default function CaptureFlow({
   const retakeHand = useCallback((hand: "right" | "left") => {
     setError(null);
     setStep(hand);
+  }, []);
+
+  const discardDraft = useCallback(() => {
+    setLeftImage(null);
+    setRightImage(null);
+    setCapturedNotice(null);
+    setError(null);
+    setPhase("creating");
+    setStep("left");
   }, []);
 
   /** アップロード → AI解析まで一気に実行 */
@@ -257,12 +264,13 @@ export default function CaptureFlow({
 
   const isShooting = step === "right" || step === "left";
   const isRetaking = isShooting && Boolean(rightImage && leftImage);
-  const currentStepIndex =
-    isRetaking || step === "confirm" || step === "uploading"
-      ? 2
-      : capturedNotice === "left" || step === "right"
-        ? 1
-        : STEPS.findIndex((s) => s.key === step);
+  const hasPendingImages = step !== "uploading" && Boolean(rightImage || leftImage);
+  const stepStates = getCaptureStepStates({
+    step,
+    hasLeftImage: Boolean(leftImage),
+    hasRightImage: Boolean(rightImage),
+    leftCapturedNotice: capturedNotice === "left",
+  });
 
   return (
     <div
@@ -270,11 +278,14 @@ export default function CaptureFlow({
         isShooting ? "min-h-0 max-w-lg flex-1" : "max-w-md"
       }`}
     >
+      <CaptureLeaveGuard active={hasPendingImages} onDiscard={discardDraft} />
+
       {/* ステップインジケーター */}
       <div className="mb-3 flex shrink-0 justify-center gap-2">
-        {STEPS.map((s, i) => {
-          const isComplete = i < currentStepIndex;
-          const isCurrent = i === currentStepIndex;
+        {CAPTURE_STEPS.map((s, i) => {
+          const state = stepStates[s.key];
+          const isComplete = state === "complete";
+          const isCurrent = state === "current";
 
           return (
             <div

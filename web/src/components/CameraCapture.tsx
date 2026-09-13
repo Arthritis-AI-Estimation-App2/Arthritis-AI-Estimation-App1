@@ -67,10 +67,12 @@ export default function CameraCapture({
   const [ready, setReady] = useState(false);
   const [flash, setFlash] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [cameraAttempt, setCameraAttempt] = useState(0);
   const flashTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    let attemptStream: MediaStream | null = null;
 
     async function startCamera() {
       try {
@@ -82,21 +84,34 @@ export default function CameraCapture({
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
+        attemptStream = stream;
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
       } catch {
-        setError("カメラにアクセスできません。設定からカメラのアクセスを許可してください。");
+        if (!cancelled) {
+          setError("カメラにアクセスできません。設定からカメラのアクセスを許可してください。");
+        }
       }
     }
 
     startCamera();
     return () => {
       cancelled = true;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      attemptStream?.getTracks().forEach((t) => t.stop());
+      if (streamRef.current === attemptStream) streamRef.current = null;
       if (flashTimerRef.current != null) window.clearTimeout(flashTimerRef.current);
     };
+  }, [cameraAttempt]);
+
+  const retryCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setReady(false);
+    setError(null);
+    setFileError(null);
+    setCameraAttempt((attempt) => attempt + 1);
   }, []);
 
   const handleCapture = useCallback(async () => {
@@ -184,7 +199,7 @@ export default function CameraCapture({
         <p className="text-danger-foreground">{error}</p>
         {fileErrorMessage}
         <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="secondary" onClick={() => window.location.reload()}>
+          <Button variant="secondary" onClick={retryCamera}>
             再試行
           </Button>
           {allowFileUpload && (
