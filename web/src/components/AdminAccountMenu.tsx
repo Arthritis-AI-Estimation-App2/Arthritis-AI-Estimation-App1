@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -9,20 +10,22 @@ import {
 } from "@/components/ui/DropdownMenu";
 
 export const ADMIN_ACCOUNT_LINKS = [
-  { href: "/admin/staffs", label: "スタッフ一覧" },
-  { href: "/admin/admins", label: "管理者一覧" },
+  { href: "/admin/staffs", label: "スタッフ" },
+  { href: "/admin/admins", label: "管理者" },
 ] as const;
 
 export default function AdminAccountMenu({ isCurrent = false }: { isCurrent?: boolean }) {
+  const pathname = usePathname();
+
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         aria-current={isCurrent ? "page" : undefined}
-        className={`group flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 ${
-          isCurrent ? "font-medium text-primary" : "text-secondary-foreground hover:text-foreground"
+        className={`group flex min-h-11 items-center gap-1 whitespace-nowrap rounded-md px-2 sm:px-3 outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 ${
+          isCurrent ? "bg-primary-subtle font-semibold text-primary" : "text-secondary-foreground hover:bg-surface-hover hover:text-foreground"
         }`}
       >
-        アカウント管理
+        ユーザー管理
         <svg
           aria-hidden="true"
           className="h-4 w-4 transition-transform group-data-[popup-open]:rotate-180"
@@ -36,7 +39,13 @@ export default function AdminAccountMenu({ isCurrent = false }: { isCurrent?: bo
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         {ADMIN_ACCOUNT_LINKS.map(({ href, label }) => (
-          <DropdownMenuLinkItem key={href} closeOnClick render={<Link href={href} />}>
+          <DropdownMenuLinkItem
+            key={href}
+            closeOnClick
+            aria-current={pathname === href || pathname.startsWith(`${href}/`) ? "page" : undefined}
+            className={pathname === href || pathname.startsWith(`${href}/`) ? "bg-primary-subtle font-semibold text-primary" : ""}
+            render={<Link href={href} />}
+          >
             {label}
           </DropdownMenuLinkItem>
         ))}

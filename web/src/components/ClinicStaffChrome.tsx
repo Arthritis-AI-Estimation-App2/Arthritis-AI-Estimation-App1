@@ -7,9 +7,11 @@ import { usePathname } from "next/navigation";
 
 export default function ClinicStaffChrome({
   userName,
+  clinicName,
   children,
 }: {
   userName: string;
+  clinicName: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -29,14 +31,25 @@ export default function ClinicStaffChrome({
         }`}
       >
         <div
-          className={`mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-safe-4 ${
+          className={`mx-auto grid max-w-4xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-safe-4 ${
             isCapture ? "py-2" : "py-3"
           }`}
         >
-          <Link href="/" className="font-bold text-primary">
-            関節炎スクリーニング
-          </Link>
-          <UserAccountMenu displayName={userName} passwordHref="/account/password" />
+          <div className="min-w-0">
+            <Link href="/" className="flex min-h-11 items-center font-bold text-primary">
+              <span className="truncate">関節炎スクリーニング</span>
+            </Link>
+            {!isCapture && (
+              <p className="truncate text-xs text-muted-foreground" title={clinicName}>
+                {clinicName}
+              </p>
+            )}
+          </div>
+          <UserAccountMenu
+            displayName={userName}
+            roleLabel={`医療機関スタッフ · ${clinicName}`}
+            passwordHref="/account/password"
+          />
         </div>
       </header>
       <main

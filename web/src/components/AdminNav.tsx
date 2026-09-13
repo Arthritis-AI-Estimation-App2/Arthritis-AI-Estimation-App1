@@ -11,11 +11,11 @@ function isUnder(pathname: string, prefix: string) {
 const NAV_ITEMS = [
   {
     href: "/admin/clinics",
-    label: "医療機関の一覧",
+    label: "医療機関",
   },
   {
     href: "/admin/screenings",
-    label: "全撮影記録",
+    label: "撮影記録",
   },
 ] as const;
 
@@ -26,8 +26,8 @@ function isNavItemCurrent(pathname: string, href: string) {
 
 function navClassName(isCurrent: boolean) {
   return isCurrent
-    ? "font-medium text-primary"
-    : "text-secondary-foreground hover:text-foreground";
+    ? "bg-primary-subtle font-semibold text-primary"
+    : "text-secondary-foreground hover:bg-surface-hover hover:text-foreground";
 }
 
 export default function AdminNav() {
@@ -37,7 +37,7 @@ export default function AdminNav() {
   );
 
   return (
-    <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+    <nav aria-label="管理メニュー" className="flex items-center gap-1 text-xs sm:text-sm">
       {NAV_ITEMS.map(({ href, label }) => {
         const isCurrent = isNavItemCurrent(pathname, href);
 
@@ -46,7 +46,7 @@ export default function AdminNav() {
             key={href}
             href={href}
             aria-current={isCurrent ? "page" : undefined}
-            className={navClassName(isCurrent)}
+            className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-md px-2 sm:px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${navClassName(isCurrent)}`}
           >
             {label}
           </Link>

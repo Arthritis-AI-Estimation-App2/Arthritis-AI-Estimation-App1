@@ -7,13 +7,13 @@ const NAV_ITEMS = [
   { href: "/", label: "ホーム", matches: (pathname: string) => pathname === "/" },
   {
     href: "/capture",
-    label: "撮影・解析",
+    label: "撮影する",
     matches: (pathname: string) =>
       pathname.startsWith("/capture") || pathname.startsWith("/results"),
   },
   {
     href: "/grouping",
-    label: "未割り当て",
+    label: "ID紐付け",
     matches: (pathname: string) => pathname.startsWith("/grouping"),
   },
   {
