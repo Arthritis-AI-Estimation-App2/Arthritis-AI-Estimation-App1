@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/admin/screenings",
-    label: "全撮影データ・解析結果",
+    label: "全撮影記録",
   },
 ] as const;
 

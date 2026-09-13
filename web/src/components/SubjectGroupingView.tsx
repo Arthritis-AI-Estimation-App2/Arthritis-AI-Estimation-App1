@@ -147,11 +147,11 @@ export default function SubjectGroupingView({
 
   const handleAssign = async () => {
     if (!selectedSubjectId) {
-      setError("グループ化先の被験者IDを選択するか、新規作成してください。");
+      setError("紐付け先の被験者IDを選択するか、新規発行してください。");
       return;
     }
     if (selectedScreenings.length === 0) {
-      setError("グループ化する画像データを選択してください。");
+      setError("紐付ける撮影記録を選択してください。");
       return;
     }
 
@@ -163,7 +163,9 @@ export default function SubjectGroupingView({
     if (res.error) {
       setError(res.error);
     } else {
-      setSuccess("画像のグループ化が完了しました。");
+      setSuccess(
+        `${selectedScreenings.length}件の撮影記録を被験者ID ${selectedSubjectId}に紐付けました。`
+      );
       setSelectedScreenings([]);
       router.refresh();
     }
@@ -179,7 +181,7 @@ export default function SubjectGroupingView({
 
       <Card>
         <CardContent className="space-y-4">
-          <h2 className="text-lg font-bold text-foreground">1. グループ化先の被験者IDを選択</h2>
+          <h2 className="text-lg font-bold text-foreground">1. 紐付け先の被験者IDを選択</h2>
           <div className="flex flex-wrap items-center gap-3">
             <select
               value={selectedSubjectId}
@@ -189,7 +191,7 @@ export default function SubjectGroupingView({
               <option value="">既存の被験者IDから選択...</option>
               {subjects.map((sub) => (
                 <option key={sub.id} value={sub.id}>
-                  被験者ID: {sub.id} ({sub.screenings?.length ?? 0}件のデータ)
+                  被験者ID: {sub.id} ({sub.screenings?.length ?? 0}件の撮影記録)
                 </option>
               ))}
             </select>
@@ -204,10 +206,10 @@ export default function SubjectGroupingView({
       <Card>
         <CardContent className="space-y-4">
           <h2 className="text-lg font-bold text-foreground">
-            2. 未割り当ての撮影データを選択 ({total}件)
+            2. 紐付ける撮影記録を選択 ({total}件)
           </h2>
           {unassignedScreenings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">未割り当ての撮影データはありません。</p>
+            <p className="text-sm text-muted-foreground">未割り当ての撮影記録はありません。</p>
           ) : (
             <div className="space-y-5">
               {dateGroups.map((group) => (
@@ -250,11 +252,11 @@ export default function SubjectGroupingView({
                             <p className="mt-2 break-words text-sm text-secondary-foreground">担当者: {staffDisplayName(sc.profiles)}</p>
                             {findings &&
                               (findings.count === 0 ? (
-                                <p className="mt-2 text-xs text-secondary-foreground">炎症の疑いなし</p>
+                                <p className="mt-2 text-xs text-secondary-foreground">陽性関節数: 0箇所</p>
                               ) : (
                                 <div className="mt-2 space-y-0.5">
                                   <p className="text-xs font-medium text-foreground">
-                                    炎症 {findings.count}箇所
+                                    陽性関節数: {findings.count}箇所
                                   </p>
                                   {findings.right.length > 0 && (
                                     <p className="text-xs text-secondary-foreground">右手: {findings.right.join("、")}</p>
@@ -291,7 +293,7 @@ export default function SubjectGroupingView({
                 page={page}
                 totalPages={totalPages}
                 pathname="/grouping"
-                ariaLabel="未割り当て撮影データのページ移動"
+                ariaLabel="未割り当て撮影記録のページ移動"
               />
             </div>
           )}

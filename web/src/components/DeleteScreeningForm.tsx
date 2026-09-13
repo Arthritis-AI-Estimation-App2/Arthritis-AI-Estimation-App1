@@ -22,7 +22,7 @@ export default function DeleteScreeningForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>撮影・解析データの削除</CardTitle>
+        <CardTitle>撮影記録の削除</CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -30,7 +30,7 @@ export default function DeleteScreeningForm({
           onSubmit={(event) => {
             if (
               !window.confirm(
-                "この撮影・解析データを画像も含めて完全に削除します。この操作は取り消せません。続行しますか？"
+                "この撮影記録を画像も含めて完全に削除します。この操作は取り消せません。続行しますか？"
               )
             ) {
               event.preventDefault();
@@ -48,7 +48,7 @@ export default function DeleteScreeningForm({
             </p>
           )}
           <Button type="submit" variant="danger" disabled={pending} className="w-full">
-            {pending ? "削除中..." : "この撮影・解析データを削除する"}
+            {pending ? "削除中..." : "この撮影記録を削除する"}
           </Button>
         </form>
       </CardContent>

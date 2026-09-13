@@ -22,7 +22,7 @@ export default async function ClinicDetailPage({
   const screeningRows = screenings.map((s) => ({
     id: s.id,
     href: `/admin/screenings/${s.id}`,
-    subjectId: s.subject_id ?? "未割当",
+    subjectId: s.subject_id ?? "未割り当て",
     staffName: s.staff_name ?? "不明",
     status: s.status,
     capturedAt: formatJapanDateTime(s.created_at),
@@ -94,11 +94,11 @@ export default async function ClinicDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>撮影・解析データ ({screenings.length}件)</CardTitle>
+          <CardTitle>撮影記録 ({screenings.length}件)</CardTitle>
         </CardHeader>
         <CardContent>
           {screenings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">撮影データはありません。</p>
+            <p className="text-sm text-muted-foreground">撮影記録はありません。</p>
           ) : (
             <>
               <ul className="-mx-5 divide-y divide-border border-y border-border lg:hidden">
@@ -119,7 +119,7 @@ export default async function ClinicDetailPage({
                           <StatusBadge status={row.status} />
                           {row.status === "completed" && (
                             <span className="text-xs text-secondary-foreground">
-                              炎症 {row.inflamedLabel}
+                              陽性関節数: {row.inflamedLabel}
                             </span>
                           )}
                         </div>
@@ -140,7 +140,7 @@ export default async function ClinicDetailPage({
                       <th className="px-4 py-3">撮影日時</th>
                       <th className="px-4 py-3">担当スタッフ</th>
                       <th className="px-4 py-3">解析ステータス</th>
-                      <th className="px-4 py-3">炎症数</th>
+                      <th className="px-4 py-3">陽性関節数</th>
                       <th className="px-4 py-3">操作</th>
                     </tr>
                   </thead>

@@ -40,7 +40,7 @@ export async function createSubject(screeningId?: string): Promise<{
   // 対象記録の被験者または撮影者から医療機関を確定する。
   if (screeningId !== undefined) {
     if (!isValidUuid(screeningId)) {
-      return { subjectId: null, error: "スクリーニング記録の指定が不正です" };
+      return { subjectId: null, error: "撮影記録の指定が不正です" };
     }
 
     const { data: screening, error: screeningError } = await supabase
@@ -50,10 +50,10 @@ export async function createSubject(screeningId?: string): Promise<{
       .maybeSingle();
     if (screeningError) {
       console.error("被験者ID発行時のスクリーニング取得エラー:", screeningError);
-      return { subjectId: null, error: "スクリーニング記録の取得に失敗しました" };
+      return { subjectId: null, error: "撮影記録の取得に失敗しました" };
     }
     if (!screening) {
-      return { subjectId: null, error: "このスクリーニング記録を変更する権限がありません" };
+      return { subjectId: null, error: "この撮影記録を変更する権限がありません" };
     }
 
     try {
@@ -210,14 +210,14 @@ export async function getUnassignedScreenings(page = 1) {
   let total = count ?? 0;
   if (error) {
     if (!isUnsatisfiableRange(error)) {
-      throwSupabaseError(error, "未割り当て撮影データの取得");
+      throwSupabaseError(error, "未割り当て撮影記録の取得");
     }
     const { count: fallbackCount, error: countError } = await supabase
       .from("screenings")
       .select("id", { count: "exact", head: true })
       .is("subject_id", null);
     if (countError) {
-      throwSupabaseError(countError, "未割り当て撮影データの件数取得");
+      throwSupabaseError(countError, "未割り当て撮影記録の件数取得");
     }
     total = fallbackCount ?? 0;
   }
@@ -228,7 +228,7 @@ export async function getUnassignedScreenings(page = 1) {
   };
 }
 
-/** スクリーニング記録を指定の Subject ID に紐付け（グルーピング） */
+/** 撮影記録を指定の Subject ID に紐付ける。 */
 export async function assignScreeningsToSubject(
   subjectId: string,
   screeningIds: string[]
@@ -273,7 +273,7 @@ export async function assignScreeningsToSubject(
     !accessibleScreenings ||
     accessibleScreenings.length !== uniqueScreeningIds.length
   ) {
-    return { error: "指定された撮影データを利用できません" };
+    return { error: "指定された撮影記録を利用できません" };
   }
 
   // 対象Subjectと全screeningを通常クライアント＋RLSで確認してから、
@@ -289,10 +289,10 @@ export async function assignScreeningsToSubject(
 
   if (error) {
     console.error("スクリーニングのSubject紐付けエラー:", error);
-    return { error: "撮影データの紐付けに失敗しました" };
+    return { error: "撮影記録の紐付けに失敗しました" };
   }
   if (!updatedScreenings || updatedScreenings.length !== uniqueScreeningIds.length) {
-    return { error: "一部の撮影データを更新できませんでした" };
+    return { error: "一部の撮影記録を更新できませんでした" };
   }
 
   revalidatePath("/subjects");
@@ -332,7 +332,7 @@ export async function correctScreeningSubject(
 ): Promise<{ error: string | null }> {
   const current = await getCurrentUser();
   if (!current) return { error: "ログインが必要です" };
-  if (!isValidUuid(screeningId)) return { error: "スクリーニング記録の指定が不正です" };
+  if (!isValidUuid(screeningId)) return { error: "撮影記録の指定が不正です" };
 
   const normalizedSubjectId = newSubjectId?.trim() || null;
 
@@ -344,9 +344,9 @@ export async function correctScreeningSubject(
     .maybeSingle();
   if (screeningError) {
     console.error("被験者ID訂正時のスクリーニング取得エラー:", screeningError);
-    return { error: "スクリーニング記録の取得に失敗しました" };
+    return { error: "撮影記録の取得に失敗しました" };
   }
-  if (!screening) return { error: "このスクリーニング記録を変更する権限がありません" };
+  if (!screening) return { error: "この撮影記録を変更する権限がありません" };
   if (screening.subject_id === normalizedSubjectId) {
     return { error: "変更前後の被験者IDが同じです" };
   }
@@ -357,7 +357,7 @@ export async function correctScreeningSubject(
       current.profile.role !== "admin" &&
       (!current.profile.clinic_id || screeningClinicId !== current.profile.clinic_id)
     ) {
-      return { error: "この医療機関のスクリーニング記録を変更する権限がありません" };
+      return { error: "この医療機関の撮影記録を変更する権限がありません" };
     }
 
     if (normalizedSubjectId) {
@@ -415,7 +415,7 @@ export async function getSubjectsForScreeningCorrection(screeningId: string) {
     .select("subject_id, created_by")
     .eq("id", screeningId)
     .maybeSingle();
-  if (screeningError) throwSupabaseError(screeningError, "スクリーニング記録の取得");
+  if (screeningError) throwSupabaseError(screeningError, "撮影記録の取得");
   if (!screening) return [];
 
   const clinicId = await getScreeningClinicId(supabase, screening);

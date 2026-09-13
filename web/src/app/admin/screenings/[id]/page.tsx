@@ -50,7 +50,7 @@ export default async function AdminScreeningDetailPage({
       {isProcessing && <ProcessingStatusRefresh />}
       <div>
         <Link href="/admin/screenings" className="text-xs text-link hover:underline">
-          ← 全撮影データ一覧に戻る
+          ← 全撮影記録一覧に戻る
         </Link>
         <div className="mt-2 flex items-center gap-2.5">
           <h1 className="text-xl font-bold text-foreground">解析結果詳細</h1>

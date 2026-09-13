@@ -120,8 +120,8 @@ async function createManagedAccount({
 }
 
 /**
- * アカウントを削除する。撮影・解析データは削除せず、担当者表示・医療機関の紐付け・
- * 撮影データの提供者追跡（監査目的）を保つため、profilesは氏名を残したまま
+ * アカウントを削除する。撮影記録は削除せず、担当者表示・医療機関の紐付け・
+ * 撮影記録の提供者追跡（監査目的）を保つため、profilesは氏名を残したまま
  * 「削除済み」の墓標行として残す（is_active=false, deleted_at設定）。
  * 画面表示はdeleted_atの有無で「(削除済みユーザー)」に切り替わるため、
  * 氏名自体をDBから消さなくても表示上は問題ない（staffDisplayName参照）。
@@ -391,7 +391,7 @@ function staffNameFromScreening(row: ClinicDetailScreeningRow) {
   return staffDisplayName(profile);
 }
 
-/** 医療機関の詳細（所属スタッフ・撮影データ）を取得 */
+/** 医療機関の詳細（所属スタッフ・撮影記録）を取得 */
 export async function getClinicDetail(clinicId: string) {
   await requireAdmin();
   if (!isValidUuid(clinicId)) return null;
@@ -425,12 +425,12 @@ export async function getClinicDetail(clinicId: string) {
     throwSupabaseError(staffsResult.error, "所属スタッフ一覧の取得");
   }
   if (assignedResult.error) {
-    throwSupabaseError(assignedResult.error, "撮影・解析データの取得");
+    throwSupabaseError(assignedResult.error, "撮影記録の取得");
   }
 
   const allStaffs = staffsResult.data ?? [];
   // 削除済みスタッフが未割り当てで撮影した記録も医療機関詳細に残すため、
-  // 未割り当て撮影データの検索対象IDには削除済みスタッフも含める。
+  // 未割り当て撮影記録の検索対象IDには削除済みスタッフも含める。
   const staffIds = allStaffs.map((staff) => staff.id);
   const staffs = allStaffs.filter((staff) => !staff.deleted_at);
 
@@ -445,7 +445,7 @@ export async function getClinicDetail(clinicId: string) {
           .order("created_at", { ascending: false });
 
   if (unassignedResult.error) {
-    throwSupabaseError(unassignedResult.error, "未割り当て撮影データの取得");
+    throwSupabaseError(unassignedResult.error, "未割り当て撮影記録の取得");
   }
 
   const screeningsById = new Map<
@@ -742,7 +742,7 @@ export async function createStaff(
 
 /**
  * 医療機関スタッフアカウントを削除する。
- * 撮影・解析データは削除せず、担当スタッフ名は「(削除済みユーザー)」と表示する。
+ * 撮影記録は削除せず、担当スタッフ名は「(削除済みユーザー)」と表示する。
  */
 export async function deleteStaff(
   _prevState: ActionState,
@@ -957,7 +957,7 @@ export async function deleteAdmin(
   redirect("/admin/admins");
 }
 
-/** 管理者用：全医療機関の撮影・解析データを検索して1ページ取得 */
+/** 管理者用：全医療機関の撮影記録を検索して1ページ取得 */
 export async function getScreeningsForAdmin(
   filters: AdminScreeningFilters,
   requestedPageSize = ADMIN_SCREENINGS_PAGE_SIZE
@@ -1039,7 +1039,7 @@ export async function getScreeningsForAdmin(
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .range(firstRow, firstRow + pageSize - 1);
-  if (error) throwSupabaseError(error, "撮影・解析データ一覧の取得");
+  if (error) throwSupabaseError(error, "撮影記録一覧の取得");
 
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));

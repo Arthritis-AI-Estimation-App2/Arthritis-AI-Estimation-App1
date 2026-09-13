@@ -74,8 +74,8 @@ export default async function ClinicStaffHomePage() {
           <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-info-solid-foreground/15">
             <GroupIcon />
           </span>
-          <p className="mt-3 text-lg font-bold">未整理画像のグルーピング</p>
-          <p className="mt-2 text-sm text-info-solid-foreground">患者ごとに記録をまとめます</p>
+          <p className="mt-3 text-lg font-bold">未割り当ての撮影記録</p>
+          <p className="mt-2 text-sm text-info-solid-foreground">被験者IDに紐付けます</p>
         </Link>
       </div>
 
@@ -107,7 +107,7 @@ export default async function ClinicStaffHomePage() {
                     <div className="flex items-center gap-2">
                       {s.status === "completed" && (
                         <span className="text-xs font-medium text-secondary-foreground">
-                          陽性関節: {s.total_inflamed_joints}箇所
+                          陽性関節数: {s.total_inflamed_joints}箇所
                         </span>
                       )}
                       <StatusBadge status={s.status} />

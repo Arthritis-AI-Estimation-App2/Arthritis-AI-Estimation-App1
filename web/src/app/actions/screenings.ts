@@ -73,7 +73,7 @@ export async function createScreening(subjectId?: string): Promise<{
 
   if (error) {
     console.error("スクリーニング作成エラー:", error);
-    return { screeningId: null, error: "スクリーニング記録の作成に失敗しました" };
+    return { screeningId: null, error: "撮影記録の作成に失敗しました" };
   }
   return { screeningId: data.id, error: null };
 }
@@ -96,14 +96,14 @@ export async function updateScreeningImages(
 
   if (screeningError) {
     console.error("画像更新時のスクリーニング確認エラー:", screeningError);
-    return { error: "スクリーニング記録の確認に失敗しました" };
+    return { error: "撮影記録の確認に失敗しました" };
   }
   if (!screening || screening.created_by !== current.userId) {
-    return { error: "このスクリーニングを更新する権限がありません" };
+    return { error: "この撮影記録を更新する権限がありません" };
   }
 
   if (screening.status !== "uploading") {
-    return { error: "このスクリーニングは画像を更新できる状態ではありません" };
+    return { error: "この撮影記録は画像を更新できる状態ではありません" };
   }
 
   // Storageのパスを任意の別ユーザー・別スクリーニングのパスに
@@ -133,7 +133,7 @@ export async function updateScreeningImages(
     console.error("スクリーニング画像更新エラー:", error);
     return { error: "画像情報の更新に失敗しました" };
   }
-  if (!data) return { error: "このスクリーニングは画像を更新できる状態ではありません" };
+  if (!data) return { error: "この撮影記録は画像を更新できる状態ではありません" };
   return { error: null };
 }
 
@@ -154,14 +154,14 @@ export async function abandonScreeningUpload(
 
   if (screeningError) {
     console.error("削除時のスクリーニング確認エラー:", screeningError);
-    return { error: "スクリーニング記録の確認に失敗しました" };
+    return { error: "撮影記録の確認に失敗しました" };
   }
   if (!screening || screening.created_by !== current.userId) {
-    return { error: "このスクリーニングを削除する権限がありません" };
+    return { error: "この撮影記録を削除する権限がありません" };
   }
 
   if (screening.status !== "uploading") {
-    return { error: "アップロード中のスクリーニングのみ削除できます" };
+    return { error: "アップロード中の撮影記録のみ削除できます" };
   }
 
   const paths = [
@@ -202,9 +202,9 @@ export async function abandonScreeningUpload(
 
   if (deleteError) {
     console.error("スクリーニング削除エラー:", deleteError);
-    return { error: "スクリーニング記録の削除に失敗しました" };
+    return { error: "撮影記録の削除に失敗しました" };
   }
-  if (!deletedScreening) return { error: "このスクリーニングを削除する権限がありません" };
+  if (!deletedScreening) return { error: "この撮影記録を削除する権限がありません" };
 
   revalidatePath("/");
   revalidatePath("/grouping");
@@ -222,14 +222,14 @@ export async function deleteScreeningAsAdmin(
   const current = await getCurrentUser();
   if (!current) return { error: "ログインが必要です", success: false };
   if (current.profile.role !== "admin") {
-    return { error: "撮影・解析データの削除は管理者のみ実行できます", success: false };
+    return { error: "撮影記録の削除は管理者のみ実行できます", success: false };
   }
 
   const screeningIdValue = formData.get("screening_id");
   const screeningId =
     typeof screeningIdValue === "string" ? screeningIdValue.trim() : "";
   if (!isValidUuid(screeningId)) {
-    return { error: "スクリーニング記録の指定が不正です", success: false };
+    return { error: "撮影記録の指定が不正です", success: false };
   }
 
   const supabase = await createClient();
@@ -241,10 +241,10 @@ export async function deleteScreeningAsAdmin(
 
   if (screeningError) {
     console.error("管理者削除時のスクリーニング確認エラー:", screeningError);
-    return { error: "スクリーニング記録の確認に失敗しました", success: false };
+    return { error: "撮影記録の確認に失敗しました", success: false };
   }
   if (!screening) {
-    return { error: "スクリーニング記録が見つかりません", success: false };
+    return { error: "撮影記録が見つかりません", success: false };
   }
 
   const paths = [
@@ -300,10 +300,10 @@ export async function deleteScreeningAsAdmin(
 
   if (deleteError) {
     console.error("管理者のスクリーニング削除エラー:", deleteError);
-    return { error: "スクリーニング記録の削除に失敗しました", success: false };
+    return { error: "撮影記録の削除に失敗しました", success: false };
   }
   if (!deletedScreening) {
-    return { error: "このスクリーニングを削除できませんでした", success: false };
+    return { error: "この撮影記録を削除できませんでした", success: false };
   }
 
   revalidatePath("/");

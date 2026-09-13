@@ -55,11 +55,11 @@ export default async function SubjectDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>グループ化された撮影・判定履歴 ({total}件)</CardTitle>
+          <CardTitle>紐付け済みの撮影記録 ({total}件)</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {screenings.length === 0 ? (
-            <p className="p-5 text-sm text-muted-foreground">紐付けられている撮影データはありません。</p>
+            <p className="p-5 text-sm text-muted-foreground">紐付けられている撮影記録はありません。</p>
           ) : (
             <ul className="divide-y divide-border">
               {screenings.map((s) => (
@@ -74,7 +74,7 @@ export default async function SubjectDetailPage({
                       </p>
                       {s.status === "completed" && (
                         <p className="text-xs text-secondary-foreground">
-                          炎症関節: {s.total_inflamed_joints}箇所
+                          陽性関節数: {s.total_inflamed_joints}箇所
                         </p>
                       )}
                     </div>

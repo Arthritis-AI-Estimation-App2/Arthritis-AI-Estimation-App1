@@ -28,9 +28,9 @@ export default async function GroupingPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">未割り当て画像のグルーピング</h1>
+        <h1 className="text-2xl font-bold text-foreground">撮影記録を被験者IDに紐付け</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          撮影された画像を、被験者IDに紐付けて整理します。
+          未割り当ての撮影記録を、被験者IDに紐付けます。
         </p>
       </div>
 

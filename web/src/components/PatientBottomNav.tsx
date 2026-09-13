@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/grouping",
-    label: "未割り当て画像",
+    label: "未割り当て",
     matches: (pathname: string) => pathname.startsWith("/grouping"),
   },
   {

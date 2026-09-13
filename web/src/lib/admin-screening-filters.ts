@@ -1,4 +1,5 @@
 import type { ScreeningStatus } from "@/lib/types";
+import { SCREENING_STATUS_LABELS } from "./screening-status.ts";
 
 export const ADMIN_SCREENINGS_PAGE_SIZE = 20;
 
@@ -6,10 +7,10 @@ export const SCREENING_STATUS_OPTIONS: ReadonlyArray<{
   value: ScreeningStatus;
   label: string;
 }> = [
-  { value: "uploading", label: "アップロード中" },
-  { value: "analyzing", label: "解析中" },
-  { value: "completed", label: "解析完了" },
-  { value: "failed", label: "解析失敗" },
+  { value: "uploading", label: SCREENING_STATUS_LABELS.uploading },
+  { value: "analyzing", label: SCREENING_STATUS_LABELS.analyzing },
+  { value: "completed", label: SCREENING_STATUS_LABELS.completed },
+  { value: "failed", label: SCREENING_STATUS_LABELS.failed },
 ];
 
 export type AdminScreeningFilters = {

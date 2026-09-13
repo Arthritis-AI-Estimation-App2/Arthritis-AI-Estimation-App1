@@ -1,5 +1,7 @@
 import { JOINT_LABELS, JOINT_NAMES, type JointName } from "./joints.ts";
+import { SCREENING_STATUS_LABELS } from "./screening-status.ts";
 import { staffDisplayName } from "./staff-display-name.ts";
+import type { ScreeningStatus } from "./types.ts";
 
 type Relation<T> = T | T[] | null;
 
@@ -28,15 +30,8 @@ type AdminScreeningCsvSource = {
   }>;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  uploading: "アップロード中",
-  analyzing: "解析中",
-  completed: "解析完了",
-  failed: "解析失敗",
-};
-
 const CSV_HEADERS = [
-  "スクリーニングID",
+  "撮影ID",
   "医療機関",
   "被験者ID",
   "撮影日時",
@@ -106,10 +101,12 @@ export function buildAdminScreeningsCsv(rows: AdminScreeningCsvSource[]) {
     return [
       row.id,
       subjectClinic?.name ?? staffClinic?.name ?? "未割り当て",
-      row.subject_id ?? "未割当",
+      row.subject_id ?? "未割り当て",
       formatJapanDateTime(row.created_at),
       staffDisplayName(profile),
-      STATUS_LABELS[row.status] ?? row.status,
+      row.status in SCREENING_STATUS_LABELS
+        ? SCREENING_STATUS_LABELS[row.status as ScreeningStatus]
+        : row.status,
       hasAnalysis
         ? (row.ra_detected ?? (row.total_inflamed_joints ?? 0) > 0)
           ? "陽性"

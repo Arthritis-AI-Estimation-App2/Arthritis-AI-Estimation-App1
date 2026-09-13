@@ -44,7 +44,7 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
   assert.ok(csv.endsWith("\r\n"));
 });
 
-test("未割当記録はスタッフの医療機関を使用し、数式文字列を無害化する", () => {
+test("未割り当て記録はスタッフの医療機関を使用し、数式文字列を無害化する", () => {
   const csv = buildAdminScreeningsCsv([
     {
       id: "screening-2",
@@ -65,7 +65,7 @@ test("未割当記録はスタッフの医療機関を使用し、数式文字�
     },
   ]);
 
-  assert.match(csv, /"テスト医院","未割当"/);
+  assert.match(csv, /"テスト医院","未割り当て"/);
   assert.match(csv, /"'=IMPORTXML\(A1\)"/);
   assert.match(csv, /"解析失敗","","","",""/);
 });

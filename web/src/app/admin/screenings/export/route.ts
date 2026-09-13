@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("撮影・解析データのCSV出力エラー:", error);
+    console.error("撮影記録のCSV出力エラー:", error);
     return new Response("CSVの作成に失敗しました。", {
       status: 500,
       headers: { "Content-Type": "text/plain; charset=utf-8" },

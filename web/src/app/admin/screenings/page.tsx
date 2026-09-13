@@ -79,7 +79,7 @@ export default async function AdminScreeningsPage({
       id: s.id,
       href: `/admin/screenings/${s.id}`,
       clinicName: subjectClinic?.name ?? staffClinic?.name ?? "未割り当て",
-      subjectId: s.subject_id ?? "未割当",
+      subjectId: s.subject_id ?? "未割り当て",
       staffName: staffDisplayName(profile),
       status: s.status,
       capturedAt: formatJapanDateTime(s.created_at),
@@ -184,10 +184,10 @@ export default async function AdminScreeningsPage({
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          全医療機関の撮影・解析データ
+          全医療機関の撮影記録
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          契約中のすべての医療機関で撮影された画像およびAI解析結果の一覧です。
+          契約中のすべての医療機関の撮影記録とAI解析結果の一覧です。
         </p>
       </div>
 
@@ -244,8 +244,8 @@ export default async function AdminScreeningsPage({
           {screenings.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {hasFilters
-                ? "条件に一致する撮影データはありません。"
-                : "撮影データはありません。"}
+                ? "条件に一致する撮影記録はありません。"
+                : "撮影記録はありません。"}
             </p>
           ) : (
             <>
@@ -270,7 +270,7 @@ export default async function AdminScreeningsPage({
                           <StatusBadge status={row.status} />
                           {row.status === "completed" && (
                             <span className="text-xs text-secondary-foreground">
-                              炎症 {row.inflamedLabel}
+                              陽性関節数: {row.inflamedLabel}
                             </span>
                           )}
                         </div>
@@ -297,7 +297,7 @@ export default async function AdminScreeningsPage({
                       <th className="px-4 py-3">撮影日時</th>
                       <th className="px-4 py-3">担当スタッフ</th>
                       <th className="px-4 py-3">解析ステータス</th>
-                      <th className="px-4 py-3">炎症数</th>
+                      <th className="px-4 py-3">陽性関節数</th>
                       <th className="px-4 py-3">操作</th>
                     </tr>
                   </thead>

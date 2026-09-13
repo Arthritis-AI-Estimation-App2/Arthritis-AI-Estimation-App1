@@ -16,7 +16,7 @@ interface Props {
 
 /**
  * 管理者・スタッフアカウントの削除フォーム。
- * 撮影・解析データは削除せず、担当者名を「(削除済みユーザー)」と表示するために
+ * 撮影記録は削除せず、担当者名を「(削除済みユーザー)」と表示するために
  * profilesを墓標として残す旨と、メールアドレスが再登録できる旨を明記する。
  */
 export default function DeleteAccountForm({
@@ -51,7 +51,7 @@ export default function DeleteAccountForm({
         >
           <input type="hidden" name={idFieldName} value={idFieldValue} />
           <p className="text-xs text-muted-foreground">
-            削除すると、このアカウントではログインできなくなります。撮影・解析データは削除せず保持され、担当者名は「(削除済みユーザー)」と表示されます。メールアドレスは別のアカウントで再登録できます。
+            削除すると、このアカウントではログインできなくなります。撮影記録は削除せず保持され、担当者名は「(削除済みユーザー)」と表示されます。メールアドレスは別のアカウントで再登録できます。
           </p>
           {state.error && (
             <p role="alert" className="rounded-lg bg-danger p-3 text-sm text-danger-foreground">

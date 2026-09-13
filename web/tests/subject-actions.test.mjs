@@ -79,7 +79,7 @@ test("不正なスクリーニングIDでは被験者IDを発行しない", asyn
 
   assert.deepEqual(await actions.createSubject("not-a-uuid"), {
     subjectId: null,
-    error: "スクリーニング記録の指定が不正です",
+    error: "撮影記録の指定が不正です",
   });
   assert.deepEqual(inserts, []);
 });

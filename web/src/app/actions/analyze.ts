@@ -200,17 +200,17 @@ export async function analyzeScreening(
 
   if (fetchError) {
     console.error("解析時のスクリーニング取得エラー:", fetchError);
-    return { error: "スクリーニング記録の取得に失敗しました" };
+    return { error: "撮影記録の取得に失敗しました" };
   }
   if (!screening) {
-    return { error: "スクリーニング記録が見つかりません" };
+    return { error: "撮影記録が見つかりません" };
   }
 
   if (screening.status !== "analyzing") {
     return {
       error:
         screening.status === "completed"
-          ? "このスクリーニングはすでに解析済みです"
+          ? "この撮影記録はすでに解析済みです"
           : "解析を実行できる状態ではありません",
     };
   }
@@ -237,11 +237,11 @@ export async function markInterruptedScreeningFailed(
 
   if (fetchError) {
     console.error("中断状態復旧時のスクリーニング取得エラー:", fetchError);
-    return { error: "スクリーニング記録の取得に失敗しました" };
+    return { error: "撮影記録の取得に失敗しました" };
   }
-  if (!screening) return { error: "スクリーニング記録が見つかりません" };
+  if (!screening) return { error: "撮影記録が見つかりません" };
   if (!isProcessingStatus(screening.status)) {
-    return { error: "このスクリーニングはすでに処理中ではありません" };
+    return { error: "この撮影記録はすでに処理中ではありません" };
   }
   if (!isStaleProcessing(screening.status, screening.status_updated_at)) {
     return { error: "最終更新から10分未満のため、まだ復旧できません" };
@@ -291,10 +291,10 @@ export async function retryAnalysis(
 
   if (fetchError) {
     console.error("再解析時のスクリーニング取得エラー:", fetchError);
-    return { error: "スクリーニング記録の取得に失敗しました" };
+    return { error: "撮影記録の取得に失敗しました" };
   }
   if (!screening || !["completed", "failed"].includes(screening.status)) {
-    return { error: "完了または失敗したスクリーニングのみ再解析できます" };
+    return { error: "解析完了または解析失敗の撮影記録のみ再解析できます" };
   }
 
   const adminClient = createAdminClient();
