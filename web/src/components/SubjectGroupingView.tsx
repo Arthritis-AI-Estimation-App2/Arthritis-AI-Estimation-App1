@@ -170,9 +170,10 @@ export default function SubjectGroupingView({
   };
 
   const dateGroups = groupByCaptureDate(unassignedScreenings);
+  const selectedCount = selectedScreenings.length;
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${selectedCount > 0 ? "pb-36 sm:pb-24" : ""}`}>
       {error && <p className="rounded-lg bg-danger p-3 text-sm text-danger-foreground">{error}</p>}
       {success && <p className="rounded-lg bg-success p-3 text-sm text-success-foreground">{success}</p>}
 
@@ -281,18 +282,6 @@ export default function SubjectGroupingView({
             </div>
           )}
 
-          {unassignedScreenings.length > 0 && (
-            <div className="pt-2">
-              <Button
-                type="button"
-                onClick={handleAssign}
-                disabled={loading || selectedScreenings.length === 0 || !selectedSubjectId}
-                className="w-full sm:w-auto"
-              >
-                選択したデータをグループ化（紐付け）
-              </Button>
-            </div>
-          )}
           {total > 0 && (
             <div>
               <p className="text-xs text-muted-foreground">
@@ -308,6 +297,44 @@ export default function SubjectGroupingView({
           )}
         </CardContent>
       </Card>
+
+      {selectedCount > 0 && (
+        <div className="fixed inset-x-0 bottom-[calc(4.0625rem+env(safe-area-inset-bottom,0px))] z-20 border-t border-border bg-surface shadow-[0_-4px_12px_rgb(0_0_0/0.08)] sm:bottom-[calc(2.75rem+env(safe-area-inset-bottom,0px))]">
+          <div className="mx-auto flex max-w-4xl flex-col gap-3 px-safe-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {selectedSubjectId
+                  ? `紐付け先: 被験者ID ${selectedSubjectId}`
+                  : "紐付け先が選択されていません"}
+              </p>
+              <p className="text-xs text-muted-foreground">このページで{selectedCount}件を選択中</p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setSelectedScreenings([])}
+                disabled={loading}
+                className="shrink-0"
+              >
+                選択解除
+              </Button>
+              <Button
+                type="button"
+                onClick={handleAssign}
+                disabled={loading || !selectedSubjectId}
+                className="min-w-0 flex-1 sm:flex-none"
+              >
+                {loading
+                  ? "紐付け中..."
+                  : selectedSubjectId
+                    ? `${selectedSubjectId}へ${selectedCount}件を紐付け`
+                    : "紐付け先を選択"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
