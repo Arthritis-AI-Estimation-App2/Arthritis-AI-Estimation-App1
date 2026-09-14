@@ -97,7 +97,7 @@ export default function SubjectList({
             totalPages={totalPages}
             pathname="/subjects"
             params={{ q: query }}
-            ariaLabel="被験者ID一覧のページ移動"
+            ariaLabel="被験者一覧のページ移動"
           />
         </CardContent>
       </Card>

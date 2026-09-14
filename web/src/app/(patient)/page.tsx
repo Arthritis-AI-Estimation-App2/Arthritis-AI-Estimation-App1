@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getRecentScreenings } from "@/app/actions/screenings";
 import StatusBadge from "@/components/StatusBadge";
 import NavigationHint from "@/components/ui/NavigationHint";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
+
+export const metadata = { title: "ホーム | 関節炎スクリーニング" };
 
 function formatDate(iso: string) {
   return formatJapanDateTime(iso);
@@ -82,7 +84,7 @@ export default async function ClinicStaffHomePage() {
 
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle>最近の撮影</CardTitle>
+          <h1 className="font-semibold text-foreground">最近の撮影</h1>
           <Link
             href="/screenings"
             className="text-sm font-medium text-link hover:underline"

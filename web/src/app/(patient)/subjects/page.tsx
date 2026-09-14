@@ -13,6 +13,8 @@ function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+export const metadata = { title: "被験者一覧 | 関節炎スクリーニング" };
+
 export default async function SubjectsPage({
   searchParams,
 }: {
@@ -30,7 +32,7 @@ export default async function SubjectsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">被験者ID一覧</h1>
+        <h1 className="text-2xl font-bold text-foreground">被験者一覧</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           被験者IDの一覧と過去の判定記録件数です。再来院時はIDで絞り込めます。
         </p>

@@ -44,7 +44,7 @@ export default async function SubjectDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <BackLink href="/subjects">被験者ID一覧に戻る</BackLink>
+        <BackLink href="/subjects">被験者一覧に戻る</BackLink>
         <h1 className="mt-2 text-xl font-bold text-foreground">
           被験者ID: {subject.id}
         </h1>

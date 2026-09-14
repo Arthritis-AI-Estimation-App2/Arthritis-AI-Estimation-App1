@@ -20,7 +20,7 @@ import {
 import { notFound } from "next/navigation";
 import BackLink from "@/components/ui/BackLink";
 
-export const metadata = { title: "解析結果詳細 | 管理画面" };
+export const metadata = { title: "撮影記録の詳細 | 管理画面" };
 
 export default async function AdminScreeningDetailPage({
   params,
@@ -52,7 +52,7 @@ export default async function AdminScreeningDetailPage({
       <div>
         <BackLink href="/admin/screenings">撮影記録一覧に戻る</BackLink>
         <div className="mt-2 flex items-center gap-2.5">
-          <h1 className="text-xl font-bold text-foreground">解析結果詳細</h1>
+          <h1 className="text-xl font-bold text-foreground">撮影記録の詳細</h1>
           <StatusBadge status={screening.status} />
         </div>
         <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
