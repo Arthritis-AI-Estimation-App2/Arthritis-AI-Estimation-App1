@@ -96,7 +96,20 @@ async function createManagedAccount({
 
   if (authError) {
     console.error(`${accountLabel}アカウント作成エラー:`, authError);
-    return { error: `${accountLabel}アカウントの作成に失敗しました`, success: false };
+    // Authの内部メッセージをそのまま公開せず、エラーコードを案内に変換する。
+    const reasons: Record<string, string> = {
+      email_exists: "このメールアドレスは既に使われています。別のメールアドレスを入力してください。",
+      user_already_exists: "このメールアドレスは既に使われています。別のメールアドレスを入力してください。",
+      email_address_invalid: "メールアドレスの形式が正しくありません。入力内容を確認してください。",
+      weak_password: "パスワードが認証サービスの安全性要件を満たしていません。より強いパスワードを設定してください。",
+      over_request_rate_limit: "作成リクエストが集中しています。しばらく待ってから再度お試しください。",
+      request_timeout: "認証サービスへの接続がタイムアウトしました。しばらく待ってから再度お試しください。",
+    };
+    return {
+      error: reasons[authError.code ?? ""] ??
+        `${accountLabel}アカウントの認証情報を登録できませんでした。システム管理担当者にお問い合わせください。`,
+      success: false,
+    };
   }
 
   const { error: profileError } = await adminClient.from("profiles").insert({
@@ -114,7 +127,12 @@ async function createManagedAccount({
     if (cleanupError) {
       console.error(`${accountLabel}Authユーザー後片付けエラー:`, cleanupError);
     }
-    return { error: `${accountLabel}アカウントの作成に失敗しました`, success: false };
+    return {
+      error: cleanupError
+        ? `${accountLabel}のプロフィール保存と作成途中の認証情報の削除に失敗しました。システム管理担当者にお問い合わせください。`
+        : `${accountLabel}のプロフィールを保存できなかったため、アカウント作成を取り消しました。システム管理担当者にお問い合わせください。`,
+      success: false,
+    };
   }
 
   return { error: null, success: true };
