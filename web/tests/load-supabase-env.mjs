@@ -30,8 +30,8 @@ export function resolveRlsTestTarget() {
 
   const testTarget = {
     url: process.env.TEST_SUPABASE_URL,
-    anonKey: process.env.TEST_SUPABASE_ANON_KEY,
-    serviceRoleKey: process.env.TEST_SUPABASE_SERVICE_ROLE_KEY,
+    publishableKey: process.env.TEST_SUPABASE_PUBLISHABLE_KEY,
+    secretKey: process.env.TEST_SUPABASE_SECRET_KEY,
   };
   const testCount = definedCount(Object.values(testTarget));
   if (testCount === 3) {
@@ -40,14 +40,14 @@ export function resolveRlsTestTarget() {
   if (testCount > 0) {
     return {
       error:
-        "TEST_SUPABASE_URL / TEST_SUPABASE_ANON_KEY / TEST_SUPABASE_SERVICE_ROLE_KEY は3つ揃えて設定してください。",
+        "TEST_SUPABASE_URL / TEST_SUPABASE_PUBLISHABLE_KEY / TEST_SUPABASE_SECRET_KEY は3つ揃えて設定してください。",
     };
   }
 
   const appTarget = {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    secretKey: process.env.SUPABASE_SECRET_KEY,
   };
   if (definedCount(Object.values(appTarget)) === 3) {
     if (isLocalSupabaseUrl(appTarget.url)) {
@@ -63,6 +63,6 @@ export function resolveRlsTestTarget() {
 
   return {
     error:
-      ".env.local にローカルSupabaseの NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY を設定するか、専用テストプロジェクト向けに TEST_SUPABASE_* を設定してください。",
+      ".env.local にローカルSupabaseの NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY を設定するか、専用テストプロジェクト向けに TEST_SUPABASE_* を設定してください。",
   };
 }

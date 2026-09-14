@@ -18,11 +18,11 @@ if (!enabled) {
     assert.fail(target.error);
   });
 } else {
-  const { url, anonKey, serviceRoleKey } = target;
+  const { url, publishableKey, secretKey } = target;
   const runId = `rls-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   const password = `RlsTest-${crypto.randomUUID()}!`;
 
-  const adminApi = createClient(url, serviceRoleKey, {
+  const adminApi = createClient(url, secretKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
@@ -44,7 +44,7 @@ if (!enabled) {
   }
 
   async function signIn(email) {
-    const client = createClient(url, anonKey, {
+    const client = createClient(url, publishableKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const { error } = await client.auth.signInWithPassword({ email, password });
@@ -155,7 +155,7 @@ if (!enabled) {
       admin = await signIn(adminEmail);
 
       await t.test("未認証ユーザーはDBとStorageのデータにアクセスできない", async () => {
-        const unauthenticated = createClient(url, anonKey, {
+        const unauthenticated = createClient(url, publishableKey, {
           auth: { autoRefreshToken: false, persistSession: false },
         });
 
@@ -800,7 +800,7 @@ if (!enabled) {
       });
 
       await t.test("未認証のDB・Storage操作は既存のテスト記録にもアクセスできない", async () => {
-        const anon = createClient(url, anonKey, {
+        const anon = createClient(url, publishableKey, {
           auth: { autoRefreshToken: false, persistSession: false },
         });
         const subject = await staffA.from("subjects").insert({ clinic_id: clinicAId }).select("id").single();
