@@ -10,7 +10,7 @@ import Button from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { JOINT_LABELS, JOINT_NAMES, type JointName } from "@/lib/joints";
 import {
-  formatJapanDateWithWeekday,
+  formatJapanDate,
   formatJapanTime,
   japanCalendarDayKey,
 } from "@/lib/japan-date-time";
@@ -52,11 +52,7 @@ function dateHeading(iso: string) {
 
   if (day === today) return "今日";
   if (day === yesterday) return "昨日";
-  return formatJapanDateWithWeekday(iso);
-}
-
-function formatTime(iso: string) {
-  return formatJapanTime(iso, true);
+  return formatJapanDate(iso);
 }
 
 function formatRelativeTime(iso: string) {
@@ -222,7 +218,7 @@ export default function SubjectGroupingView({
                       const isSelected = selectedScreenings.includes(sc.id);
                       const findings = screeningFindings(sc);
                       const relative = formatRelativeTime(sc.created_at);
-                      const time = formatTime(sc.created_at);
+                      const time = formatJapanTime(sc.created_at);
 
                       return (
                         <div

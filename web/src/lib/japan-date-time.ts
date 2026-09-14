@@ -33,25 +33,15 @@ export function formatJapanDateTime(value: DateTimeValue) {
 export function formatJapanDate(value: DateTimeValue) {
   return format(value, {
     year: "numeric",
-    month: "long",
+    month: "numeric",
     day: "numeric",
   });
 }
 
-export function formatJapanDateWithWeekday(value: DateTimeValue) {
-  return format(value, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    weekday: "short",
-  });
-}
-
-export function formatJapanTime(value: DateTimeValue, includeSeconds = false) {
+export function formatJapanTime(value: DateTimeValue) {
   return format(value, {
     hour: "2-digit",
     minute: "2-digit",
-    ...(includeSeconds ? { second: "2-digit" as const } : {}),
   });
 }
 

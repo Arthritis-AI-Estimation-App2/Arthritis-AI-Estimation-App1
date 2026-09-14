@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   formatJapanDate,
   formatJapanDateTime,
-  formatJapanDateWithWeekday,
   formatJapanTime,
   japanCalendarDayKey,
 } from "../src/lib/japan-date-time.ts";
@@ -13,9 +12,12 @@ test("UTCの撮影・解析日時を日本時間で表示する", () => {
   const capturedAt = "2025-12-31T15:00:00.000Z";
 
   assert.equal(formatJapanDateTime(capturedAt), "2026/1/1 00:00");
-  assert.equal(formatJapanDate(capturedAt), "2026年1月1日");
-  assert.equal(formatJapanDateWithWeekday(capturedAt), "2026年1月1日(木)");
+  assert.equal(formatJapanDate(capturedAt), "2026/1/1");
   assert.equal(formatJapanTime(capturedAt), "00:00");
+  assert.equal(
+    formatJapanDateTime(capturedAt).startsWith(`${formatJapanDate(capturedAt)} `),
+    true
+  );
 });
 
 test("日本時間の日付グルーピングはUTCではなくAsia/Tokyoの境界を使う", () => {
