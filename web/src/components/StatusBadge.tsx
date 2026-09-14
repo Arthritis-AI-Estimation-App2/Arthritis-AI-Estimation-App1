@@ -16,7 +16,7 @@ export default function StatusBadge({ status }: { status: Screening["status"] })
   const displayStatus = isScreeningStatus(status) ? status : "uploading";
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS_NAMES[displayStatus]}`}
+      className={`inline-block shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS_NAMES[displayStatus]}`}
     >
       {SCREENING_STATUS_LABELS[displayStatus]}
     </span>

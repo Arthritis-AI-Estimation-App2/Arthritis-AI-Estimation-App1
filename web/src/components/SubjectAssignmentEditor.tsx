@@ -95,19 +95,19 @@ export default function SubjectAssignmentEditor({
           )}
         </div>
         {capturedAt && status && (
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
-            <div className="min-w-0 space-y-0.5">
-              <p className="text-xs text-muted-foreground">
+          <div className="mt-3 space-y-0.5 border-t border-border pt-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="min-w-0 text-xs text-muted-foreground">
                 撮影日時: {formatJapanDateTime(capturedAt)}
               </p>
-              <p className="break-all text-xs text-muted-foreground">
-                撮影ID:{" "}
-                <span className="font-mono tracking-tight">
-                  {formatFullScreeningId(screeningId)}
-                </span>
-              </p>
+              <StatusBadge status={status} />
             </div>
-            <StatusBadge status={status} />
+            <p className="break-all text-xs text-muted-foreground">
+              撮影ID:{" "}
+              <span className="font-mono tracking-tight">
+                {formatFullScreeningId(screeningId)}
+              </span>
+            </p>
           </div>
         )}
       </CardHeader>
