@@ -250,6 +250,11 @@ export default function SubjectGroupingView({
                               <StatusBadge status={sc.status} />
                               <span className="text-xs text-muted-foreground">撮影ID: {sc.id.slice(0, 8)}</span>
                             </div>
+                            {sc.status === "failed" && (
+                              <p className="mt-2 text-xs text-danger-foreground">
+                                詳細を開いて次の操作を確認
+                              </p>
+                            )}
                             <p className="mt-2 break-words text-sm text-secondary-foreground">担当者: {staffDisplayName(sc.profiles)}</p>
                             {findings &&
                               (findings.count === 0 ? (

@@ -4,6 +4,7 @@ import ScreeningResult from "@/components/ScreeningResult";
 import SubjectAssignmentEditor from "@/components/SubjectAssignmentEditor";
 import ProcessingStatusRefresh from "@/components/ProcessingStatusRefresh";
 import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
+import FailedScreeningNextStep from "@/components/FailedScreeningNextStep";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -55,13 +56,11 @@ export default async function ResultPage({
         />
       </div>
       {screening.status === "failed" && (
-        <div className="mb-4 space-y-3 rounded-xl border border-danger-border bg-danger p-4">
-          <p className="text-sm text-danger-foreground">
-            {canRetryAnalysis
-              ? "AI解析に失敗しました。管理者へ再解析を依頼してください。"
-              : "画像のアップロードが完了しませんでした。もう一度撮影してください。"}
-          </p>
-        </div>
+        <FailedScreeningNextStep
+          className="mb-4"
+          canRetryAnalysis={canRetryAnalysis}
+          screeningId={screening.id}
+        />
       )}
       {isProcessing && isInterrupted && (
         <div className="mb-4 rounded-xl border border-warning-border bg-warning p-4">

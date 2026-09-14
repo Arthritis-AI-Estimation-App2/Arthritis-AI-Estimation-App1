@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getScreeningDetail } from "@/app/actions/screenings";
+import FailedScreeningNextStep from "@/components/FailedScreeningNextStep";
 import ScreeningResult from "@/components/ScreeningResult";
 import Button from "@/components/ui/Button";
 
@@ -48,11 +49,10 @@ export default function GroupingScreeningDetail({ screeningId }: { screeningId: 
         ) : detail && (
           <>
             {detail.screening.status === "failed" && (
-              <p className="text-sm text-danger-foreground">
-                {detail.canRetryAnalysis
-                  ? "AI解析に失敗しました。管理者へ再解析を依頼してください。"
-                  : "画像のアップロードが完了しませんでした。もう一度撮影してください。"}
-              </p>
+              <FailedScreeningNextStep
+                canRetryAnalysis={detail.canRetryAnalysis}
+                screeningId={detail.screening.id}
+              />
             )}
             {(detail.screening.status === "uploading" || detail.screening.status === "analyzing") && (
               <p className="text-sm text-muted-foreground">処理中です。詳細を開き直すと最新の状態を確認できます。</p>

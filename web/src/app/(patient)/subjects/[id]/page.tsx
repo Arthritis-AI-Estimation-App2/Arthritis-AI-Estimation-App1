@@ -78,6 +78,11 @@ export default async function SubjectDetailPage({
                           陽性関節数: {s.total_inflamed_joints}箇所
                         </p>
                       )}
+                      {s.status === "failed" && (
+                        <p className="text-xs text-danger-foreground">
+                          再撮影するか、詳細から次の操作を確認
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <StatusBadge status={s.status} />

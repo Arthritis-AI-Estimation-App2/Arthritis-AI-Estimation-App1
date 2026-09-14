@@ -104,6 +104,11 @@ export default async function ClinicStaffHomePage() {
                         <p className="text-sm text-muted-foreground">未割り当て</p>
                       )}
                       <p className="text-xs text-muted-foreground">{formatDate(s.created_at)}</p>
+                      {s.status === "failed" && (
+                        <p className="text-xs text-danger-foreground">
+                          再撮影するか、詳細から次の操作を確認
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex flex-wrap items-center justify-end gap-2">
