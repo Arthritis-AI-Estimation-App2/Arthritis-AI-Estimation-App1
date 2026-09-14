@@ -20,7 +20,7 @@ import {
 import { notFound } from "next/navigation";
 import BackLink from "@/components/ui/BackLink";
 
-export const metadata = { title: "撮影記録の詳細 | 管理画面" };
+export const metadata = { title: "撮影記録の詳細" };
 
 export default async function AdminScreeningDetailPage({
   params,

@@ -1,6 +1,6 @@
 import CaptureFlow from "@/components/CaptureFlow";
 
-export const metadata = { title: "撮影 | 関節炎スクリーニング" };
+export const metadata = { title: "撮影" };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

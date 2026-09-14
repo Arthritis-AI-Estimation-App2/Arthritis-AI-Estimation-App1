@@ -3,6 +3,8 @@ import NewStaffForm from "@/components/NewStaffForm";
 import BackLink from "@/components/ui/BackLink";
 import { generatePassword } from "@/lib/generate-password";
 
+export const metadata = { title: "スタッフアカウント発行" };
+
 export default async function NewStaffPage({
   searchParams,
 }: {

@@ -4,6 +4,13 @@ import Link from "next/link";
 import AdminNav from "@/components/AdminNav";
 import UserAccountMenu from "@/components/UserAccountMenu";
 
+export const metadata = {
+  title: {
+    default: "管理画面",
+    template: "%s | 管理画面",
+  },
+};
+
 export default async function AdminLayout({
   children,
 }: {

@@ -2,7 +2,10 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "関節炎スクリーニング",
+  title: {
+    default: "関節炎スクリーニング",
+    template: "%s | 関節炎スクリーニング",
+  },
   description: "手指の撮影による関節炎スクリーニング支援アプリ",
 };
 

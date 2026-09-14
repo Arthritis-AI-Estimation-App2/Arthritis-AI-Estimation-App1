@@ -7,6 +7,8 @@ import BackLink from "@/components/ui/BackLink";
 import { generatePassword } from "@/lib/generate-password";
 import { notFound } from "next/navigation";
 
+export const metadata = { title: "スタッフ情報を編集" };
+
 export default async function EditStaffPage({
   params,
 }: {

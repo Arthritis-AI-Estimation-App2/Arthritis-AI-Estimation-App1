@@ -3,6 +3,8 @@ import EditClinicForm from "@/components/EditClinicForm";
 import BackLink from "@/components/ui/BackLink";
 import { notFound } from "next/navigation";
 
+export const metadata = { title: "医療機関の情報を編集" };
+
 export default async function EditClinicPage({
   params,
 }: {

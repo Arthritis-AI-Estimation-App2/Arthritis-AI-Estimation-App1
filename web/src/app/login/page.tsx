@@ -2,6 +2,8 @@ import LoginForm from "@/components/LoginForm";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
+export const metadata = { title: "ログイン" };
+
 export default async function LoginPage() {
   const current = await getCurrentUser();
   if (current) {

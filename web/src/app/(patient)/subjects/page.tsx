@@ -13,7 +13,7 @@ function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export const metadata = { title: "被験者一覧 | 関節炎スクリーニング" };
+export const metadata = { title: "被験者一覧" };
 
 export default async function SubjectsPage({
   searchParams,

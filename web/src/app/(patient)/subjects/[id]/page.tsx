@@ -10,12 +10,22 @@ import {
 } from "@/lib/staff-pagination";
 import BackLink from "@/components/ui/BackLink";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  return { title: `${id}の判定履歴` };
 }
 
 export default async function SubjectDetailPage({

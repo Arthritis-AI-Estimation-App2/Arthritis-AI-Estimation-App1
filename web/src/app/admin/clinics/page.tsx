@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { formatJapanDate } from "@/lib/japan-date-time";
 import Link from "next/link";
 
+export const metadata = { title: "医療機関の管理" };
+
 export default async function ClinicsPage() {
   const clinics = await getClinics();
 

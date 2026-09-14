@@ -15,7 +15,7 @@ import {
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-export const metadata = { title: "医療機関の詳細 | 管理画面" };
+export const metadata = { title: "医療機関の詳細" };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

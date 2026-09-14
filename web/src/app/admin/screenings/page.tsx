@@ -18,6 +18,8 @@ import { staffDisplayName } from "@/lib/staff-display-name";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+export const metadata = { title: "撮影記録" };
+
 type SearchParams = Promise<
   Record<string, string | string[] | undefined>
 >;

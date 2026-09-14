@@ -5,6 +5,8 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { roleLabel } from "@/lib/types";
 
+export const metadata = { title: "スタッフ一覧" };
+
 export default async function StaffsPage() {
   const staffs = await getStaffs();
 

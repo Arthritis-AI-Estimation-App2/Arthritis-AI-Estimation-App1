@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
 
+export const metadata = { title: "管理者一覧" };
+
 export default async function AdminsPage() {
   const admins = await getAdmins();
   return (

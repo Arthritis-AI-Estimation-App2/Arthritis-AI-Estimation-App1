@@ -8,6 +8,8 @@ import { generatePassword } from "@/lib/generate-password";
 import { getCurrentUser } from "@/lib/auth";
 import { notFound } from "next/navigation";
 
+export const metadata = { title: "管理者を編集" };
+
 export default async function EditAdminPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [admin, current] = await Promise.all([getAdmin(id), getCurrentUser()]);

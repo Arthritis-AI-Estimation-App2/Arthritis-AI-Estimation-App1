@@ -2,6 +2,8 @@ import NewAdminForm from "@/components/NewAdminForm";
 import BackLink from "@/components/ui/BackLink";
 import { generatePassword } from "@/lib/generate-password";
 
+export const metadata = { title: "管理者アカウント発行" };
+
 export default function NewAdminPage() {
   return (
     <div className="mx-auto max-w-lg space-y-6">

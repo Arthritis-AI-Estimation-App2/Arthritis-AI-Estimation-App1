@@ -15,7 +15,7 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "撮影記録 | 関節炎スクリーニング" };
+export const metadata = { title: "撮影記録" };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

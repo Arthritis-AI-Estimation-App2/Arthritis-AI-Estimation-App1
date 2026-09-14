@@ -3,6 +3,8 @@ import { normalizePage, paginatedListHref } from "@/lib/staff-pagination";
 import SubjectGroupingView from "@/components/SubjectGroupingView";
 import { redirect } from "next/navigation";
 
+export const metadata = { title: "紐付け" };
+
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function firstValue(value: string | string[] | undefined) {

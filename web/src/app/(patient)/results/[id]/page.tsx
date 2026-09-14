@@ -9,7 +9,7 @@ import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness
 import BackLink from "@/components/ui/BackLink";
 import { notFound } from "next/navigation";
 
-export const metadata = { title: "判定結果 | 関節炎スクリーニング" };
+export const metadata = { title: "判定結果" };
 
 export default async function ResultPage({
   params,

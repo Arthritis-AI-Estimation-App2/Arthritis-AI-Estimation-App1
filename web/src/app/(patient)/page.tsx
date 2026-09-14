@@ -5,7 +5,7 @@ import NavigationHint from "@/components/ui/NavigationHint";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 
-export const metadata = { title: "ホーム | 関節炎スクリーニング" };
+export const metadata = { title: "ホーム" };
 
 function CameraIcon() {
   return (
