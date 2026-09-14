@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatScreeningId } from "@/lib/admin-screening-filters";
 
 export default function FailedScreeningNextStep({
   canRetryAnalysis,
@@ -20,7 +21,7 @@ export default function FailedScreeningNextStep({
           </p>
           <p>
             依頼するときは、撮影ID{" "}
-            <span className="break-all font-mono text-xs">{screeningId}</span>
+            <span className="font-mono text-xs">{formatScreeningId(screeningId)}</span>
             {" "}を伝えてください。管理者は撮影記録一覧でこのIDを検索できます。待ちたくない場合は、もう一度撮影してください。
           </p>
         </div>

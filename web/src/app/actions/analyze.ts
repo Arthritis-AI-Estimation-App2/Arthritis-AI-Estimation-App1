@@ -269,6 +269,7 @@ export async function markInterruptedScreeningFailed(
   revalidatePath("/admin/screenings");
   revalidatePath(`/results/${screeningId}`);
   revalidatePath(`/admin/screenings/${screeningId}`);
+  revalidatePath("/screenings");
   return { error: null };
 }
 

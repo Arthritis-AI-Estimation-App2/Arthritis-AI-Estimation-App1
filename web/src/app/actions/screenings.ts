@@ -12,6 +12,16 @@ import { HAND_IMAGES_BUCKET } from "@/lib/storage";
 import { tryCreateSignedHandImageUrls } from "@/lib/supabase/signed-hand-images";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import {
+  endOfJapanDateExclusive,
+  screeningIdPrefixBounds,
+  startOfJapanDate,
+} from "@/lib/admin-screening-filters";
+import { isUnsatisfiableRange, pageRange, paginationMeta } from "@/lib/staff-pagination";
+import {
+  normalizeStaffScreeningFilters,
+  type StaffScreeningFilters,
+} from "@/lib/staff-screening-filters";
 
 type ActionState = { error: string | null; success: boolean };
 
@@ -208,6 +218,7 @@ export async function abandonScreeningUpload(
 
   revalidatePath("/");
   revalidatePath("/grouping");
+  revalidatePath("/screenings");
   return { error: null };
 }
 
@@ -310,8 +321,104 @@ export async function deleteScreeningAsAdmin(
   revalidatePath("/admin/screenings");
   revalidatePath(`/admin/screenings/${screeningId}`);
   revalidatePath(`/results/${screeningId}`);
+  revalidatePath("/screenings");
   if (screening.subject_id) revalidatePath(`/subjects/${screening.subject_id}`);
   redirect("/admin/screenings");
+}
+
+/** 所属医療機関の撮影記録を検索して1ページ取得 */
+export async function getScreeningsForStaff(filters: StaffScreeningFilters) {
+  const current = await getCurrentUser();
+  const safeFilters = normalizeStaffScreeningFilters({
+    from: typeof filters?.dateFrom === "string" ? filters.dateFrom : undefined,
+    to: typeof filters?.dateTo === "string" ? filters.dateTo : undefined,
+    status: typeof filters?.status === "string" ? filters.status : undefined,
+    subject: typeof filters?.subjectId === "string" ? filters.subjectId : undefined,
+    id:
+      typeof filters?.screeningIdInput === "string" && filters.screeningIdInput
+        ? filters.screeningIdInput
+        : typeof filters?.screeningId === "string"
+          ? filters.screeningId
+          : undefined,
+    page: typeof filters?.page === "number" ? String(filters.page) : undefined,
+  });
+
+  if (!current || current.profile.role !== "clinic_staff") {
+    return { items: [], ...paginationMeta(0, safeFilters.page) };
+  }
+
+  if (
+    safeFilters.screeningIdInput &&
+    !safeFilters.screeningId &&
+    !safeFilters.screeningIdPrefix
+  ) {
+    return { items: [], ...paginationMeta(0, 1) };
+  }
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("screenings")
+    .select(
+      "id, subject_id, created_by, status, total_inflamed_joints, created_at",
+      { count: "exact" }
+    );
+
+  if (safeFilters.status) query = query.eq("status", safeFilters.status);
+  if (safeFilters.subjectId) query = query.eq("subject_id", safeFilters.subjectId);
+  if (safeFilters.screeningId) {
+    query = query.eq("id", safeFilters.screeningId);
+  } else if (safeFilters.screeningIdPrefix) {
+    const { from, to } = screeningIdPrefixBounds(safeFilters.screeningIdPrefix);
+    query = query.gte("id", from).lte("id", to);
+  }
+  if (safeFilters.dateFrom) {
+    query = query.gte("created_at", startOfJapanDate(safeFilters.dateFrom));
+  }
+  if (safeFilters.dateTo) {
+    query = query.lt("created_at", endOfJapanDateExclusive(safeFilters.dateTo));
+  }
+
+  const { firstRow, lastRow } = pageRange(safeFilters.page);
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(firstRow, lastRow);
+  let total = count ?? 0;
+  if (error) {
+    if (!isUnsatisfiableRange(error)) {
+      throwSupabaseError(error, "撮影記録一覧の取得");
+    }
+    let countQuery = supabase
+      .from("screenings")
+      .select("id", { count: "exact", head: true });
+    if (safeFilters.status) countQuery = countQuery.eq("status", safeFilters.status);
+    if (safeFilters.subjectId) {
+      countQuery = countQuery.eq("subject_id", safeFilters.subjectId);
+    }
+    if (safeFilters.screeningId) {
+      countQuery = countQuery.eq("id", safeFilters.screeningId);
+    } else if (safeFilters.screeningIdPrefix) {
+      const { from, to } = screeningIdPrefixBounds(safeFilters.screeningIdPrefix);
+      countQuery = countQuery.gte("id", from).lte("id", to);
+    }
+    if (safeFilters.dateFrom) {
+      countQuery = countQuery.gte("created_at", startOfJapanDate(safeFilters.dateFrom));
+    }
+    if (safeFilters.dateTo) {
+      countQuery = countQuery.lt(
+        "created_at",
+        endOfJapanDateExclusive(safeFilters.dateTo)
+      );
+    }
+    const { count: fallbackCount, error: countError } = await countQuery;
+    if (countError) throwSupabaseError(countError, "撮影記録の件数取得");
+    total = fallbackCount ?? 0;
+  }
+
+  return {
+    items: data ?? [],
+    ...paginationMeta(total, safeFilters.page),
+  };
 }
 
 /** 直近のスクリーニング履歴を取得 */

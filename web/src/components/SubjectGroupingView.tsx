@@ -16,6 +16,7 @@ import {
 } from "@/lib/japan-date-time";
 import type { JointResult, Screening, Subject } from "@/lib/types";
 import PaginationNav from "@/components/PaginationNav";
+import { formatScreeningId } from "@/lib/admin-screening-filters";
 
 type GroupingJoint = Pick<JointResult, "side" | "joint_name" | "is_inflamed">;
 
@@ -248,7 +249,7 @@ export default function SubjectGroupingView({
                             </div>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                               <StatusBadge status={sc.status} />
-                              <span className="text-xs text-muted-foreground">撮影ID: {sc.id.slice(0, 8)}</span>
+                              <span className="text-xs text-muted-foreground">撮影ID: {formatScreeningId(sc.id)}</span>
                             </div>
                             {sc.status === "failed" && (
                               <p className="mt-2 text-xs text-danger-foreground">

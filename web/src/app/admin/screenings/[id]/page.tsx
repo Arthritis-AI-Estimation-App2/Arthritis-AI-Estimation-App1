@@ -12,6 +12,7 @@ import DeleteScreeningForm from "@/components/DeleteScreeningForm";
 import CopyJsonButton from "@/components/CopyJsonButton";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
+import { formatScreeningId } from "@/lib/admin-screening-filters";
 import {
   ANALYSIS_ERROR_LABELS,
   type AnalysisErrorCode,
@@ -61,7 +62,7 @@ export default async function AdminScreeningDetailPage({
           <p>担当者: {staffDisplayName(screening.profiles)}</p>
           <p>撮影日時: {formatJapanDateTime(screening.created_at)}</p>
           <p>
-            撮影ID: <span className="break-all font-mono tracking-tight">{screening.id}</span>
+            撮影ID: <span className="font-mono tracking-tight">{formatScreeningId(screening.id)}</span>
           </p>
         </div>
       </div>

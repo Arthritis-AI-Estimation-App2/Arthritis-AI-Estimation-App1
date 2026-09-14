@@ -81,8 +81,14 @@ export default async function ClinicStaffHomePage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>最近の撮影</CardTitle>
+          <Link
+            href="/screenings"
+            className="text-sm font-medium text-link hover:underline"
+          >
+            すべての撮影記録
+          </Link>
         </CardHeader>
         <CardContent className="p-0">
           {screenings.length === 0 ? (

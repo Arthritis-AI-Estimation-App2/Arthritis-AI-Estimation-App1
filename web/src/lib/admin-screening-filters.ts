@@ -40,7 +40,7 @@ const UUID_PATTERN =
 const SCREENING_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const UUID_TEXT_TEMPLATE = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
-const MIN_SCREENING_ID_PREFIX_HEX = 8;
+export const MIN_SCREENING_ID_PREFIX_HEX = 8;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SCREENING_STATUSES = new Set<ScreeningStatus>(
   SCREENING_STATUS_OPTIONS.map(({ value }) => value)
@@ -93,6 +93,11 @@ export function screeningIdPrefixBounds(prefix: string) {
     to += "f";
   }
   return { from, to };
+}
+
+/** 画面に出す撮影ID。検索と同じ先頭8文字。 */
+export function formatScreeningId(id: string) {
+  return id.slice(0, MIN_SCREENING_ID_PREFIX_HEX);
 }
 
 export function normalizeAdminScreeningFilters(

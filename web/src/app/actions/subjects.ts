@@ -297,6 +297,9 @@ export async function assignScreeningsToSubject(
 
   revalidatePath("/subjects");
   revalidatePath(`/subjects/${subjectId}`);
+  revalidatePath("/");
+  revalidatePath("/grouping");
+  revalidatePath("/screenings");
   return { error: null };
 }
 
@@ -395,6 +398,7 @@ export async function correctScreeningSubject(
   revalidatePath("/");
   revalidatePath("/grouping");
   revalidatePath("/subjects");
+  revalidatePath("/screenings");
   revalidatePath("/admin/screenings");
   revalidatePath(`/results/${screeningId}`);
   revalidatePath(`/admin/screenings/${screeningId}`);

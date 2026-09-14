@@ -4,6 +4,7 @@ import {
   adminScreeningExportHref,
   adminScreeningListHref,
   endOfJapanDateExclusive,
+  formatScreeningId,
   normalizeAdminScreeningFilters,
   screeningIdPrefixBounds,
   startOfJapanDate,
@@ -121,5 +122,12 @@ test("形式が正しくない撮影IDは入力を残し、絞り込みなしに
   assert.equal(
     normalizeAdminScreeningFilters({ id: "09c6191" }).screeningIdPrefix,
     ""
+  );
+});
+
+test("画面の撮影IDは先頭8文字だけを出す", () => {
+  assert.equal(
+    formatScreeningId("09c6191d-386f-42af-9fbe-3881df0cfcd6"),
+    "09c6191d"
   );
 });
