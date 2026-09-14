@@ -5,6 +5,8 @@ substitutions:
 steps:
   - id: require-weights
     name: gcr.io/cloud-builders/gcloud
+    env:
+      - CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=true
     entrypoint: bash
     args:
       - -c

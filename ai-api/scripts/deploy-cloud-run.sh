@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=true
+
 cd "$(dirname "$0")/.."
 
 if [[ $# -lt 3 || $# -gt 4 ]]; then

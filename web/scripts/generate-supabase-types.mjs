@@ -8,7 +8,10 @@ const command = process.platform === "win32" ? "supabase.cmd" : "supabase";
 const result = spawnSync(
   command,
   ["gen", "types", "typescript", "--local", "--schema", "public"],
-  { encoding: "utf8" }
+  {
+    encoding: "utf8",
+    env: { ...process.env, SUPABASE_TELEMETRY_DISABLED: "1" },
+  }
 );
 
 if (result.stderr) process.stderr.write(result.stderr);

@@ -19,6 +19,10 @@
 
 コマンドはすべて `web/` で実行します。
 
+`npm run dev`・`npm run build`・`npm start` は `NEXT_TELEMETRY_DISABLED=1` を指定し、Next.jsのtelemetryを無効にしています。Next.jsのCLIを直接実行する場合も、この環境変数を指定してください。
+
+Supabase CLIは初回に `SUPABASE_TELEMETRY_DISABLED=1 npx supabase telemetry disable` を実行してtelemetryを無効化してください。`npx supabase telemetry status` で確認できます。`npm run types:supabase` は環境変数でもtelemetryを無効化しています。
+
 ### 1. 依存関係のインストール
 
 ```bash
