@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     to: params.get("to") ?? undefined,
     status: params.get("status") ?? undefined,
     subject: params.get("subject") ?? undefined,
+    id: params.get("id") ?? undefined,
     page: "1",
   });
 

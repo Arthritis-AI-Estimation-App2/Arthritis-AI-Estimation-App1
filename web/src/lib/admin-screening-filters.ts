@@ -19,6 +19,9 @@ export type AdminScreeningFilters = {
   dateTo: string;
   status: ScreeningStatus | "";
   subjectId: string;
+  screeningIdInput: string;
+  screeningId: string;
+  screeningIdPrefix: string;
   page: number;
 };
 
@@ -28,11 +31,16 @@ type RawAdminScreeningFilters = {
   to?: string;
   status?: string;
   subject?: string;
+  id?: string;
   page?: string;
 };
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SCREENING_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_TEXT_TEMPLATE = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+const MIN_SCREENING_ID_PREFIX_HEX = 8;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SCREENING_STATUSES = new Set<ScreeningStatus>(
   SCREENING_STATUS_OPTIONS.map(({ value }) => value)
@@ -49,6 +57,44 @@ function validDate(value: string | undefined) {
     : "";
 }
 
+function screeningIdPrefix(value: string) {
+  const lower = value.toLowerCase();
+  if (lower.length === 0 || lower.length > UUID_TEXT_TEMPLATE.length) return "";
+  for (let index = 0; index < lower.length; index += 1) {
+    const expected = UUID_TEXT_TEMPLATE[index];
+    const actual = lower[index];
+    if (expected === "-") {
+      if (actual !== "-") return "";
+      continue;
+    }
+    if (!/[0-9a-f]/.test(actual)) return "";
+  }
+  const hexCount = lower.replaceAll("-", "").length;
+  return hexCount >= MIN_SCREENING_ID_PREFIX_HEX ? lower : "";
+}
+
+/** 撮影IDの先頭一致を、UUIDの大小比較で表す。 */
+export function screeningIdPrefixBounds(prefix: string) {
+  let from = "";
+  let to = "";
+  for (let index = 0; index < UUID_TEXT_TEMPLATE.length; index += 1) {
+    const expected = UUID_TEXT_TEMPLATE[index];
+    if (index < prefix.length) {
+      from += prefix[index];
+      to += prefix[index];
+      continue;
+    }
+    if (expected === "-") {
+      from += "-";
+      to += "-";
+      continue;
+    }
+    from += "0";
+    to += "f";
+  }
+  return { from, to };
+}
+
 export function normalizeAdminScreeningFilters(
   raw: RawAdminScreeningFilters
 ): AdminScreeningFilters {
@@ -57,12 +103,20 @@ export function normalizeAdminScreeningFilters(
     : "";
   const parsedPage = Number.parseInt(raw.page ?? "", 10);
 
+  const screeningIdInput = (raw.id ?? "").trim().slice(0, 100);
+  const screeningId = SCREENING_ID_PATTERN.test(screeningIdInput)
+    ? screeningIdInput.toLowerCase()
+    : "";
+
   return {
     clinicId: raw.clinic && UUID_PATTERN.test(raw.clinic) ? raw.clinic : "",
     dateFrom: validDate(raw.from),
     dateTo: validDate(raw.to),
     status,
     subjectId: (raw.subject ?? "").trim().slice(0, 100),
+    screeningIdInput,
+    screeningId,
+    screeningIdPrefix: screeningId ? "" : screeningIdPrefix(screeningIdInput),
     page: Number.isSafeInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1,
   };
 }
@@ -94,6 +148,7 @@ export function adminScreeningListHref(
   if (filters.dateTo) params.set("to", filters.dateTo);
   if (filters.status) params.set("status", filters.status);
   if (filters.subjectId) params.set("subject", filters.subjectId);
+  if (filters.screeningIdInput) params.set("id", filters.screeningIdInput);
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `/admin/screenings?${query}` : "/admin/screenings";

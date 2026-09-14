@@ -14,6 +14,7 @@ import {
   ADMIN_SCREENINGS_PAGE_SIZE,
   endOfJapanDateExclusive,
   normalizeAdminScreeningFilters,
+  screeningIdPrefixBounds,
   startOfJapanDate,
   type AdminScreeningFilters,
 } from "@/lib/admin-screening-filters";
@@ -971,12 +972,28 @@ export async function getScreeningsForAdmin(
     to: typeof filters?.dateTo === "string" ? filters.dateTo : undefined,
     status: typeof filters?.status === "string" ? filters.status : undefined,
     subject: typeof filters?.subjectId === "string" ? filters.subjectId : undefined,
+    id:
+      typeof filters?.screeningIdInput === "string" && filters.screeningIdInput
+        ? filters.screeningIdInput
+        : typeof filters?.screeningId === "string"
+          ? filters.screeningId
+          : undefined,
     page: typeof filters?.page === "number" ? String(filters.page) : undefined,
   });
   const pageSize =
     Number.isSafeInteger(requestedPageSize) && requestedPageSize > 0
       ? Math.min(requestedPageSize, 1000)
       : ADMIN_SCREENINGS_PAGE_SIZE;
+
+  if (safeFilters.screeningIdInput && !safeFilters.screeningId && !safeFilters.screeningIdPrefix) {
+    return {
+      screenings: [],
+      total: 0,
+      page: 1,
+      pageSize,
+      totalPages: 1,
+    };
+  }
 
   let subjectIds: string[] | null = null;
   let staffIds: string[] | null = null;
@@ -1027,6 +1044,12 @@ export async function getScreeningsForAdmin(
   }
   if (safeFilters.status) query = query.eq("status", safeFilters.status);
   if (safeFilters.subjectId) query = query.eq("subject_id", safeFilters.subjectId);
+  if (safeFilters.screeningId) {
+    query = query.eq("id", safeFilters.screeningId);
+  } else if (safeFilters.screeningIdPrefix) {
+    const { from, to } = screeningIdPrefixBounds(safeFilters.screeningIdPrefix);
+    query = query.gte("id", from).lte("id", to);
+  }
   if (safeFilters.dateFrom) {
     query = query.gte("created_at", startOfJapanDate(safeFilters.dateFrom));
   }

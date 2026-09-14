@@ -5,6 +5,7 @@ import {
   adminScreeningListHref,
   endOfJapanDateExclusive,
   normalizeAdminScreeningFilters,
+  screeningIdPrefixBounds,
   startOfJapanDate,
 } from "../src/lib/admin-screening-filters.ts";
 
@@ -24,6 +25,9 @@ test("一覧の検索条件を正規化する", () => {
       dateTo: "",
       status: "completed",
       subjectId: "keio47",
+      screeningIdInput: "",
+      screeningId: "",
+      screeningIdPrefix: "",
       page: 3,
     }
   );
@@ -43,6 +47,9 @@ test("不正な検索条件には安全な既定値を使う", () => {
       dateTo: "",
       status: "",
       subjectId: "",
+      screeningIdInput: "",
+      screeningId: "",
+      screeningIdPrefix: "",
       page: 1,
     }
   );
@@ -70,5 +77,49 @@ test("ページリンクは検索条件を維持し、1ページ目はpageを省
   assert.equal(
     adminScreeningExportHref(filters),
     "/admin/screenings/export?status=failed&subject=keio+1"
+  );
+});
+
+test("撮影IDはUUIDだけを残し、一覧とCSVのURLに載せる", () => {
+  const filters = normalizeAdminScreeningFilters({
+    id: "  5F0E2EB8-622E-446E-94F3-D6C89F52056C  ",
+  });
+  assert.equal(filters.screeningIdInput, "5F0E2EB8-622E-446E-94F3-D6C89F52056C");
+  assert.equal(filters.screeningId, "5f0e2eb8-622e-446e-94f3-d6c89f52056c");
+  assert.equal(filters.screeningIdPrefix, "");
+  assert.equal(
+    adminScreeningListHref(filters, 1),
+    "/admin/screenings?id=5F0E2EB8-622E-446E-94F3-D6C89F52056C"
+  );
+  assert.equal(
+    adminScreeningExportHref(filters),
+    "/admin/screenings/export?id=5F0E2EB8-622E-446E-94F3-D6C89F52056C"
+  );
+});
+
+test("撮影IDの先頭8文字は部分一致の検索条件になる", () => {
+  const filters = normalizeAdminScreeningFilters({ id: "09C6191D" });
+  assert.equal(filters.screeningIdInput, "09C6191D");
+  assert.equal(filters.screeningId, "");
+  assert.equal(filters.screeningIdPrefix, "09c6191d");
+  assert.deepEqual(screeningIdPrefixBounds(filters.screeningIdPrefix), {
+    from: "09c6191d-0000-0000-0000-000000000000",
+    to: "09c6191d-ffff-ffff-ffff-ffffffffffff",
+  });
+});
+
+test("形式が正しくない撮影IDは入力を残し、絞り込みなしにはしない", () => {
+  const filters = normalizeAdminScreeningFilters({ id: "keio1" });
+  assert.equal(filters.screeningIdInput, "keio1");
+  assert.equal(filters.screeningId, "");
+  assert.equal(filters.screeningIdPrefix, "");
+  assert.equal(adminScreeningListHref(filters, 1), "/admin/screenings?id=keio1");
+  assert.equal(
+    adminScreeningExportHref(filters),
+    "/admin/screenings/export?id=keio1"
+  );
+  assert.equal(
+    normalizeAdminScreeningFilters({ id: "09c6191" }).screeningIdPrefix,
+    ""
   );
 });

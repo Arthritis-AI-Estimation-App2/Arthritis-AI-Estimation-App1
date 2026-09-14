@@ -41,6 +41,7 @@ export default async function AdminScreeningsPage({
     to: firstValue(rawParams.to),
     status: firstValue(rawParams.status),
     subject: firstValue(rawParams.subject),
+    id: firstValue(rawParams.id),
     page: firstValue(rawParams.page),
   });
   const [{ screenings, total, page, pageSize, totalPages }, clinics] =
@@ -49,16 +50,32 @@ export default async function AdminScreeningsPage({
   if (filters.page > totalPages) {
     redirect(adminScreeningListHref(filters, totalPages));
   }
+  if (
+    (filters.screeningId || filters.screeningIdPrefix) &&
+    !filters.clinicId &&
+    !filters.dateFrom &&
+    !filters.dateTo &&
+    !filters.status &&
+    !filters.subjectId &&
+    total === 1 &&
+    screenings[0]
+  ) {
+    redirect(`/admin/screenings/${screenings[0].id}`);
+  }
 
   const hasFilters = Boolean(
     filters.clinicId ||
       filters.dateFrom ||
       filters.dateTo ||
       filters.status ||
-      filters.subjectId
+      filters.subjectId ||
+      filters.screeningIdInput
   );
   const invalidDateRange = Boolean(
     filters.dateFrom && filters.dateTo && filters.dateFrom > filters.dateTo
+  );
+  const invalidScreeningId = Boolean(
+    filters.screeningIdInput && !filters.screeningId && !filters.screeningIdPrefix
   );
   const activeFilterCount = [
     filters.clinicId,
@@ -66,6 +83,7 @@ export default async function AdminScreeningsPage({
     filters.dateTo,
     filters.status,
     filters.subjectId,
+    filters.screeningIdInput,
   ].filter(Boolean).length;
   const firstResult = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastResult = Math.min(page * pageSize, total);
@@ -92,13 +110,27 @@ export default async function AdminScreeningsPage({
 
   const filterForm = (
     <>
-      <form method="get" className="mt-3 grid items-end gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-3 xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
+      <form method="get" className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <label className="min-w-0 text-xs font-medium text-muted-foreground sm:col-span-2 lg:col-span-3">
+          撮影ID
+          <input
+            type="search"
+            name="id"
+            defaultValue={filters.screeningIdInput}
+            placeholder="例: 09c6191d"
+            spellCheck={false}
+            autoComplete="off"
+            aria-invalid={invalidScreeningId || undefined}
+            className="mt-1 block h-9 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 font-mono text-sm text-foreground placeholder:font-sans placeholder:text-subtle-foreground"
+          />
+        </label>
+
         <label className="min-w-0 text-xs font-medium text-muted-foreground">
           医療機関
           <select
             name="clinic"
             defaultValue={filters.clinicId}
-            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9"
+            className="mt-1 block h-9 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground"
           >
             <option value="">すべて</option>
             {clinics.map((clinic) => (
@@ -115,7 +147,7 @@ export default async function AdminScreeningsPage({
             type="date"
             name="from"
             defaultValue={filters.dateFrom}
-            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9"
+            className="mt-1 block h-9 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground"
           />
         </label>
 
@@ -125,7 +157,7 @@ export default async function AdminScreeningsPage({
             type="date"
             name="to"
             defaultValue={filters.dateTo}
-            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9"
+            className="mt-1 block h-9 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground"
           />
         </label>
 
@@ -134,7 +166,7 @@ export default async function AdminScreeningsPage({
           <select
             name="status"
             defaultValue={filters.status}
-            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9"
+            className="mt-1 block h-9 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground"
           >
             <option value="">すべて</option>
             {SCREENING_STATUS_OPTIONS.map((option) => (
@@ -152,21 +184,21 @@ export default async function AdminScreeningsPage({
             name="subject"
             defaultValue={filters.subjectId}
             placeholder="例: keio47"
-            className="mt-1 block h-10 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground lg:h-9 placeholder:text-subtle-foreground"
+            className="mt-1 block h-9 w-full min-w-0 rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-foreground placeholder:text-subtle-foreground"
           />
         </label>
 
-        <div className="flex min-h-10 items-center gap-2 lg:min-h-9">
+        <div className="flex min-h-9 items-center gap-2">
           <button
             type="submit"
-            className="inline-flex h-10 shrink-0 items-center rounded-md bg-primary px-3 text-sm lg:h-9 font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+            className="inline-flex h-9 shrink-0 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             絞り込む
           </button>
           {hasFilters && (
             <Link
               href="/admin/screenings"
-              className="inline-flex h-10 shrink-0 items-center rounded-md px-2 text-xs font-medium text-secondary-foreground hover:bg-surface-hover lg:h-9"
+              className="inline-flex h-9 shrink-0 items-center rounded-md px-2 text-xs font-medium text-secondary-foreground hover:bg-surface-hover"
             >
               条件をクリア
             </Link>
@@ -174,8 +206,13 @@ export default async function AdminScreeningsPage({
         </div>
       </form>
       {invalidDateRange && (
-        <p className="mt-3 text-sm font-medium text-danger-foreground" role="alert">
+        <p className="mt-2 text-sm font-medium text-danger-foreground" role="alert">
           撮影日の開始日は、終了日以前の日付を指定してください。
+        </p>
+      )}
+      {invalidScreeningId && (
+        <p className="mt-2 text-sm font-medium text-danger-foreground" role="alert">
+          撮影IDは先頭から8文字以上のUUIDで入力してください。
         </p>
       )}
     </>
@@ -192,35 +229,31 @@ export default async function AdminScreeningsPage({
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-3">
+      <div className="rounded-lg border border-border bg-surface">
         <details
-          className="group lg:hidden"
-          open={hasFilters || invalidDateRange}
+          className="group"
+          {...(invalidDateRange || invalidScreeningId ? { open: true } : {})}
         >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-1 py-1 text-sm font-semibold text-secondary-foreground marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
-            <span>絞り込み条件</span>
-            <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              {activeFilterCount > 0 && (
-                <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-primary-subtle-foreground">
-                  {activeFilterCount}件を適用中
-                </span>
-              )}
-              <svg
-                aria-hidden="true"
-                className="h-4 w-4 transition-transform group-open:rotate-180"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
-              </svg>
-            </span>
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium text-secondary-foreground marker:content-none hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
+            <span>絞り込み</span>
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-medium text-primary-subtle-foreground">
+                {activeFilterCount}件を適用中
+              </span>
+            )}
+            <svg
+              aria-hidden="true"
+              className="ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+            </svg>
           </summary>
-
-          {filterForm}
+          <div className="border-t border-border px-3 py-3">{filterForm}</div>
         </details>
-        <div className="hidden lg:block">{filterForm}</div>
       </div>
 
       <Card>
