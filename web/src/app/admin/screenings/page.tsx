@@ -9,6 +9,7 @@ import {
   SCREENING_STATUS_OPTIONS,
   adminScreeningExportHref,
   adminScreeningListHref,
+  formatScreeningId,
   normalizeAdminScreeningFilters,
 } from "@/lib/admin-screening-filters";
 import { isStaleProcessing } from "@/lib/screening-staleness";
@@ -295,6 +296,9 @@ export default async function AdminScreeningsPage({
                           {row.clinicName}
                         </p>
                         <p className="font-mono text-xs tracking-tight text-secondary-foreground">
+                          撮影ID: {formatScreeningId(row.id)}
+                        </p>
+                        <p className="font-mono text-xs tracking-tight text-secondary-foreground">
                           被験者ID: {row.subjectId}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -325,6 +329,7 @@ export default async function AdminScreeningsPage({
                   <thead className="border-b bg-surface-muted text-xs font-semibold uppercase text-secondary-foreground">
                     <tr>
                       <th className="px-4 py-3">医療機関</th>
+                      <th className="px-4 py-3">撮影ID</th>
                       <th className="px-4 py-3">被験者ID</th>
                       <th className="px-4 py-3">撮影日時</th>
                       <th className="px-4 py-3">担当スタッフ</th>
@@ -338,6 +343,9 @@ export default async function AdminScreeningsPage({
                       <tr key={row.id} className="relative transition-colors hover:bg-surface-hover">
                         <td className="px-4 py-3 font-medium text-foreground">
                           {row.clinicName}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs tracking-tight">
+                          {formatScreeningId(row.id)}
                         </td>
                         <td className="px-4 py-3 font-mono text-xs tracking-tight">
                           {row.subjectId}
@@ -356,7 +364,7 @@ export default async function AdminScreeningsPage({
                         <td className="px-4 py-3 text-right">
                           <Link
                             href={row.href}
-                            aria-label={`被験者ID ${row.subjectId}、${row.capturedAt}の撮影記録の詳細を見る`}
+                            aria-label={`撮影ID ${formatScreeningId(row.id)}、被験者ID ${row.subjectId}、${row.capturedAt}の撮影記録の詳細を見る`}
                             className="after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-focus"
                           >
                             <NavigationHint>詳細</NavigationHint>

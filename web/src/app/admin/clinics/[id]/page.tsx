@@ -5,6 +5,7 @@ import PaginationNav from "@/components/PaginationNav";
 import StatusBadge from "@/components/StatusBadge";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { formatScreeningId } from "@/lib/admin-screening-filters";
 import { formatJapanDate, formatJapanDateTime } from "@/lib/japan-date-time";
 import {
   normalizePage,
@@ -132,6 +133,9 @@ export default async function ClinicDetailPage({
                     >
                       <div className="min-w-0 space-y-1">
                         <p className="font-mono text-sm font-medium tracking-tight text-foreground">
+                          撮影ID: {formatScreeningId(row.id)}
+                        </p>
+                        <p className="font-mono text-xs tracking-tight text-secondary-foreground">
                           被験者ID: {row.subjectId}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -156,6 +160,7 @@ export default async function ClinicDetailPage({
                 <table className="w-full text-left text-sm text-secondary-foreground">
                   <thead className="border-b bg-surface-muted text-xs font-semibold uppercase text-secondary-foreground">
                     <tr>
+                      <th className="px-4 py-3">撮影ID</th>
                       <th className="px-4 py-3">被験者ID</th>
                       <th className="px-4 py-3">撮影日時</th>
                       <th className="px-4 py-3">担当スタッフ</th>
@@ -168,6 +173,9 @@ export default async function ClinicDetailPage({
                     {screeningRows.map((row) => (
                       <tr key={row.id} className="relative transition-colors hover:bg-surface-hover">
                         <td className="px-4 py-3 font-mono text-xs tracking-tight">
+                          {formatScreeningId(row.id)}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs tracking-tight">
                           {row.subjectId}
                         </td>
                         <td className="px-4 py-3 text-xs">{row.capturedAt}</td>
@@ -179,7 +187,7 @@ export default async function ClinicDetailPage({
                         <td className="px-4 py-3 text-right">
                           <Link
                             href={row.href}
-                            aria-label={`被験者ID ${row.subjectId}、${row.capturedAt}の撮影記録の詳細を見る`}
+                            aria-label={`撮影ID ${formatScreeningId(row.id)}、被験者ID ${row.subjectId}、${row.capturedAt}の撮影記録の詳細を見る`}
                             className="after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-focus"
                           >
                             <NavigationHint>詳細</NavigationHint>
