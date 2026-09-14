@@ -1,25 +1,47 @@
 import NavigationHint from "@/components/ui/NavigationHint";
 import BackLink from "@/components/ui/BackLink";
 import { getClinicDetail } from "@/app/actions/admin";
+import PaginationNav from "@/components/PaginationNav";
 import StatusBadge from "@/components/StatusBadge";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatJapanDate, formatJapanDateTime } from "@/lib/japan-date-time";
+import {
+  normalizePage,
+  paginatedListHref,
+} from "@/lib/staff-pagination";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export const metadata = { title: "医療機関の詳細 | 管理画面" };
 
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+function firstValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default async function ClinicDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: SearchParams;
 }) {
   const { id } = await params;
-  const detail = await getClinicDetail(id);
+  const rawParams = await searchParams;
+  const requestedPage = normalizePage(firstValue(rawParams.page));
+  const detail = await getClinicDetail(id, requestedPage);
   if (!detail) notFound();
 
-  const { clinic, staffs, screenings } = detail;
+  const pathname = `/admin/clinics/${id}`;
+  if (requestedPage > detail.totalPages) {
+    redirect(paginatedListHref(pathname, detail.totalPages));
+  }
+
+  const { clinic, staffs, screenings, total, page, pageSize, totalPages } = detail;
+  const firstResult = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastResult = Math.min(page * pageSize, total);
 
   const screeningRows = screenings.map((s) => ({
     id: s.id,
@@ -94,13 +116,16 @@ export default async function ClinicDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>撮影記録 ({screenings.length}件)</CardTitle>
+          <CardTitle>撮影記録 ({total}件)</CardTitle>
         </CardHeader>
         <CardContent>
-          {screenings.length === 0 ? (
+          {total === 0 ? (
             <p className="text-sm text-muted-foreground">撮影記録はありません。</p>
           ) : (
             <>
+              <p className="mb-4 text-sm text-secondary-foreground">
+                {total}件中 {firstResult}〜{lastResult}件を表示
+              </p>
               <ul className="-mx-5 divide-y divide-border border-y border-border lg:hidden">
                 {screeningRows.map((row) => (
                   <li key={row.id}>
@@ -168,6 +193,12 @@ export default async function ClinicDetailPage({
                   </tbody>
                 </table>
               </div>
+              <PaginationNav
+                page={page}
+                totalPages={totalPages}
+                pathname={pathname}
+                ariaLabel="撮影記録のページ移動"
+              />
             </>
           )}
         </CardContent>

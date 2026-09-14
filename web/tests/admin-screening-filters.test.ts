@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   adminScreeningExportHref,
   adminScreeningListHref,
+  clinicScreeningOrFilter,
   endOfJapanDateExclusive,
   formatScreeningId,
   normalizeAdminScreeningFilters,
@@ -130,4 +131,16 @@ test("画面の撮影IDは先頭8文字だけを出す", () => {
     formatScreeningId("09c6191d-386f-42af-9fbe-3881df0cfcd6"),
     "09c6191d"
   );
+});
+
+test("医療機関の撮影記録は割り当て済みと未割り当てをORで結ぶ", () => {
+  assert.equal(
+    clinicScreeningOrFilter(["sub-1"], ["staff-1", "staff-2"]),
+    "subject_id.in.(sub-1),and(subject_id.is.null,created_by.in.(staff-1,staff-2))"
+  );
+  assert.equal(
+    clinicScreeningOrFilter([], ["staff-1"]),
+    "and(subject_id.is.null,created_by.in.(staff-1))"
+  );
+  assert.equal(clinicScreeningOrFilter(["sub-1"], []), "subject_id.in.(sub-1)");
 });

@@ -50,4 +50,12 @@ test("ページURLは検索語を維持し1ページ目ではpageを省略する
     "/subjects?q=keio47"
   );
   assert.equal(paginatedListHref("/grouping", 1), "/grouping");
+  assert.equal(
+    paginatedListHref("/admin/clinics/825b641d-26cd-43d8-9bec-ff775d6e6d88", 2),
+    "/admin/clinics/825b641d-26cd-43d8-9bec-ff775d6e6d88?page=2"
+  );
+  assert.equal(
+    paginatedListHref("/admin/clinics/825b641d-26cd-43d8-9bec-ff775d6e6d88", 1),
+    "/admin/clinics/825b641d-26cd-43d8-9bec-ff775d6e6d88"
+  );
 });
