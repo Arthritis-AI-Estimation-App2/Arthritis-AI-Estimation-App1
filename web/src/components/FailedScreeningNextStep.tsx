@@ -20,9 +20,13 @@ export default function FailedScreeningNextStep({
             AI解析に失敗しました。画像は残っているので、本部の管理者にこの撮影の再解析を依頼できます。
           </p>
           <p>
-            依頼するときは、撮影ID{" "}
+            撮影ID{" "}
             <span className="font-mono text-xs">{formatScreeningId(screeningId)}</span>
-            {" "}を伝えてください。管理者は撮影記録一覧でこのIDを検索できます。待ちたくない場合は、もう一度撮影してください。
+            は、
+            <Link href="/screenings" className="font-medium underline underline-offset-2">
+              撮影記録一覧
+            </Link>
+            で探せます。管理者へ再解析を依頼するときも、このIDを伝えてください。待ちたくない場合は、もう一度撮影してください。
           </p>
         </div>
       ) : (
