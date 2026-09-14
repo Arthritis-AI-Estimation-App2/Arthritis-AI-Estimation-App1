@@ -24,7 +24,7 @@ export default async function ClinicsPage() {
         </div>
 
         <div>
-          <h2 className="mb-3 text-lg font-bold text-foreground">登録済みの医療機関一覧 ({clinics.length}件)</h2>
+          <h2 className="mb-3 text-lg font-bold text-foreground">登録済みの医療機関一覧 ({clinics.length}施設)</h2>
           <Card>
             <CardContent>
               {clinics.length === 0 ? (

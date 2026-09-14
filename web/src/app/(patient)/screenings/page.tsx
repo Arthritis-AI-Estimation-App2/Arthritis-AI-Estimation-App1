@@ -190,7 +190,7 @@ export default async function StaffScreeningsPage({
             <span>絞り込み</span>
             {activeFilterCount > 0 && (
               <span className="rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-medium text-primary-subtle-foreground">
-                {activeFilterCount}件を適用中
+                {activeFilterCount}項目を適用中
               </span>
             )}
             <svg

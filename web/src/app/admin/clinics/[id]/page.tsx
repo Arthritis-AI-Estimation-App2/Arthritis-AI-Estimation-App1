@@ -75,7 +75,7 @@ export default async function ClinicDetailPage({
 
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle>所属スタッフ ({staffs.length}件)</CardTitle>
+          <CardTitle>所属スタッフ ({staffs.length}人)</CardTitle>
           <Link href={`/admin/staffs/new?clinic_id=${clinic.id}`}>
             <Button size="sm" className="whitespace-nowrap">
               ＋ スタッフアカウント発行
