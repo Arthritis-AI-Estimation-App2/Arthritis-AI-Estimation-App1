@@ -57,7 +57,7 @@ export default function ScreeningResult({
                 ? "関節炎スクリーニング判定: 陽性"
                 : "関節炎スクリーニング判定: 陰性"}
             <p className="mt-1 text-xs font-normal opacity-80">
-              この判定はスクリーニング結果であり、診断結果ではありません。
+              両手をまとめたスクリーニング結果であり、診断ではありません。関節ごとの所見は下にあります。
             </p>
           </div>
         </>
@@ -98,12 +98,18 @@ export default function ScreeningResult({
               保存された解析情報の一部を表示できません。
             </p>
           )}
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
             <h2 className="text-lg font-bold text-foreground">関節別の解析結果</h2>
-            <p className="text-sm text-secondary-foreground">
-              陽性関節数: <span className="font-semibold text-foreground">
-                {totalPositiveJoints === null ? "未提供" : `${totalPositiveJoints} 箇所`}
+            <p className="mt-1 text-sm text-secondary-foreground">
+              陽性関節数:{" "}
+              <span className="font-semibold text-foreground">
+                {totalPositiveJoints === null ? "未提供" : `${totalPositiveJoints}箇所`}
               </span>
+              {raDetected === false &&
+              totalPositiveJoints != null &&
+              totalPositiveJoints > 0
+                ? "。両手をまとめた判定とは基準が異なるため、判定が陰性でも陽性関節が出ることがあります。"
+                : null}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -116,10 +122,10 @@ export default function ScreeningResult({
                   <h3 className="font-semibold">{label}の解析結果</h3>
                   <dl className="mt-3 space-y-2 text-sm">
                     {[
-                      ["判定", summary ? (summary.ra_detected ? "陽性" : "陰性") : "未提供"],
+                      ["手全体の判定", summary ? (summary.ra_detected ? "陽性" : "陰性") : "未提供"],
                       ["手全体の陽性確率", formatProbability(summary?.hand_probability) ?? "未提供"],
-                      ["陽性関節数", summary ? `${summary.num_positive_joints} 箇所` : "未提供"],
-                      ["検出関節数", summary ? `${summary.num_joints_detected} 箇所` : "未提供"],
+                      ["陽性関節数", summary ? `${summary.num_positive_joints}箇所` : "未提供"],
+                      ["検出関節数", summary ? `${summary.num_joints_detected}箇所` : "未提供"],
                     ].map(([name, value]) => (
                       <div key={name} className="flex flex-wrap justify-between gap-x-3">
                         <dt className="text-muted-foreground">{name}</dt><dd>{value}</dd>
