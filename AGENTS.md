@@ -14,16 +14,16 @@
 - Server Actionは公開されたサーバー側入口であり、`"use server"`だけでは認可されない。各Actionで入力値と権限を検証する。
 - `clinic_staff`は所属医療機関のデータのみ、`admin`は全医療機関を扱える。
 - `is_active = false`のユーザーは、Server ActionだけでなくRLSとStorageポリシーでも拒否する。
-- 読み取りは、Cookieセッション付きの通常クライアント（Anon Key）とRLSを使う。RLSを最終的な認可境界とする。
+- 読み取りは、Cookieセッション付きの通常クライアント（Publishable key）とRLSを使う。RLSを最終的な認可境界とする。
 - `screenings` / `joint_results`の書き込みと、解析確定・再解析・被験者ID訂正などのRPCはService Roleを使う。Service RoleはRLSを迂回するため、使用前に必ず認証・`is_active`・ロール・対象テナントを確認する。
-- `SUPABASE_SERVICE_ROLE_KEY`と`AI_API_KEY`はブラウザへ公開しない。
+- `SUPABASE_SECRET_KEY`と`AI_API_KEY`はブラウザへ公開しない。
 - 新しいテーブル、Storage操作、直接Supabaseアクセスを追加する場合は、アプリ側のチェックだけでなくRLS／Storageポリシーも確認する。
 
 クライアントは次の3つだけを使う。
 
 - `web/src/lib/supabase/server.ts`: Cookieセッション付きの通常クライアント
 - `web/src/lib/supabase/client.ts`: 撮影画面のAuth確認とStorage画像アップロード
-- `web/src/lib/supabase/admin.ts`: Service Roleクライアント。クライアント側からimportしない
+- `web/src/lib/supabase/admin.ts`: Secret keyを使うService Roleクライアント。クライアント側からimportしない
 
 ## 手画像と解析
 

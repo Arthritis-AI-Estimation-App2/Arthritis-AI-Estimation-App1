@@ -63,14 +63,16 @@ set role = 'admin',
 cp .env.example .env.local
 ```
 
-`.env.local` にSupabaseのURL・Anon Key・Service Role Keyを設定してください。`SUPABASE_SERVICE_ROLE_KEY` はアカウント発行・メールアドレス変更・パスワード再設定などのServer Actionからのみ使用し、ブラウザへ公開しないでください。
+`.env.local` にSupabaseのURL・Publishable key・Secret keyを設定してください。`SUPABASE_SECRET_KEY` はアカウント発行・メールアドレス変更・パスワード再設定などのServer Actionからのみ使用し、ブラウザへ公開しないでください。
 
-ローカルSupabaseを使う場合は `npx supabase start` のあと、`npx supabase status` の API URL・anon key・service_role key を書きます。
+ホスト済みプロジェクトでは Settings > API Keys から Publishable key（`sb_publishable_...`）と Secret key（`sb_secret_...`）を取得し、なければ作成します。環境変数は `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` と `SUPABASE_SECRET_KEY` を使います。従来の `anon` / `service_role` キーはレガシー形式であり、単なる名称変更ではありません（[公式ドキュメント](https://supabase.com/docs/guides/getting-started/api-keys)）。
+
+ローカルSupabaseを使う場合は `npx supabase start` のあと、`npx supabase status` の API URL・Publishable key・Secret key を書きます。旧CLIで新形式が表示されない場合はanon key・service_role keyを使います。
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+SUPABASE_SECRET_KEY=your-secret-key
 AI_API_URL=
 AI_API_KEY=
 ```
@@ -177,8 +179,8 @@ npm run test:rls
 
 ```env
 TEST_SUPABASE_URL=https://<test-project-ref>.supabase.co
-TEST_SUPABASE_ANON_KEY=<test-anon-key>
-TEST_SUPABASE_SERVICE_ROLE_KEY=<test-service-role-key>
+TEST_SUPABASE_PUBLISHABLE_KEY=<test-publishable-key>
+TEST_SUPABASE_SECRET_KEY=<test-secret-key>
 ```
 
 テストは一時的に2施設・4ユーザー・撮影記録・Storageオブジェクトを作成し、終了時に削除します。未認証アクセスの拒否、施設間のDB/Storage隔離、スタッフによる権限昇格・診断結果改ざんの拒否、管理者アクセス、解析開始後の画像削除拒否、無効化アカウントのDB/Storage拒否を確認します。アップロード時の状態・パス制限と、片手だけ保存された場合・両手とも未保存の場合の後片付け、管理者による完了済み記録の完全物理削除も実際のServer ActionとStorageで検証します。
