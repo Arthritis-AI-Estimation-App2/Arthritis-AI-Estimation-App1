@@ -184,7 +184,7 @@ export default async function StaffScreeningsPage({
       <div className="rounded-lg border border-border bg-surface">
         <details
           className="group"
-          {...(invalidDateRange || invalidScreeningId ? { open: true } : {})}
+          {...(hasFilters ? { open: true } : {})}
         >
           <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium text-secondary-foreground marker:content-none hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
             <span>絞り込み</span>
