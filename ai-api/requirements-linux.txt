@@ -3,10 +3,10 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 numpy==1.26.4
 Pillow==10.4.0
-requests==2.32.3
+requests==2.34.2
 torch==2.3.1+cpu
 torchvision==0.18.1+cpu
 torch-geometric==2.5.3
 mediapipe==0.10.14
-fastapi==0.115.12
-uvicorn[standard]==0.30.6
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
