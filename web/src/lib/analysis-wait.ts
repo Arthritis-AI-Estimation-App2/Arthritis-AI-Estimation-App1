@@ -75,7 +75,7 @@ export function getAnalysisWaitCopy(
   if (elapsed < ANALYSIS_WAIT_SLOW_AFTER_MS) {
     return {
       title: "画像を解析しています",
-      detail: "通常は数秒で完了します",
+      detail: "まもなく完了します",
     };
   }
 
