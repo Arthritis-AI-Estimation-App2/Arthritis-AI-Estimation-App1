@@ -7,10 +7,6 @@ import { formatJapanDateTime } from "@/lib/japan-date-time";
 
 export const metadata = { title: "ホーム | 関節炎スクリーニング" };
 
-function formatDate(iso: string) {
-  return formatJapanDateTime(iso);
-}
-
 function CameraIcon() {
   return (
     <svg
@@ -103,32 +99,34 @@ export default async function ClinicStaffHomePage() {
                 <li key={s.id}>
                   <Link
                     href={`/results/${s.id}`}
-                    className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-4 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-4"
                   >
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                       {s.subject_id ? (
                         <p className="font-mono text-sm text-foreground">{s.subject_id}</p>
                       ) : (
                         <p className="text-sm text-muted-foreground">未割り当て</p>
                       )}
-                      <p className="text-xs text-muted-foreground">{formatDate(s.created_at)}</p>
+                      <p className="whitespace-nowrap text-xs text-muted-foreground">
+                        {formatJapanDateTime(s.created_at)}
+                      </p>
                       {s.status === "failed" && (
                         <p className="text-xs text-danger-foreground">
                           再撮影するか、詳細から次の操作を確認
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-wrap items-center justify-end gap-2">
-                        {s.status === "completed" && (
-                          <span className="text-xs font-medium text-secondary-foreground">
-                            陽性関節数: {s.total_inflamed_joints}箇所
-                          </span>
-                        )}
-                        <StatusBadge status={s.status} />
-                      </div>
-                      <NavigationHint>詳細</NavigationHint>
+                    <div className="col-start-1 flex flex-wrap items-center gap-2 pt-0.5 sm:col-start-2 sm:pt-0">
+                      <StatusBadge status={s.status} />
+                      {s.status === "completed" && (
+                        <span className="whitespace-nowrap text-xs font-medium text-secondary-foreground">
+                          陽性関節数: {s.total_inflamed_joints}箇所
+                        </span>
+                      )}
                     </div>
+                    <span className="col-start-2 row-start-1 row-span-2 self-center sm:col-start-3 sm:row-span-1">
+                      <NavigationHint>詳細</NavigationHint>
+                    </span>
                   </Link>
                 </li>
               ))}
