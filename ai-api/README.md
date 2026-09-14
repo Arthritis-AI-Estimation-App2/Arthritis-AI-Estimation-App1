@@ -2,7 +2,7 @@
 
 手の写真（RGB画像）から、関節リウマチ(RA)による関節炎症の有無を関節ごとに判定するモデルの推論コード一式です。
 
-HTTP API の契約の正は [`contract/`](../contract/) です。解説は [`docs/ai_api_contract.md`](../docs/ai_api_contract.md) です。リポジトリ全体の入口は [../README.md](../README.md) です。
+HTTP API契約の正本は [`contract/`](../contract/) です。解説は [`docs/ai_api_contract.md`](../docs/ai_api_contract.md) を参照してください。リポジトリ全体の説明は [../README.md](../README.md) を参照してください。
 
 ## フォルダ構成
 
@@ -10,7 +10,11 @@ HTTP API の契約の正は [`contract/`](../contract/) です。解説は [`doc
 ai-api/
 ├── api.py                    FastAPI（認証・署名付きURL取得・契約エラー）
 ├── serve.py                  推論コード本体
+├── Dockerfile                Cloud Run 用イメージ
 ├── cloudbuild.yaml           Cloud Build（重みをイメージに焼き込んで push）
+├── scripts/
+│   ├── deploy-cloud-run.sh   Cloud Run へのデプロイ
+│   └── verify-received-files.sh  受け取りファイルの検証
 ├── model/
 │   ├── ra_screening_model.json モデルのバージョン情報（Git管理）
 │   └── ra_screening_model.pt   学習済みモデル（Gitには含まれません。別途配置）
@@ -33,7 +37,7 @@ source .venv/bin/activate
 pip install -r requirements-test.txt
 ```
 
-このファイルが無い状態で `serve.py`・API・デプロイを起動すると、配置を促すエラーで停止します。Python 3.11を推奨します。GPU（CUDA）がなくても動作しますが、後述の通り推論速度が変わります。
+重みが無い状態で `serve.py`・API・デプロイを起動すると、配置を促すエラーで停止します。Python 3.11を推奨します。GPU（CUDA）がなくても動作しますが、後述の通り推論速度が変わります。
 
 API の契約テスト（モデル重みは不要）:
 
@@ -53,11 +57,11 @@ Web 側の `AI_API_URL` を `http://127.0.0.1:8080` に向けると、モック�
 
 ## HTTP API とデプロイ
 
-呼び出し元は Next.js の Server Action（`web/src/lib/ai-api.ts`）だけです。ブラウザから直接呼びません。リクエストとレスポンスの形は契約書を見てください。
+ブラウザからは直接呼びません。呼び出し元は Next.js の Server Action（`web/src/lib/ai-api.ts`）だけです。リクエストとレスポンスの形式は契約を参照してください。
 
 `GET /health` は認証なしで `{"status":"ok"}` を返します。Cloud Run が予約する `/healthz` は使いません。
 
-Cloud Run へ出す前に、共有 API キーを Vercel と Secret Manager の両方へ入れます。キーを共有ログへ出さないでください。
+Cloud Run へデプロイする前に、共有 API キーを Vercel と Secret Manager の両方へ入れます。キーをログへ出さないでください。
 
 ```bash
 gcloud secrets create ra-ai-api-key --replication-policy=automatic
@@ -68,9 +72,9 @@ scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co,ANOTHER_PROJECT_REF.supabase.co ra-ai-api-key
 ```
 
-`model/ra_screening_model.pt` が無いと Cloud Build は失敗します。スクリプトは Artifact Registry のリポジトリが無ければ作り、`cloudbuild.yaml` で linux/amd64 イメージに重みを焼き込んで push し、Cloud Run へ出します。Cloud Build は標準の `e2-standard-2` を使い、月 2,500 分の無料枠の対象にします。高性能マシンは指定しません。リージョンは `asia-northeast1`、8 vCPU、4GiB、concurrency 1、0–2 インスタンス、リクエストタイムアウト 60 秒です。PyTorch の推論スレッド数は 8 に設定しています。リクエストベース課金で、無料枠内に収まるかは起動時間や解析件数に依存します。プラットフォーム上は未認証で公開し、アプリ側の Bearer キーで守ります。
+`model/ra_screening_model.pt` が無いと Cloud Build は失敗します。スクリプトは Artifact Registry のリポジトリが無ければ作り、`cloudbuild.yaml` で linux/amd64 イメージに重みを焼き込んで push し、Cloud Run へデプロイします。Cloud Build は標準の `e2-standard-2` を使い、月 2,500 分の無料枠の対象です。高性能マシンは指定しません。リージョンは `asia-northeast1`、8 vCPU、4GiB、concurrency 1、0–2 インスタンス、リクエストタイムアウト 60 秒です。PyTorch の推論スレッド数は 8 に設定しています。リクエストベース課金で、無料枠内に収まるかは起動時間や解析件数に依存します。プラットフォーム上は未認証で公開し、アプリ側の Bearer キーで守ります。
 
-推論イメージは Artifact Registry の月 0.5GB の無料枠より大きいので、残しておくと保管料がかかります。Cloud Run はデプロイ時にイメージを取り込むため、成功後は `ra-inference` リポジトリごと消します。イメージだけ消すとレイヤーが翌日まで残るためです。起動やスケールはこの取り込み済みのコピーで足り、古い版に戻すときは再ビルドします。次のデプロイでリポジトリは作り直します。デプロイが途中で止まったときのために、直近 1 件を残し、作成から 2 日以上経ったイメージを消すクリーンアップも付けてあります。
+推論イメージは Artifact Registry の月 0.5GB の無料枠より大きいので、残しておくと保管料がかかります。Cloud Run はデプロイ時にイメージを取り込むため、成功後は `ra-inference` リポジトリごと消します。イメージだけ消すとレイヤーが翌日まで残るためです。起動やスケールアウトには、この取り込み済みのコピーで十分です。古い版に戻すときは再ビルドします。次のデプロイでリポジトリは作り直します。デプロイが途中で止まったときのために、直近 1 件を残し、作成から 2 日以上経ったイメージを消すクリーンアップも付けてあります。
 
 Cloud Build のソースアーカイブは `{PROJECT_ID}_cloudbuild` に残ります。Artifact Registry のクリーンアップはこのバケットには効かないため、作成から 3 日以上経ったオブジェクトを削除する Lifecycle を付けます。
 

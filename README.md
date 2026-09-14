@@ -1,6 +1,6 @@
 # 関節炎スクリーニングAIアプリ
 
-医療機関スタッフが手指を撮影し、AIで関節炎のスクリーニング結果を管理するアプリケーションです。管理者は医療機関とスタッフを管理します。患者の氏名などの個人情報は保持しません。
+医療機関スタッフが手指を撮影し、AIによる関節炎スクリーニングの結果を管理するアプリケーションです。管理者は医療機関とスタッフを管理します。患者の氏名などの個人情報は保持しません。
 
 ## 構成
 
@@ -11,7 +11,7 @@
 | `contract/` | 関節炎スクリーニング API（`/v1/ra-screening`）の OpenAPI と fixtures | — |
 | `docs/` | 契約の解説 | — |
 
-`web/` は Next.js、`ai-api/` は FastAPI です。契約の正は [`contract/`](./contract/) です。解説は [docs/ai_api_contract.md](./docs/ai_api_contract.md) です。
+API契約の正本は [`contract/`](./contract/) です。解説は [docs/ai_api_contract.md](./docs/ai_api_contract.md) を参照してください。
 
 ## 起動
 
@@ -24,9 +24,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-詳細は [web/README.md](./web/README.md) です。
+詳細は [web/README.md](./web/README.md) を参照してください。
 
-推論 API（任意。`.pt` が必要です）:
+推論 API（任意。学習済み重み `.pt` が必要です）:
 
 ```bash
 cd ai-api
@@ -35,7 +35,7 @@ export SUPABASE_STORAGE_HOSTS=127.0.0.1
 uvicorn api:app --host 127.0.0.1 --port 8080
 ```
 
-詳細は [ai-api/README.md](./ai-api/README.md) です。`web/.env.local` の `AI_API_URL` が未設定ならモック解析を使います。実推論を見るときは `AI_API_URL` と `AI_API_KEY` をこの API に向けてください。
+詳細は [ai-api/README.md](./ai-api/README.md) を参照してください。`web/.env.local` の `AI_API_URL` が未設定ならモック解析を使います。実推論を見るときは `AI_API_URL` と `AI_API_KEY` をこの API に向けてください。
 
 ## 環境変数
 
@@ -53,7 +53,7 @@ uvicorn api:app --host 127.0.0.1 --port 8080
 | `AI_API_LOG_RESPONSE` | 任意 | 解析レスポンスをサーバーログへ出す場合だけ `true`。本番は通常 `false` または未設定。 |
 | `ENABLE_DARK_MODE` | 任意 | OS設定に応じたダークモードを有効にする場合は `true`。`false` または未設定ではライト固定。 |
 
-Supabaseの推奨キーは Publishable key / Secret key。従来の `anon` / `service_role` キーはレガシー形式で、単なる名称変更ではない。このアプリでは `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` と `SUPABASE_SECRET_KEY` にそれぞれのキーを設定する（[公式ドキュメント](https://supabase.com/docs/guides/getting-started/api-keys)）。
+Supabaseの推奨キーは Publishable key / Secret key。従来の `anon` / `service_role` キーはレガシー形式であり、単なる名称変更ではない。このアプリでは `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` と `SUPABASE_SECRET_KEY` にそれぞれのキーを設定する（[公式ドキュメント](https://supabase.com/docs/guides/getting-started/api-keys)）。
 
 `SUPABASE_SECRET_KEY` と `AI_API_KEY` に `NEXT_PUBLIC_` を付けない。専用DBでRLSテストを行う場合の `TEST_SUPABASE_*` は [Web README](./web/README.md#rls--storage-統合テスト) を参照。
 
@@ -108,8 +108,8 @@ scripts/verify-received-files.sh
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 ```
 
-第3引数は共有キーを登録したSecret名。Cloud Buildで重みを含むイメージを作成し、Artifact Registry経由で `asia-northeast1` のCloud Run（既定サービス名: `ra-image-inference`）へ反映する。更新時も同じデプロイコマンドを実行する。成功後はスクリプトがArtifact Registryの `ra-inference` リポジトリを削除するため、イメージを再利用する場合は再ビルドが必要。
+第3引数は、共有キーを登録したSecret名。Cloud Buildで重みを含むイメージを作成し、Artifact Registry経由で `asia-northeast1` のCloud Run（既定サービス名: `ra-image-inference`）へ反映する。更新時も同じデプロイコマンドを実行する。成功後はスクリプトがArtifact Registryの `ra-inference` リポジトリを削除するため、イメージを再利用する場合は再ビルドが必要。
 
 デプロイ後はサービスURLの `GET /health` が `{"status":"ok"}` を返すことを確認し、Vercelの `AI_API_URL` と `AI_API_KEY` を設定してWebを再デプロイする。推論エンドポイントは共有キーによるBearer認証を使う。
 
-手順の詳細は [web/README.md](./web/README.md) と [ai-api/README.md](./ai-api/README.md) です。
+手順の詳細は [web/README.md](./web/README.md) と [ai-api/README.md](./ai-api/README.md) を参照してください。
