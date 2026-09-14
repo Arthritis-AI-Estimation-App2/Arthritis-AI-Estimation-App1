@@ -25,7 +25,6 @@ export default async function AdminsPage() {
                   <div className="min-w-0 flex-1 break-words">
                     <p className="break-words font-semibold text-foreground">{admin.full_name}</p>
                     <p className="break-all text-xs text-muted-foreground">{admin.email ?? "メールアドレス未確認"}</p>
-                    <p className="break-all text-xs text-muted-foreground">ID: {admin.id}</p>
                   </div>
                   <Link href={`/admin/admins/${admin.id}/edit`} className="shrink-0 whitespace-nowrap"><Button variant="secondary" size="sm">編集</Button></Link>
                 </li>

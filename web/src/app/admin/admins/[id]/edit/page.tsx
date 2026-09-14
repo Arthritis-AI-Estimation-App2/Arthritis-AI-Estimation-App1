@@ -19,7 +19,6 @@ export default async function EditAdminPage({ params }: { params: Promise<{ id: 
         <BackLink href="/admin/admins">管理者一覧に戻る</BackLink>
         <h1 className="mt-2 text-2xl font-bold text-foreground">管理者を編集</h1>
       </div>
-      <p className="break-all text-xs text-muted-foreground">ID: {admin.id}</p>
       <EditAdminForm admin={admin} />
       <ChangeAccountEmailForm
         action={updateAdminEmail}
