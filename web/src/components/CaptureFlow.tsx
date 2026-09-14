@@ -37,15 +37,30 @@ function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+function CloseIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 19 19 5M5 5l14 14" />
+    </svg>
+  );
+}
+
 function CaptureCancelLink() {
   return (
     <Link
       href="/"
       aria-label="撮影を中止して戻る"
       title="撮影を中止して戻る"
-      className="absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-lg font-medium text-foreground transition-colors hover:bg-surface-hover"
+      className="absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:bg-surface-hover"
     >
-      ✗
+      <CloseIcon />
     </Link>
   );
 }
