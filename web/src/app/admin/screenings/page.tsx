@@ -265,17 +265,14 @@ export default async function AdminScreeningsPage({
             <p className="text-sm text-secondary-foreground">
               {total}件中 {firstResult}〜{lastResult}件を表示
             </p>
-            <div className="flex items-center gap-3">
-              <p className="text-xs text-muted-foreground">1ページあたり{pageSize}件</p>
-              {total > 0 && (
-                <a
-                  href={adminScreeningExportHref(filters)}
-                  className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-surface-hover"
-                >
-                  CSV出力
-                </a>
-              )}
-            </div>
+            {total > 0 && (
+              <a
+                href={adminScreeningExportHref(filters)}
+                className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-surface-hover"
+              >
+                CSV出力
+              </a>
+            )}
           </div>
 
           {screenings.length === 0 ? (
