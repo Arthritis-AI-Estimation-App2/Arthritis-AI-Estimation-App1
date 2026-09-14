@@ -225,7 +225,7 @@ export default async function StaffScreeningsPage({
                 <li key={screening.id}>
                   <Link
                     href={`/results/${screening.id}`}
-                    className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-4 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-4"
                   >
                     <div className="min-w-0 space-y-1">
                       {screening.subject_id ? (
@@ -246,16 +246,18 @@ export default async function StaffScreeningsPage({
                           再撮影するか、詳細から次の操作を確認
                         </p>
                       )}
-                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                        <StatusBadge status={screening.status} />
-                        {screening.status === "completed" && (
-                          <span className="whitespace-nowrap text-xs font-medium text-secondary-foreground">
-                            陽性関節数: {screening.total_inflamed_joints}箇所
-                          </span>
-                        )}
-                      </div>
                     </div>
-                    <NavigationHint>詳細</NavigationHint>
+                    <div className="col-start-1 flex flex-wrap items-center gap-2 pt-0.5 sm:col-start-2 sm:pt-0">
+                      <StatusBadge status={screening.status} />
+                      {screening.status === "completed" && (
+                        <span className="whitespace-nowrap text-xs font-medium text-secondary-foreground">
+                          陽性関節数: {screening.total_inflamed_joints}箇所
+                        </span>
+                      )}
+                    </div>
+                    <span className="col-start-2 row-start-1 row-span-2 self-center sm:col-start-3 sm:row-span-1">
+                      <NavigationHint>詳細</NavigationHint>
+                    </span>
                   </Link>
                 </li>
               ))}
