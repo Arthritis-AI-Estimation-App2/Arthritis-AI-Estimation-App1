@@ -39,8 +39,8 @@ export default async function ClinicsPage() {
                       >
                         <div className="min-w-0 flex-1 break-words">
                           <p className="font-semibold text-foreground">{clinic.name}</p>
-                          <p className="break-all text-xs text-muted-foreground">
-                            ID: {clinic.id} | 登録日: {formatJapanDate(clinic.created_at)}
+                          <p className="text-xs text-muted-foreground">
+                            登録日: {formatJapanDate(clinic.created_at)}
                           </p>
                         </div>
                         <NavigationHint>詳細</NavigationHint>

@@ -61,12 +61,9 @@ export default async function ClinicDetailPage({
         <div className="mt-2 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-foreground">{clinic.name}</h1>
-            <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-              <p>
-                ID: <span className="font-mono tracking-tight">{clinic.id}</span>
-              </p>
-              <p>登録日: {formatJapanDate(clinic.created_at)}</p>
-            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              登録日: {formatJapanDate(clinic.created_at)}
+            </p>
           </div>
           <Link href={`/admin/clinics/${clinic.id}/edit`}>
             <Button variant="secondary">編集</Button>
