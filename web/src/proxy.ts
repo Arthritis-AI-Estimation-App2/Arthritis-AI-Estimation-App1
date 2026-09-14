@@ -4,6 +4,8 @@ import type { Database } from "@/lib/supabase/database.types";
 
 /** セッションCookieのリフレッシュ用プロキシ */
 export async function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === "/api/version") return NextResponse.next();
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(

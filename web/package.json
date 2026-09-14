@@ -10,7 +10,8 @@
     "lint": "eslint src tests eslint.config.mjs",
     "test": "node --test tests/*.test.mjs tests/*.test.ts",
     "test:rls": "RUN_SUPABASE_RLS_TESTS=true node --test tests/rls.integration.test.mjs",
-    "types:supabase": "node scripts/generate-supabase-types.mjs"
+    "types:supabase": "node scripts/generate-supabase-types.mjs",
+    "prebuild": "node scripts/generate-app-version.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

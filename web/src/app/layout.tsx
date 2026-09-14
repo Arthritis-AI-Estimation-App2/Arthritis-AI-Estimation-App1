@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import VersionCheck from "@/components/VersionCheck";
 
 export const metadata: Metadata = {
   title: {
@@ -26,7 +27,10 @@ export default function RootLayout({
 
   return (
     <html lang="ja" data-dark-mode-enabled={darkModeEnabled ? "true" : undefined}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <VersionCheck />
+      </body>
     </html>
   );
 }

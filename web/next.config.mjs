@@ -1,3 +1,11 @@
+import { readFileSync } from "node:fs";
+
+// npm run build generates this ID once. Embed it in both server and client
+// bundles so server restarts and replicas of the same build keep the same ID.
+const appVersion = process.env.NODE_ENV === "production"
+  ? JSON.parse(readFileSync(new URL("./app-version.json", import.meta.url), "utf8")).version
+  : "";
+
 function getSupabaseOrigin() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) return null;
@@ -48,6 +56,7 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: { NEXT_PUBLIC_APP_BUILD_VERSION: appVersion },
   turbopack: {
     root: import.meta.dirname,
   },
