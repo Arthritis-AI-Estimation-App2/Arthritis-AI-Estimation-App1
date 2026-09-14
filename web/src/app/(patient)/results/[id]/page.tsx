@@ -5,6 +5,7 @@ import SubjectAssignmentEditor from "@/components/SubjectAssignmentEditor";
 import ProcessingStatusRefresh from "@/components/ProcessingStatusRefresh";
 import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export const metadata = { title: "判定結果 | 関節炎スクリーニング" };
@@ -28,10 +29,22 @@ export default async function ResultPage({
     screening.status_updated_at
   );
 
+  const back = screening.subject_id
+    ? {
+        href: `/subjects/${encodeURIComponent(screening.subject_id)}`,
+        label: `被験者ID ${screening.subject_id} の判定履歴に戻る`,
+      }
+    : { href: "/", label: "ホームに戻る" };
+
   return (
     <div>
       {isProcessing && <ProcessingStatusRefresh />}
-      <h2 className="mb-4 text-lg font-bold">判定結果</h2>
+      <div className="mb-4">
+        <Link href={back.href} className="text-xs text-link hover:underline">
+          ← {back.label}
+        </Link>
+        <h1 className="mt-2 text-xl font-bold text-foreground">判定結果</h1>
+      </div>
       <div className="mb-4">
         <SubjectAssignmentEditor
           screeningId={screening.id}

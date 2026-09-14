@@ -8,8 +8,7 @@ const NAV_ITEMS = [
   {
     href: "/capture",
     label: "撮影",
-    matches: (pathname: string) =>
-      pathname.startsWith("/capture") || pathname.startsWith("/results"),
+    matches: (pathname: string) => pathname.startsWith("/capture"),
   },
   {
     href: "/grouping",
