@@ -3,7 +3,7 @@
 import StatusBadge from "@/components/StatusBadge";
 import GroupingScreeningDetail from "@/components/GroupingScreeningDetail";
 import { staffDisplayName } from "@/lib/staff-display-name";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { assignScreeningsToSubject, createSubject } from "@/app/actions/subjects";
 import Button from "@/components/ui/Button";
@@ -116,6 +116,7 @@ export default function SubjectGroupingView({
   totalPages,
 }: Props) {
   const router = useRouter();
+  const subjectSelectRef = useRef<HTMLSelectElement>(null);
   const [selectedScreenings, setSelectedScreenings] = useState<string[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -169,6 +170,14 @@ export default function SubjectGroupingView({
     }
   };
 
+  const focusSubjectSelect = () => {
+    const select = subjectSelectRef.current;
+    if (!select) return;
+
+    select.focus({ preventScroll: true });
+    select.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const dateGroups = groupByCaptureDate(unassignedScreenings);
   const selectedCount = selectedScreenings.length;
 
@@ -182,6 +191,7 @@ export default function SubjectGroupingView({
           <h2 className="text-lg font-bold text-foreground">1. 紐付け先の被験者IDを選択</h2>
           <div className="flex flex-wrap items-center gap-3">
             <select
+              ref={subjectSelectRef}
               value={selectedSubjectId}
               onChange={(e) => setSelectedSubjectId(e.target.value)}
               className="rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm text-foreground focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus"
@@ -319,8 +329,8 @@ export default function SubjectGroupingView({
               </Button>
               <Button
                 type="button"
-                onClick={handleAssign}
-                disabled={loading || !selectedSubjectId}
+                onClick={selectedSubjectId ? handleAssign : focusSubjectSelect}
+                disabled={loading}
                 className="min-w-0 flex-1 sm:flex-none"
               >
                 {loading
