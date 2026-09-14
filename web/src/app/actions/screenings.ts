@@ -32,7 +32,7 @@ function isValidUuid(value: string) {
   return UUID_PATTERN.test(value);
 }
 
-/** 新規スクリーニング記録を作成（status: uploading） */
+/** 新規撮影記録を作成（status: uploading） */
 export async function createScreening(subjectId?: string): Promise<{
   screeningId: string | null;
   error: string | null;
@@ -437,7 +437,7 @@ export async function getRecentScreenings(limit = 20) {
     .limit(safeLimit);
 
   const { data, error } = await query;
-  if (error) throwSupabaseError(error, "撮影履歴の取得");
+  if (error) throwSupabaseError(error, "撮影記録の取得");
   return data ?? [];
 }
 

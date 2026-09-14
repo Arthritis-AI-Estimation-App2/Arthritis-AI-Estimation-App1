@@ -464,13 +464,13 @@ export async function getSubjectDetail(subjectId: string, page = 1) {
   let total = count ?? 0;
   if (screeningsError) {
     if (!isUnsatisfiableRange(screeningsError)) {
-      throwSupabaseError(screeningsError, "被験者の撮影履歴取得");
+      throwSupabaseError(screeningsError, "被験者の撮影記録取得");
     }
     const { count: fallbackCount, error: countError } = await supabase
       .from("screenings")
       .select("id", { count: "exact", head: true })
       .eq("subject_id", subjectId);
-    if (countError) throwSupabaseError(countError, "被験者の撮影履歴件数取得");
+    if (countError) throwSupabaseError(countError, "被験者の撮影記録件数取得");
     total = fallbackCount ?? 0;
   }
 

@@ -206,7 +206,7 @@ export default function CaptureFlow({
       setPhase("creating");
       const created = await createScreening();
       if (created.error || !created.screeningId) {
-        throw new Error(created.error ?? "記録の作成に失敗");
+        throw new Error(created.error ?? "撮影記録の作成に失敗");
       }
       screeningId = created.screeningId;
 
