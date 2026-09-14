@@ -1,4 +1,5 @@
 import { getStaffs } from "@/app/actions/admin";
+import ActiveBadge from "@/components/ActiveBadge";
 import { Card, CardContent } from "@/components/ui/Card";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -39,9 +40,7 @@ export default async function StaffsPage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
-                    <span className={`inline-block px-2 py-1 text-xs rounded font-semibold ${staff.is_active ? 'bg-success text-success-foreground' : 'bg-danger text-danger-foreground'}`}>
-                      {staff.is_active ? "有効" : "無効"}
-                    </span>
+                    <ActiveBadge isActive={staff.is_active} />
                     <Link href={`/admin/staffs/${staff.id}/edit`}>
                       <Button variant="secondary" size="sm">編集</Button>
                     </Link>

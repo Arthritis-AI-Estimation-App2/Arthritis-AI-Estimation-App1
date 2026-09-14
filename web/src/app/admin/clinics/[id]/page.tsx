@@ -2,6 +2,7 @@ import NavigationHint from "@/components/ui/NavigationHint";
 import BackLink from "@/components/ui/BackLink";
 import { getClinicDetail } from "@/app/actions/admin";
 import PaginationNav from "@/components/PaginationNav";
+import ActiveBadge from "@/components/ActiveBadge";
 import StatusBadge from "@/components/StatusBadge";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -90,15 +91,7 @@ export default async function ClinicDetailPage({
                 <li key={staff.id} className="flex items-center justify-between py-3">
                   <p className="font-semibold text-foreground">{staff.full_name}</p>
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`inline-block rounded px-2 py-1 text-xs font-semibold ${
-                        staff.is_active
-                          ? "bg-success text-success-foreground"
-                          : "bg-danger text-danger-foreground"
-                      }`}
-                    >
-                      {staff.is_active ? "有効" : "無効"}
-                    </span>
+                    <ActiveBadge isActive={staff.is_active} />
                     <Link href={`/admin/staffs/${staff.id}/edit`}>
                       <Button variant="secondary" size="sm">
                         編集
