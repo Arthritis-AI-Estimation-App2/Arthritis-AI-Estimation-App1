@@ -1,4 +1,4 @@
-/** 管理画面でスタッフへ渡す初期／再設定パスワードの長さ。 */
+/** 管理画面でスタッフ・管理者へ渡す初期／再設定パスワードの長さ。 */
 export const GENERATED_PASSWORD_LENGTH = 16;
 
 const LOWERCASE = "abcdefghijkmnpqrstuvwxyz";

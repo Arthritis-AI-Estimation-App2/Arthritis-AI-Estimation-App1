@@ -17,7 +17,7 @@ export default function GeneratedPasswordField({
   name = "password",
   label,
   initialPassword,
-  hint = "自動生成したパスワードです。スタッフへ共有するか、必要なら書き換えてください。",
+  hint = "自動生成したパスワードです。自由に変更できます。",
 }: Props) {
   const [password, setPassword] = useState(initialPassword);
   const [copied, setCopied] = useState(false);

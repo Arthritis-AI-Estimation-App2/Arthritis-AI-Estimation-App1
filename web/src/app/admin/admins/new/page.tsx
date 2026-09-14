@@ -1,4 +1,5 @@
 import NewAdminForm from "@/components/NewAdminForm";
+import { generatePassword } from "@/lib/generate-password";
 
 export default function NewAdminPage() {
   return (
@@ -10,7 +11,7 @@ export default function NewAdminPage() {
         </p>
       </div>
 
-      <NewAdminForm />
+      <NewAdminForm initialPassword={generatePassword()} />
     </div>
   );
 }

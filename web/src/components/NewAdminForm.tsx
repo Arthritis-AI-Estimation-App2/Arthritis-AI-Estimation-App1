@@ -3,10 +3,15 @@
 import { useActionState } from "react";
 import { createAdmin } from "@/app/actions/admin";
 import Button from "@/components/ui/Button";
+import GeneratedPasswordField from "@/components/GeneratedPasswordField";
 import Input from "@/components/ui/Input";
 import { Card, CardContent } from "@/components/ui/Card";
 
-export default function NewAdminForm() {
+export default function NewAdminForm({
+  initialPassword,
+}: {
+  initialPassword: string;
+}) {
   const [state, formAction, pending] = useActionState(createAdmin, {
     error: null,
     success: false,
@@ -35,13 +40,11 @@ export default function NewAdminForm() {
             required
           />
 
-          <Input
+          <GeneratedPasswordField
             id="password"
-            name="password"
-            type="password"
             label="初期パスワード（8文字以上）"
-            autoComplete="new-password"
-            required
+            initialPassword={initialPassword}
+            hint="自動生成したパスワードです。自由に変更できます。"
           />
 
           {state.error && (
@@ -49,7 +52,7 @@ export default function NewAdminForm() {
           )}
           {state.success && (
             <p className="rounded-lg bg-success p-3 text-sm text-success-foreground">
-              管理者アカウントを発行しました。
+              管理者アカウントを発行しました。初期パスワードを管理者へ共有してください。
             </p>
           )}
 
