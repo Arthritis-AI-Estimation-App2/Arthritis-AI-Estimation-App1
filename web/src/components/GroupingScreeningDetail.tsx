@@ -35,7 +35,7 @@ export default function GroupingScreeningDetail({ screeningId }: { screeningId: 
         if (event.currentTarget.open) void loadDetail();
       }}
     >
-      <summary className="min-h-11 cursor-pointer px-3 py-3 text-sm font-medium text-primary hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus">
+      <summary className="min-h-11 cursor-pointer px-3 py-3 text-sm font-medium text-primary hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus">
         解析結果の詳細
       </summary>
       <div className="space-y-3 border-t border-border p-3" aria-busy={loading}>

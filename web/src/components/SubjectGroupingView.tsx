@@ -226,7 +226,7 @@ export default function SubjectGroupingView({
                       return (
                         <div
                           key={sc.id}
-                          className={`flex flex-col rounded-lg border transition-colors ${
+                          className={`flex flex-col overflow-hidden rounded-lg border transition-colors ${
                             isSelected
                               ? "border-primary bg-primary-subtle"
                               : "border-border bg-surface hover:border-border-strong"
