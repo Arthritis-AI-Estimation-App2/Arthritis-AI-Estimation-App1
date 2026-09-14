@@ -1,5 +1,4 @@
 import { getAdmins } from "@/app/actions/admin";
-import ActiveBadge from "@/components/ActiveBadge";
 import { Card, CardContent } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
@@ -28,10 +27,7 @@ export default async function AdminsPage() {
                     <p className="break-all text-xs text-muted-foreground">{admin.email ?? "メールアドレス未確認"}</p>
                     <p className="break-all text-xs text-muted-foreground">ID: {admin.id}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
-                    <ActiveBadge isActive={admin.is_active} />
-                    <Link href={`/admin/admins/${admin.id}/edit`}><Button variant="secondary" size="sm">編集</Button></Link>
-                  </div>
+                  <Link href={`/admin/admins/${admin.id}/edit`} className="shrink-0 whitespace-nowrap"><Button variant="secondary" size="sm">編集</Button></Link>
                 </li>
               ))}
             </ul>
