@@ -66,7 +66,7 @@ export default async function ClinicStaffHomePage() {
             <CameraIcon />
           </span>
           <p className="mt-3 text-lg font-bold">手指の画像を撮影する</p>
-          <p className="mt-2 text-sm text-primary-foreground/75">患者の両手を撮影・AI解析</p>
+          <p className="mt-2 text-sm text-primary-foreground/75">被験者の両手を撮影・AI解析</p>
         </Link>
         <Link
           href="/grouping"
