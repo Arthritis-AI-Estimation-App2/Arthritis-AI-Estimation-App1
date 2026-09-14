@@ -1,4 +1,5 @@
 import NavigationHint from "@/components/ui/NavigationHint";
+import BackLink from "@/components/ui/BackLink";
 import { getClinicDetail } from "@/app/actions/admin";
 import StatusBadge from "@/components/StatusBadge";
 import Button from "@/components/ui/Button";
@@ -34,9 +35,7 @@ export default async function ClinicDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/admin/clinics" className="text-xs text-link hover:underline">
-          ← 医療機関の一覧に戻る
-        </Link>
+        <BackLink href="/admin/clinics">医療機関の一覧に戻る</BackLink>
         <div className="mt-2 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-foreground">{clinic.name}</h1>

@@ -1,7 +1,7 @@
 import { getClinics } from "@/app/actions/admin";
 import NewStaffForm from "@/components/NewStaffForm";
+import BackLink from "@/components/ui/BackLink";
 import { generatePassword } from "@/lib/generate-password";
-import Link from "next/link";
 
 export default async function NewStaffPage({
   searchParams,
@@ -13,19 +13,18 @@ export default async function NewStaffPage({
   const selectedClinic = clinicId
     ? clinics.find((clinic) => clinic.id === clinicId)
     : undefined;
+  const back = selectedClinic
+    ? {
+        href: `/admin/clinics/${selectedClinic.id}`,
+        label: `${selectedClinic.name}の詳細に戻る`,
+      }
+    : { href: "/admin/staffs", label: "スタッフ一覧に戻る" };
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
       <div>
-        {selectedClinic && (
-          <Link
-            href={`/admin/clinics/${selectedClinic.id}`}
-            className="text-xs text-link hover:underline"
-          >
-            ← {selectedClinic.name}の詳細に戻る
-          </Link>
-        )}
-        <h1 className={`${selectedClinic ? "mt-2 " : ""}text-2xl font-bold text-foreground`}>
+        <BackLink href={back.href}>{back.label}</BackLink>
+        <h1 className="mt-2 text-2xl font-bold text-foreground">
           スタッフアカウント発行
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

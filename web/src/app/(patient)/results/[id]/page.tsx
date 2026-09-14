@@ -6,7 +6,7 @@ import ProcessingStatusRefresh from "@/components/ProcessingStatusRefresh";
 import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import FailedScreeningNextStep from "@/components/FailedScreeningNextStep";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
-import Link from "next/link";
+import BackLink from "@/components/ui/BackLink";
 import { notFound } from "next/navigation";
 
 export const metadata = { title: "判定結果 | 関節炎スクリーニング" };
@@ -33,7 +33,7 @@ export default async function ResultPage({
   const back = screening.subject_id
     ? {
         href: `/subjects/${encodeURIComponent(screening.subject_id)}`,
-        label: `被験者ID ${screening.subject_id} の判定履歴に戻る`,
+        label: `${screening.subject_id}の判定履歴に戻る`,
       }
     : { href: "/", label: "ホームに戻る" };
 
@@ -41,9 +41,7 @@ export default async function ResultPage({
     <div>
       {isProcessing && <ProcessingStatusRefresh />}
       <div className="mb-4">
-        <Link href={back.href} className="text-xs text-link hover:underline">
-          ← {back.label}
-        </Link>
+        <BackLink href={back.href}>{back.label}</BackLink>
         <h1 className="mt-2 text-xl font-bold text-foreground">判定結果</h1>
       </div>
       <div className="mb-4">

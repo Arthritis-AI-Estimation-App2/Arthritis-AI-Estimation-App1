@@ -18,7 +18,7 @@ import {
   type AnalysisErrorCode,
 } from "@/lib/analysis-error";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import BackLink from "@/components/ui/BackLink";
 
 export const metadata = { title: "解析結果詳細 | 管理画面" };
 
@@ -50,9 +50,7 @@ export default async function AdminScreeningDetailPage({
     <div className="space-y-6">
       {isProcessing && <ProcessingStatusRefresh />}
       <div>
-        <Link href="/admin/screenings" className="text-xs text-link hover:underline">
-          ← 全撮影記録一覧に戻る
-        </Link>
+        <BackLink href="/admin/screenings">撮影記録一覧に戻る</BackLink>
         <div className="mt-2 flex items-center gap-2.5">
           <h1 className="text-xl font-bold text-foreground">解析結果詳細</h1>
           <StatusBadge status={screening.status} />

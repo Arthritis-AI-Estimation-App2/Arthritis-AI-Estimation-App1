@@ -3,10 +3,9 @@ import EditAdminForm from "@/components/EditAdminForm";
 import ChangeAccountEmailForm from "@/components/ChangeAccountEmailForm";
 import ResetAccountPasswordForm from "@/components/ResetAccountPasswordForm";
 import DeleteAccountForm from "@/components/DeleteAccountForm";
-import Button from "@/components/ui/Button";
+import BackLink from "@/components/ui/BackLink";
 import { generatePassword } from "@/lib/generate-password";
 import { getCurrentUser } from "@/lib/auth";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export default async function EditAdminPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,9 +15,9 @@ export default async function EditAdminPage({ params }: { params: Promise<{ id: 
   const isSelf = current?.userId === admin.id;
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground">管理者を編集</h1>
-        <Link href="/admin/admins"><Button variant="secondary">一覧へ戻る</Button></Link>
+      <div>
+        <BackLink href="/admin/admins">管理者一覧に戻る</BackLink>
+        <h1 className="mt-2 text-2xl font-bold text-foreground">管理者を編集</h1>
       </div>
       <p className="break-all text-xs text-muted-foreground">ID: {admin.id}</p>
       <EditAdminForm admin={admin} />

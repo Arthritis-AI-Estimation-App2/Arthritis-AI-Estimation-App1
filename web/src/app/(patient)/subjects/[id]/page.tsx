@@ -8,6 +8,7 @@ import {
   normalizePage,
   paginatedListHref,
 } from "@/lib/staff-pagination";
+import BackLink from "@/components/ui/BackLink";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -43,9 +44,7 @@ export default async function SubjectDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/subjects" className="text-xs text-link hover:underline">
-          ← 被験者ID一覧に戻る
-        </Link>
+        <BackLink href="/subjects">被験者ID一覧に戻る</BackLink>
         <h1 className="mt-2 text-xl font-bold text-foreground">
           被験者ID: {subject.id}
         </h1>

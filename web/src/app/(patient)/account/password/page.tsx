@@ -5,5 +5,11 @@ import { redirect } from "next/navigation";
 export default async function ClinicStaffPasswordPage() {
   const current = await getCurrentUser();
   if (!current) redirect("/login");
-  return <ChangePasswordPage backHref="/" currentEmail={current.email ?? ""} />;
+  return (
+    <ChangePasswordPage
+      backHref="/"
+      backLabel="ホームに戻る"
+      currentEmail={current.email ?? ""}
+    />
+  );
 }
