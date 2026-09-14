@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CameraCapture from "@/components/CameraCapture";
 import CaptureLeaveGuard from "@/components/CaptureLeaveGuard";
@@ -33,6 +34,19 @@ function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
     </svg>
+  );
+}
+
+function CaptureCancelLink() {
+  return (
+    <Link
+      href="/"
+      aria-label="撮影を中止して戻る"
+      title="撮影を中止して戻る"
+      className="absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-lg font-medium text-foreground transition-colors hover:bg-surface-hover"
+    >
+      ✗
+    </Link>
   );
 }
 
@@ -281,7 +295,8 @@ export default function CaptureFlow({
       <CaptureLeaveGuard active={hasPendingImages} onDiscard={discardDraft} />
 
       {/* ステップインジケーター */}
-      <div className="mb-3 flex shrink-0 justify-center gap-2">
+      <div className="relative mb-3 flex min-h-8 shrink-0 items-center justify-center gap-2 pl-9">
+        <CaptureCancelLink />
         {CAPTURE_STEPS.map((s, i) => {
           const state = stepStates[s.key];
           const isComplete = state === "complete";
@@ -321,15 +336,17 @@ export default function CaptureFlow({
       {isShooting && (
         <div className="flex min-h-0 flex-1 flex-col gap-2">
           {isRetaking && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="shrink-0 self-start"
-              onClick={() => setStep("confirm")}
-            >
-              確認に戻る
-            </Button>
+            <div className="flex shrink-0 justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setStep("confirm")}
+              >
+                確認に戻る
+              </Button>
+            </div>
           )}
           <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl">
             <CameraCapture
