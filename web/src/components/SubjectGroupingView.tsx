@@ -17,6 +17,7 @@ import {
 import type { JointResult, Screening, Subject } from "@/lib/types";
 import PaginationNav from "@/components/PaginationNav";
 import { formatScreeningId } from "@/lib/admin-screening-filters";
+import SubjectIdCombobox, { type SubjectIdOption } from "@/components/SubjectIdCombobox";
 
 type GroupingJoint = Pick<JointResult, "side" | "joint_name" | "is_inflamed">;
 
@@ -116,7 +117,7 @@ export default function SubjectGroupingView({
   totalPages,
 }: Props) {
   const router = useRouter();
-  const subjectSelectRef = useRef<HTMLSelectElement>(null);
+  const subjectSelectRef = useRef<HTMLInputElement>(null);
   const [selectedScreenings, setSelectedScreenings] = useState<string[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -171,15 +172,28 @@ export default function SubjectGroupingView({
   };
 
   const focusSubjectSelect = () => {
-    const select = subjectSelectRef.current;
-    if (!select) return;
+    const input = subjectSelectRef.current;
+    if (!input) return;
 
-    select.focus({ preventScroll: true });
-    select.scrollIntoView({ behavior: "smooth", block: "center" });
+    input.focus({ preventScroll: true });
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const dateGroups = groupByCaptureDate(unassignedScreenings);
   const selectedCount = selectedScreenings.length;
+  const subjectOptions: SubjectIdOption[] = subjects.map((subject) => ({
+    value: subject.id,
+    label: `被験者ID: ${subject.id}（${subject.screenings?.length ?? 0}件の撮影記録）`,
+  }));
+  if (
+    selectedSubjectId &&
+    !subjectOptions.some((option) => option.value === selectedSubjectId)
+  ) {
+    subjectOptions.unshift({
+      value: selectedSubjectId,
+      label: `被験者ID: ${selectedSubjectId}（新規発行）`,
+    });
+  }
 
   return (
     <div className={`space-y-6 ${selectedCount > 0 ? "pb-36 sm:pb-24" : ""}`}>
@@ -190,19 +204,15 @@ export default function SubjectGroupingView({
         <CardContent className="space-y-4">
           <h2 className="text-lg font-bold text-foreground">1. 紐付け先の被験者IDを選択</h2>
           <div className="flex flex-wrap items-center gap-3">
-            <select
-              ref={subjectSelectRef}
-              value={selectedSubjectId}
-              onChange={(e) => setSelectedSubjectId(e.target.value)}
-              className="rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm text-foreground focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus"
-            >
-              <option value="">既存の被験者IDから選択...</option>
-              {subjects.map((sub) => (
-                <option key={sub.id} value={sub.id}>
-                  被験者ID: {sub.id} ({sub.screenings?.length ?? 0}件の撮影記録)
-                </option>
-              ))}
-            </select>
+            <div className="w-full min-w-0 sm:max-w-md">
+              <SubjectIdCombobox
+                inputRef={subjectSelectRef}
+                value={selectedSubjectId}
+                options={subjectOptions}
+                onValueChange={setSelectedSubjectId}
+                disabled={loading}
+              />
+            </div>
             <span className="text-xs text-muted-foreground">または</span>
             <Button type="button" variant="secondary" onClick={handleCreateNewSubject} disabled={loading}>
               ＋ 新しい被験者IDを発行

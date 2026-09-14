@@ -9,6 +9,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import { formatFullScreeningId } from "@/lib/admin-screening-filters";
 import type { Screening, Subject } from "@/lib/types";
+import SubjectIdCombobox, { type SubjectIdOption } from "@/components/SubjectIdCombobox";
 
 interface Props {
   screeningId: string;
@@ -37,6 +38,19 @@ export default function SubjectAssignmentEditor({
   const [createdSubjectId, setCreatedSubjectId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const subjectOptions: SubjectIdOption[] = [
+    { value: "", label: "未割り当てにする" },
+    ...subjects.map((subject) => ({ value: subject.id, label: subject.id })),
+  ];
+  if (
+    createdSubjectId &&
+    !subjectOptions.some((option) => option.value === createdSubjectId)
+  ) {
+    subjectOptions.splice(1, 0, {
+      value: createdSubjectId,
+      label: `${createdSubjectId}（新規発行）`,
+    });
+  }
 
   const cancel = () => {
     setNextSubjectId(currentSubjectId ?? "");
@@ -119,22 +133,14 @@ export default function SubjectAssignmentEditor({
               <label htmlFor="subject-id" className="mb-1 block text-sm font-medium text-foreground">
                 {currentSubjectId ? "変更後の被験者ID" : "紐付ける被験者ID"}
               </label>
-              <select
+              <SubjectIdCombobox
                 id="subject-id"
                 value={nextSubjectId}
-                onChange={(event) => setNextSubjectId(event.target.value)}
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus"
-              >
-                <option value="">未割り当てにする</option>
-                {createdSubjectId && !subjects.some((subject) => subject.id === createdSubjectId) && (
-                  <option value={createdSubjectId}>{createdSubjectId}（新規発行）</option>
-                )}
-                {subjects.map((subject) => (
-                  <option key={subject.id} value={subject.id}>
-                    {subject.id}
-                  </option>
-                ))}
-              </select>
+                options={subjectOptions}
+                onValueChange={setNextSubjectId}
+                placeholder="被験者IDを入力して検索"
+                disabled={saving || creating}
+              />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-secondary-foreground">一覧にない場合</span>

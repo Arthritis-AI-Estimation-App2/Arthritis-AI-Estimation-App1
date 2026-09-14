@@ -82,7 +82,7 @@ export default function SubjectList({
                     <div>
                       <p className="font-semibold text-foreground">被験者ID: {sub.id}</p>
                       <p className="text-xs text-muted-foreground">
-                        判定記録件数: {sub.screening_count}件 | 作成日時:{" "}
+                        撮影記録件数: {sub.screening_count}件 | 作成日時:{" "}
                         {formatJapanDateTime(sub.created_at)}
                       </p>
                     </div>
