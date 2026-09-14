@@ -95,9 +95,14 @@ export function screeningIdPrefixBounds(prefix: string) {
   return { from, to };
 }
 
-/** 画面に出す撮影ID。検索と同じ先頭8文字。 */
+/** 一覧・口頭伝達用の撮影ID。検索と同じ先頭8文字。 */
 export function formatScreeningId(id: string) {
   return id.slice(0, MIN_SCREENING_ID_PREFIX_HEX);
+}
+
+/** 詳細画面用の撮影ID。URL・CSVと同じフルUUID。 */
+export function formatFullScreeningId(id: string) {
+  return id;
 }
 
 export function normalizeAdminScreeningFilters(

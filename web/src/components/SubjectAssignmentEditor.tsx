@@ -7,7 +7,7 @@ import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import StatusBadge from "@/components/StatusBadge";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
-import { formatScreeningId } from "@/lib/admin-screening-filters";
+import { formatFullScreeningId } from "@/lib/admin-screening-filters";
 import type { Screening, Subject } from "@/lib/types";
 
 interface Props {
@@ -100,9 +100,11 @@ export default function SubjectAssignmentEditor({
               <p className="text-xs text-muted-foreground">
                 撮影日時: {formatJapanDateTime(capturedAt)}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="break-all text-xs text-muted-foreground">
                 撮影ID:{" "}
-                <span className="font-mono tracking-tight">{formatScreeningId(screeningId)}</span>
+                <span className="font-mono tracking-tight">
+                  {formatFullScreeningId(screeningId)}
+                </span>
               </p>
             </div>
             <StatusBadge status={status} />
