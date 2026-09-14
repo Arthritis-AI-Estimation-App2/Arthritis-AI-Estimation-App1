@@ -227,7 +227,7 @@ export default async function StaffScreeningsPage({
                     href={`/results/${screening.id}`}
                     className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
                   >
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                       {screening.subject_id ? (
                         <p className="font-mono text-sm text-foreground">
                           {screening.subject_id}
@@ -237,7 +237,8 @@ export default async function StaffScreeningsPage({
                       )}
                       <p className="text-xs text-muted-foreground">
                         {formatJapanDateTime(screening.created_at)}
-                        <span className="mx-1">·</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
                         撮影ID {formatScreeningId(screening.id)}
                       </p>
                       {screening.status === "failed" && (
@@ -245,18 +246,16 @@ export default async function StaffScreeningsPage({
                           再撮影するか、詳細から次の操作を確認
                         </p>
                       )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-wrap items-center justify-end gap-2">
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                        <StatusBadge status={screening.status} />
                         {screening.status === "completed" && (
-                          <span className="text-xs font-medium text-secondary-foreground">
+                          <span className="whitespace-nowrap text-xs font-medium text-secondary-foreground">
                             陽性関節数: {screening.total_inflamed_joints}箇所
                           </span>
                         )}
-                        <StatusBadge status={screening.status} />
                       </div>
-                      <NavigationHint>詳細</NavigationHint>
                     </div>
+                    <NavigationHint>詳細</NavigationHint>
                   </Link>
                 </li>
               ))}
