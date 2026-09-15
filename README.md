@@ -89,7 +89,7 @@ Secretが既にある場合は `create` を省略する。キーを更新する�
 ### 初回デプロイ
 
 1. [Supabaseのセットアップ](./web/README.md#2-supabaseプロジェクトの準備) を行う。新規DBには `web/supabase/schema.sql`、既存DBには未適用の個別マイグレーションを番号順に適用する。
-2. 実推論を使う場合は、Google Cloudの課金・必要なAPIとIAMを設定し、[共有APIキー](#共有apiキーの作成初回)をSecret Managerに登録する。`gcloud run deploy --max` 対応版のCLIを使い、受け取った `.pt` をGitに追加せず `ai-api/model/` に配置してデプロイする（[前提の詳細](./ai-api/README.md#http-api-とデプロイ)）。
+2. Google Cloudで支払い方法を登録し、必要なAPIとIAMを設定後、[共有APIキー](#共有apiキーの作成初回)をSecret Managerに登録する。Google Cloud CLIを使い、AIモデルファイル `.pt` をGitに追加せずに `ai-api/model/` に配置してデプロイする（[前提の詳細](./ai-api/README.md#http-api-とデプロイ)）。
 
    ```bash
    cd ai-api
@@ -104,7 +104,7 @@ Secretが既にある場合は `create` を省略する。キーを更新する�
 
 1. DB変更がある場合は、既存DBへ未適用の個別マイグレーションを番号順に適用する（[手順](./web/README.md#2-supabaseプロジェクトの準備)）。
 2. Web変更は本番ブランチ（main）へpushする。Vercelの環境変数を変更した場合は再デプロイする。`web/` に差分がなければビルドはスキップされる。
-3. AI APIやモデルの変更は `ai-api/` で同じデプロイコマンドを再実行し、`GET /health` を確認する。モデル更新時は `.pt` を置き換え、`model/ra_screening_model.json` の `model_version` も更新する（[詳細](./ai-api/README.md#既存モデルの更新)）。サービスURLや共有キーを変更した場合はVercelの設定も更新して再デプロイする。
+3. AI APIやモデルの変更は `ai-api/` で初回と同じデプロイコマンドを再実行し、`GET /health` を確認する。モデル更新時は `.pt` を置き換え、`model/ra_screening_model.json` の `model_version` も更新する（[詳細](./ai-api/README.md#既存モデルの更新)）。サービスURLや共有キーを変更した場合はVercelの設定も更新して再デプロイする。
 
 Webのみの変更ではAI APIの再デプロイは不要。AI APIのモデルのみの変更ではWebの再デプロイは不要。
 
