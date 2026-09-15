@@ -86,29 +86,26 @@ Secretが既にある場合は `create` を省略する。キーを更新する�
 
 ## デプロイ
 
-### Web（Vercel）
+### 初回デプロイ
 
-1. Vercel に Git リポジトリを連携し、Framework Preset を Next.js、Root Directory を `web` に設定する。
-2. 対象環境の環境変数に `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、`SUPABASE_SECRET_KEY` を登録する。実推論を使う場合は `AI_API_URL`（Cloud Run のサービスURL）と `AI_API_KEY`（APIと同じ共有キー）も登録する。秘密キーに `NEXT_PUBLIC_` を付けない。
-3. 初回は [Supabaseのセットアップ](./web/README.md#2-supabaseプロジェクトの準備) を行う。既存DBは未適用の個別マイグレーションを番号順に適用する。
-4. Vercel で設定した Production Branch へ push して本番デプロイする。環境変数の変更後は再デプロイする。
+1. [Supabaseのセットアップ](./web/README.md#2-supabaseプロジェクトの準備) を行う。新規DBには `web/supabase/schema.sql`、既存DBには未適用の個別マイグレーションを番号順に適用する。
+2. 実推論を使う場合は、Google Cloudの課金・必要なAPIとIAMを設定し、[共有APIキー](#共有apiキーの作成初回)をSecret Managerに登録する。`gcloud run deploy --max` 対応版のCLIを使い、受け取った `.pt` をGitに追加せず `ai-api/model/` に配置してデプロイする（[前提の詳細](./ai-api/README.md#http-api-とデプロイ)）。
 
-`web/` に差分がない場合は `web/vercel.json` によりビルドをスキップする。Webのみの変更ではAI APIの再デプロイは不要。
+   ```bash
+   cd ai-api
+   cp /path/to/ra_screening_model.pt model/ra_screening_model.pt
+   scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
+   ```
 
-### AI API（Cloud Run）
+   `PROJECT_ID` はGoogle CloudプロジェクトID、第2引数はSupabase URLのホスト名、第3引数は共有キーのSecret名。サービスURLの `GET /health` が `{"status":"ok"}` を返すことを確認する。
+3. Vercelにリポジトリを連携し、Framework PresetをNext.js、Root Directoryを`web`に設定する。対象環境へ `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、`SUPABASE_SECRET_KEY` を登録する。実推論時はCloud RunのサービスURLを `AI_API_URL`、同じ共有キーの値を `AI_API_KEY` に登録する。本番ブランチ（main）へpushする。
 
-前提: Google Cloud CLIでログイン済みで、対象プロジェクトの課金・Cloud Build / Artifact Registry / Cloud Run / Secret Manager APIが有効であること。デプロイ実行者とCloud Buildに必要なIAM権限を設定し、共有キーをSecret Managerへ登録しておく（[詳細](./ai-api/README.md#http-api-とデプロイ)）。CLIは `gcloud run deploy --max` 対応版を使う。
+### 更新時のデプロイ
 
-リポジトリルートから以下を実行する。`.pt` は別途受け取り、Gitには追加しない。`PROJECT_ID` は対象のGoogle CloudプロジェクトID、`PROJECT_REF` はWebが使うSupabaseプロジェクトのrefに置き換える（例: Supabase URLが `https://abc123.supabase.co` なら `abc123.supabase.co` を第2引数に渡す）。Secret名が `ra-ai-api-key` と異なる場合は第3引数も実際の名前に置き換える。
+1. DB変更がある場合は、既存DBへ未適用の個別マイグレーションを番号順に適用する（[手順](./web/README.md#2-supabaseプロジェクトの準備)）。
+2. Web変更は本番ブランチ（main）へpushする。Vercelの環境変数を変更した場合は再デプロイする。`web/` に差分がなければビルドはスキップされる。
+3. AI APIやモデルの変更は `ai-api/` で同じデプロイコマンドを再実行し、`GET /health` を確認する。モデル更新時は `.pt` を置き換え、`model/ra_screening_model.json` の `model_version` も更新する（[詳細](./ai-api/README.md#既存モデルの更新)）。サービスURLや共有キーを変更した場合はVercelの設定も更新して再デプロイする。
 
-```bash
-cd ai-api
-cp /path/to/ra_screening_model.pt model/ra_screening_model.pt
-scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
-```
-
-既存サービスのモデルを更新するときは、新しい `.pt` を同じパスへ置き換え、`ai-api/model/ra_screening_model.json` の `model_version` を更新してから同じデプロイコマンドを実行する。詳しくは [AI APIのモデル更新手順](./ai-api/README.md#既存モデルの更新) を参照。第3引数は、共有キーを登録したSecret名。Cloud Buildで重みを含むイメージを作成し、Artifact Registry経由で `asia-northeast1` のCloud Run（既定サービス名: `ra-image-inference`）へ反映する。成功後はスクリプトがArtifact Registryの `ra-inference` リポジトリを削除するため、イメージを再利用する場合は再ビルドが必要。
-
-デプロイ後はサービスURLの `GET /health` が `{"status":"ok"}` を返すことを確認する。初めて実推論を使う場合やURL・共有キーを変更した場合は、Vercelの `AI_API_URL` と `AI_API_KEY` を設定してWebを再デプロイする。既存サービスでモデルだけを更新する場合、Webの再デプロイは不要。推論エンドポイントは共有キーによるBearer認証を使う。
+Webのみの変更ではAI APIの再デプロイは不要。AI APIのモデルのみの変更ではWebの再デプロイは不要。
 
 手順の詳細は [web/README.md](./web/README.md) と [ai-api/README.md](./ai-api/README.md) を参照してください。
