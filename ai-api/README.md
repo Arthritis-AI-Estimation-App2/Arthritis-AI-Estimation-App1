@@ -17,7 +17,7 @@ ai-api/
 │   └── verify-received-files.sh  受け取りファイルの検証
 ├── model/
 │   ├── ra_screening_model.json モデルのバージョン情報（Git管理）
-│   └── ra_screening_model.pt   学習済みモデル（Gitには含まれません。別途配置）
+│   └── ra_screening_model.pt   学習済みモデル（重みと設定情報を含む。Gitには含まれず、別途配置）
 └── test_images/
     └── sample_001〜005.jpg   動作確認用のサンプル画像（CG生成の合成データ）
 ```
@@ -26,7 +26,7 @@ ai-api/
 
 ## セットアップ
 
-学習済み重み `model/ra_screening_model.pt` はサイズが大きいので Git には入れていません。clone しただけでは推論できないため、別途受け取った `.pt` を `ai-api/model/ra_screening_model.pt` に置いてください。
+重みと設定情報を含む学習済みモデル `model/ra_screening_model.pt` はサイズが大きいので Git には入れていません。clone しただけでは推論できないため、別途受け取った `.pt` を `ai-api/model/ra_screening_model.pt` に置いてください。API が返す `model_version` は、別途 Git 管理している `model/ra_screening_model.json` から読み込みます。
 
 ```bash
 # 受け取った重みをこのパスへコピーする（ファイル名も合わせる）
@@ -211,5 +211,5 @@ python serve.py --checkpoint model/ra_screening_model.pt --image-url https://exa
 
 ## 補足
 
-- 別途配置する`ra_screening_model.pt`は、5分割交差検証（患者単位で分割、リーク無し）で学習した5つのモデルのうち1つです。実運用に耐える精度かどうかは別途評価対象の画像で検証してください。
+- 別途配置する`ra_screening_model.pt`は、ハイパーパラメータ探索（Optuna）で見つけた最良設定を使い、5分割交差検証（患者単位で分割、リーク無し）で本番学習した5つのモデルのうち、最も精度の高かった1つです。実運用に耐える精度かどうかは別途評価対象の画像で検証してください。
 - モデルは学習用の合成データ（RASH: 3DCGで生成したRA症例データセット）で事前学習し、少数の実患者データでファインチューニングしたものです。
