@@ -99,17 +99,16 @@ Secretが既にある場合は `create` を省略する。キーを更新する�
 
 前提: Google Cloud CLIでログイン済みで、対象プロジェクトの課金・Cloud Build / Artifact Registry / Cloud Run / Secret Manager APIが有効であること。デプロイ実行者とCloud Buildに必要なIAM権限を設定し、共有キーをSecret Managerへ登録しておく（[詳細](./ai-api/README.md#http-api-とデプロイ)）。CLIは `gcloud run deploy --max` 対応版を使う。
 
-リポジトリルートから以下を実行する。`.pt` は別途受け取り、Gitには追加しない。
+リポジトリルートから以下を実行する。`.pt` は別途受け取り、Gitには追加しない。`PROJECT_ID` は対象のGoogle CloudプロジェクトID、`PROJECT_REF` はWebが使うSupabaseプロジェクトのrefに置き換える（例: Supabase URLが `https://abc123.supabase.co` なら `abc123.supabase.co` を第2引数に渡す）。Secret名が `ra-ai-api-key` と異なる場合は第3引数も実際の名前に置き換える。
 
 ```bash
 cd ai-api
 cp /path/to/ra_screening_model.pt model/ra_screening_model.pt
-scripts/verify-received-files.sh
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 ```
 
-第3引数は、共有キーを登録したSecret名。Cloud Buildで重みを含むイメージを作成し、Artifact Registry経由で `asia-northeast1` のCloud Run（既定サービス名: `ra-image-inference`）へ反映する。更新時も同じデプロイコマンドを実行する。成功後はスクリプトがArtifact Registryの `ra-inference` リポジトリを削除するため、イメージを再利用する場合は再ビルドが必要。
+既存サービスのモデルを更新するときは、新しい `.pt` を同じパスへ置き換え、`ai-api/model/ra_screening_model.json` の `model_version` を更新してから同じデプロイコマンドを実行する。詳しくは [AI APIのモデル更新手順](./ai-api/README.md#既存モデルの更新) を参照。第3引数は、共有キーを登録したSecret名。Cloud Buildで重みを含むイメージを作成し、Artifact Registry経由で `asia-northeast1` のCloud Run（既定サービス名: `ra-image-inference`）へ反映する。成功後はスクリプトがArtifact Registryの `ra-inference` リポジトリを削除するため、イメージを再利用する場合は再ビルドが必要。
 
-デプロイ後はサービスURLの `GET /health` が `{"status":"ok"}` を返すことを確認し、Vercelの `AI_API_URL` と `AI_API_KEY` を設定してWebを再デプロイする。推論エンドポイントは共有キーによるBearer認証を使う。
+デプロイ後はサービスURLの `GET /health` が `{"status":"ok"}` を返すことを確認する。初めて実推論を使う場合やURL・共有キーを変更した場合は、Vercelの `AI_API_URL` と `AI_API_KEY` を設定してWebを再デプロイする。既存サービスでモデルだけを更新する場合、Webの再デプロイは不要。推論エンドポイントは共有キーによるBearer認証を使う。
 
 手順の詳細は [web/README.md](./web/README.md) と [ai-api/README.md](./ai-api/README.md) を参照してください。

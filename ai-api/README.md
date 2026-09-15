@@ -13,8 +13,7 @@ ai-api/
 ├── Dockerfile                Cloud Run 用イメージ
 ├── cloudbuild.yaml           Cloud Build（重みをイメージに焼き込んで push）
 ├── scripts/
-│   ├── deploy-cloud-run.sh   Cloud Run へのデプロイ
-│   └── verify-received-files.sh  受け取りファイルの検証
+│   └── deploy-cloud-run.sh   Cloud Run へのデプロイ
 ├── model/
 │   ├── ra_screening_model.json モデルのバージョン情報（Git管理）
 │   └── ra_screening_model.pt   学習済みモデル（重みと設定情報を含む。Gitには含まれず、別途配置）
@@ -61,12 +60,11 @@ Web 側の `AI_API_URL` を `http://127.0.0.1:8080` に向けると、モック�
 
 `GET /health` は認証なしで `{"status":"ok"}` を返します。Cloud Run が予約する `/healthz` は使いません。
 
-Cloud Run へデプロイする前に、共有 API キーを Vercel と Secret Manager の両方へ入れます。キーをログへ出さないでください。
+Cloud Run へデプロイする前に、共有 API キーを Vercel と Secret Manager の両方へ入れます。キーをログへ出さないでください。以下の `PROJECT_ID` は対象のGoogle CloudプロジェクトID、`PROJECT_REF` はWebが使うSupabaseプロジェクトのrefに置き換えます。例えばSupabase URLが `https://abc123.supabase.co` なら、第2引数には `abc123.supabase.co` を渡します。Secret名が `ra-ai-api-key` と異なる場合は、第3引数を実際の名前に置き換えてください。
 
 ```bash
 gcloud secrets create ra-ai-api-key --replication-policy=automatic
 gcloud secrets versions add ra-ai-api-key --data-file=/path/to/key-file
-scripts/verify-received-files.sh
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 # 複数のSupabaseプロジェクトを許可する場合
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co,ANOTHER_PROJECT_REF.supabase.co ra-ai-api-key
@@ -77,6 +75,23 @@ scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co,ANOTHER_PROJECT_R
 推論イメージは Artifact Registry の月 0.5GB の無料枠より大きいので、残しておくと保管料がかかります。Cloud Run はデプロイ時にイメージを取り込むため、成功後は `ra-inference` リポジトリごと消します。イメージだけ消すとレイヤーが翌日まで残るためです。起動やスケールアウトには、この取り込み済みのコピーで十分です。古い版に戻すときは再ビルドします。次のデプロイでリポジトリは作り直します。デプロイが途中で止まったときのために、直近 1 件を残し、作成から 2 日以上経ったイメージを消すクリーンアップも付けてあります。
 
 Cloud Build のソースアーカイブは `{PROJECT_ID}_cloudbuild` に残ります。Artifact Registry のクリーンアップはこのバケットには効かないため、作成から 3 日以上経ったオブジェクトを削除する Lifecycle を付けます。
+
+### 既存モデルの更新
+
+`ai-api/` で新しい重みを `model/ra_screening_model.pt` に置き換え、`model/ra_screening_model.json` の `model_version` を新しいモデルに合わせて更新します。現在の推論コードが重みを読み込めることを確認してから、既存サービスと同じ引数で再デプロイします。サービス名を第4引数で指定していた場合は、更新時も同じ名前を指定してください。
+
+```bash
+cp /path/to/new_ra_screening_model.pt model/ra_screening_model.pt
+python -c 'from serve import RAScreeningService; RAScreeningService.from_checkpoint("model/ra_screening_model.pt", device="cpu"); print("Model loaded successfully")'
+```
+
+読み込みが成功すると `Model loaded successfully` と表示され、コマンドは終了コード `0` で終わります。例外の traceback が出た場合は、重みと推論コードの互換性などを確認してください。読み込み確認後にデプロイします。
+
+```bash
+scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
+```
+
+デプロイ後は `GET /health` でサービスの起動を確認し、実際の解析結果でも新しい `model_version` を確認してください。モデルのみ更新し、サービスURLと共有キーが同じなら、Vercel側の環境変数変更やWebの再デプロイは不要です。
 
 リクエストログには手の左右と署名付き画像 URL、成功レスポンスのログにはスクリーニング結果と `model_version` を含めます。署名付き URL の検証に失敗した場合は、`image_url_validation_failed` イベントに対象の左右・URLと、許可外ホスト、スキーム不一致、不正ポート、署名パス不一致、token 不足などの具体的な判定理由を記録します。画像の取得に失敗した場合は、`image_download_failed` イベントに HTTP ステータス、Content-Type、サイズ超過、タイムアウト、通信例外、画像デコード失敗などの原因を記録します。API キーと画像データは出しません。署名付き URL のトークンも Cloud Logging に記録されるため、ログの閲覧権限と保持期間を適切に制限してください。
 
