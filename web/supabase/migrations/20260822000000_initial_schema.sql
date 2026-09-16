@@ -9,12 +9,15 @@ create table if not exists public.clinics (
 );
 
 -- ========== profiles ==========
+-- 管理者はアカウントを削除できるが、撮影データの担当者表示・医療機関の紐付けを保つため、
+-- auth.usersの削除時にprofilesへcascadeさせず、削除済みの墓標行として残す（deleted_at）。
 create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key,
   role text not null check (role in ('admin', 'clinic_staff')),
   full_name text not null,
   clinic_id uuid references public.clinics(id) on delete set null, -- admin の場合は NULL 可
   is_active boolean not null default true,
+  deleted_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -87,6 +90,14 @@ create table if not exists public.joint_results (
 create index if not exists idx_joint_results_screening on public.joint_results(screening_id);
 create unique index if not exists idx_joint_results_screening_side_joint
   on public.joint_results(screening_id, side, joint_name);
+
+-- ========== screening_analysis_debug_responses ==========
+-- AI APIの成功レスポンス原文。管理者のみがデバッグ目的で参照できる。
+create table if not exists public.screening_analysis_debug_responses (
+  screening_id uuid primary key references public.screenings(id) on delete cascade,
+  raw_response jsonb not null check (jsonb_typeof(raw_response) = 'object'),
+  created_at timestamptz not null default now()
+);
 
 -- SupabaseのData APIでRLSを評価させるため、利用ロールにテーブル権限を付与する。
 -- 実際に許可する行・操作は下記のRLSポリシーで制限する。
@@ -249,6 +260,8 @@ revoke all on function public.complete_screening_analysis(uuid, integer, jsonb, 
 revoke all on function public.complete_screening_analysis(uuid, integer, jsonb, jsonb) from authenticated;
 grant execute on function public.complete_screening_analysis(uuid, integer, jsonb, jsonb) to service_role;
 
+-- 被験者IDの訂正を確定する。
+-- 直接実行はService Roleに限定し、呼び出し元の有効状態・ロール・施設もDBで再確認する。
 create or replace function public.correct_screening_subject(
   p_screening_id uuid,
   p_expected_subject_id text,
@@ -270,44 +283,76 @@ declare
   v_actor_clinic_id uuid;
   v_actor_is_active boolean;
 begin
-  select subject_id, created_by into v_current_subject_id, v_created_by
-  from public.screenings where id = p_screening_id;
-  if not found then raise exception 'スクリーニング記録が見つかりません'; end if;
+  select subject_id, created_by
+    into v_current_subject_id, v_created_by
+  from public.screenings
+  where id = p_screening_id;
+
+  if not found then
+    raise exception 'スクリーニング記録が見つかりません';
+  end if;
+
   if v_current_subject_id is distinct from p_expected_subject_id then
     raise exception '被験者IDがすでに変更されています。画面を更新して確認してください';
   end if;
+
   if v_current_subject_id is not distinct from p_new_subject_id then
     raise exception '変更前後の被験者IDが同じです';
   end if;
 
   if v_current_subject_id is not null then
-    select clinic_id into v_old_clinic_id from public.subjects where id = v_current_subject_id;
+    select clinic_id into v_old_clinic_id
+    from public.subjects
+    where id = v_current_subject_id;
   elsif v_created_by is not null then
-    select clinic_id into v_old_clinic_id from public.profiles where id = v_created_by;
+    select clinic_id into v_old_clinic_id
+    from public.profiles
+    where id = v_created_by;
   end if;
 
   if p_new_subject_id is not null then
-    select clinic_id into v_new_clinic_id from public.subjects where id = p_new_subject_id;
-    if not found then raise exception '変更先の被験者IDが見つかりません'; end if;
+    select clinic_id into v_new_clinic_id
+    from public.subjects
+    where id = p_new_subject_id;
+
+    if not found then
+      raise exception '変更先の被験者IDが見つかりません';
+    end if;
   end if;
 
-  if v_old_clinic_id is not null and v_new_clinic_id is not null and v_old_clinic_id <> v_new_clinic_id then
+  if v_old_clinic_id is not null
+     and v_new_clinic_id is not null
+     and v_old_clinic_id <> v_new_clinic_id then
     raise exception '別の医療機関の被験者IDへは変更できません';
   end if;
-  v_clinic_id := coalesce(v_old_clinic_id, v_new_clinic_id);
-  if v_clinic_id is null then raise exception '記録の医療機関を特定できないため変更できません'; end if;
 
-  select role, clinic_id, is_active into v_actor_role, v_actor_clinic_id, v_actor_is_active
-  from public.profiles where id = p_changed_by;
-  if not found or not v_actor_is_active then raise exception '有効なユーザーのみ変更できます'; end if;
+  v_clinic_id := coalesce(v_old_clinic_id, v_new_clinic_id);
+  if v_clinic_id is null then
+    raise exception '記録の医療機関を特定できないため変更できません';
+  end if;
+
+  select role, clinic_id, is_active
+    into v_actor_role, v_actor_clinic_id, v_actor_is_active
+  from public.profiles
+  where id = p_changed_by;
+
+  if not found or not v_actor_is_active then
+    raise exception '有効なユーザーのみ変更できます';
+  end if;
+
   if v_actor_role <> 'admin'
      and (v_actor_role <> 'clinic_staff' or v_actor_clinic_id is distinct from v_clinic_id) then
     raise exception 'この医療機関の記録を変更する権限がありません';
   end if;
 
-  update public.screenings set subject_id = p_new_subject_id
-  where id = p_screening_id and subject_id is not distinct from p_expected_subject_id;
-  if not found then raise exception '被験者IDがすでに変更されています。画面を更新して確認してください'; end if;
+  update public.screenings
+  set subject_id = p_new_subject_id
+  where id = p_screening_id
+    and subject_id is not distinct from p_expected_subject_id;
+
+  if not found then
+    raise exception '被験者IDがすでに変更されています。画面を更新して確認してください';
+  end if;
 end;
 $$;
 
@@ -325,7 +370,7 @@ stable
 as $$
   select exists (
     select 1 from profiles
-    where id = auth.uid() and is_active = true
+    where id = auth.uid() and is_active = true and deleted_at is null
   );
 $$;
 
@@ -341,7 +386,7 @@ stable
 as $$
   select exists (
     select 1 from profiles
-    where id = auth.uid() and role = 'admin' and is_active = true
+    where id = auth.uid() and role = 'admin' and is_active = true and deleted_at is null
   );
 $$;
 
@@ -353,7 +398,7 @@ set search_path = public
 stable
 as $$
   select clinic_id from profiles
-  where id = auth.uid() and is_active = true;
+  where id = auth.uid() and is_active = true and deleted_at is null;
 $$;
 
 -- ========== RLS ==========
@@ -362,6 +407,7 @@ alter table public.profiles enable row level security;
 alter table public.subjects enable row level security;
 alter table public.screenings enable row level security;
 alter table public.joint_results enable row level security;
+alter table public.screening_analysis_debug_responses enable row level security;
 
 -- clinics
 drop policy if exists "clinics: admin は全件参照・編集可能, staff は自分の所属クリニックを参照可能" on public.clinics;
@@ -489,6 +535,17 @@ create policy "joint_results_tenant_access"
     )
   );
 
+-- screening_analysis_debug_responses
+-- Data APIからの読み取りも、RLSで有効な本部管理者だけに限定する。
+drop policy if exists "screening_analysis_debug_responses_admin_select"
+  on public.screening_analysis_debug_responses;
+create policy "screening_analysis_debug_responses_admin_select"
+  on public.screening_analysis_debug_responses for select
+  using (public.is_admin());
+
+grant select on table public.screening_analysis_debug_responses to authenticated, service_role;
+grant insert, update, delete on table public.screening_analysis_debug_responses to service_role;
+
 -- ========== Storage バケット ==========
 insert into storage.buckets (id, name, public)
 values ('hand-images', 'hand-images', false)
@@ -592,6 +649,7 @@ begin
     raise exception '完了または失敗した記録のみ再解析できます';
   end if;
   delete from public.joint_results where screening_id = p_screening_id;
+  delete from public.screening_analysis_debug_responses where screening_id = p_screening_id;
   return next;
 end;
 $$;
@@ -769,7 +827,8 @@ create or replace function public.complete_ra_screening_analysis_with_metadata(
   p_ra_detected boolean,
   p_total_positive_joints integer,
   p_hands jsonb,
-  p_ai_model_version text
+  p_ai_model_version text,
+  p_raw_response jsonb
 )
 returns void
 language plpgsql
@@ -787,9 +846,17 @@ begin
   update public.screenings
   set ai_model_version = nullif(trim(p_ai_model_version), '')
   where id = p_screening_id;
+
+  insert into public.screening_analysis_debug_responses (
+    screening_id, raw_response
+  )
+  values (p_screening_id, p_raw_response)
+  on conflict (screening_id) do update
+  set raw_response = excluded.raw_response,
+      created_at = now();
 end;
 $$;
 
-revoke all on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text) from public;
-revoke all on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text) from authenticated;
-grant execute on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text) to service_role;
+revoke all on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text, jsonb) from public;
+revoke all on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text, jsonb) from authenticated;
+grant execute on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text, jsonb) to service_role;
