@@ -30,7 +30,7 @@ Linuxでは次を実行して依存関係をインストールします。
 pip install -r requirements-test.txt
 ```
 
-macOS（arm64、Python 3.11）では、動作確認済みの依存関係をインストールします。
+macOSでは代わりに次を実行します。
 
 ```bash
 pip install -r requirements-macos-py311.txt -r requirements-api.txt
