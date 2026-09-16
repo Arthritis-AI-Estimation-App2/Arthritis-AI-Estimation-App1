@@ -22,7 +22,19 @@ Python 3.11を推奨します。モデル提供元の要件はPython 3.9以降�
 cp /path/to/ra_screening_model.pt model/ra_screening_model.pt
 python3 -m venv .venv
 source .venv/bin/activate
+```
+
+Linuxでは次を実行して依存関係をインストールします。
+
+```bash
 pip install -r requirements-test.txt
+```
+
+macOSでは代わりに次を実行します。
+
+```bash
+pip install -r validation/requirements-tested-macos-py311.txt -r requirements-api.txt
+pip install pytest==8.4.2 httpx==0.28.1
 ```
 
 `ra_screening_model.pt` がない状態では推論とデプロイは起動しません。API仕様適合テストには重みは不要です。

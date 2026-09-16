@@ -40,7 +40,24 @@ Supabaseの準備と環境変数は [WebのREADME](./web/README.md) を参照し
 cd ai-api
 python3 -m venv .venv
 source .venv/bin/activate
+```
+
+Linuxでは次を実行して依存関係をインストールします。
+
+```bash
 pip install -r requirements-test.txt
+```
+
+macOSでは代わりに次を実行します。
+
+```bash
+pip install -r validation/requirements-tested-macos-py311.txt -r requirements-api.txt
+pip install pytest==8.4.2 httpx==0.28.1
+```
+
+依存関係をインストールしたら、AI APIを起動します。
+
+```bash
 export AI_API_KEY=local-dev-key
 export SUPABASE_STORAGE_HOSTS=127.0.0.1
 uvicorn api:app --host 127.0.0.1 --port 8080

@@ -20,7 +20,7 @@ cp .env.example .env.local
 ### Supabaseの準備
 
 1. Supabaseプロジェクトを作成する。ローカル環境では `npx supabase start` を実行する。
-2. ホスト環境の新規DBでは、SQL Editorで `supabase/schema.sql` を実行する。ローカル環境では初期マイグレーションが自動適用される。
+2. ホスト環境の新規DBでは、SQL Editorで `supabase/schema.sql` を実行する。ローカル環境では初期マイグレーションが自動適用されるが、含まれていない `supabase/migration_v24_ai_response_debug.sql` と `supabase/migration_v25_account_deletion.sql` も番号順に適用する。
 3. Authentication > Usersで最初の管理者を作成し、そのUUIDを使ってSQL Editorでプロフィールを登録する。
 
 ```sql
