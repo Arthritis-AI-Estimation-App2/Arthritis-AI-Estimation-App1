@@ -11,7 +11,7 @@ from PIL import Image
 import api
 import serve
 
-CONTRACT_FIXTURES = Path(__file__).resolve().parents[2] / "contract" / "fixtures"
+API_SPEC_FIXTURES = Path(__file__).resolve().parents[2] / "api-spec" / "fixtures"
 
 
 CURRENT_MODEL_VERSION = api.load_model_version("model/ra_screening_model.json")
@@ -466,8 +466,8 @@ def test_signed_url_validation_failure_logs_diagnostic(monkeypatch):
     }
 
 
-def test_success_response_matches_contract_fixture(monkeypatch):
-    fixture = json.loads((CONTRACT_FIXTURES / "success-both-hands.json").read_text())
+def test_success_response_matches_api_spec_fixture(monkeypatch):
+    fixture = json.loads((API_SPEC_FIXTURES / "success-both-hands.json").read_text())
     results = [
         {key: hand[key] for key in hand if key != "side"}
         for hand in fixture["hands"]
@@ -486,8 +486,8 @@ def test_success_response_matches_contract_fixture(monkeypatch):
     assert body["total_positive_joints"] == fixture["total_positive_joints"]
 
 
-def test_no_hand_error_matches_contract_fixture(monkeypatch):
-    fixture = json.loads((CONTRACT_FIXTURES / "error-no-hand-detected.json").read_text())
+def test_no_hand_error_matches_api_spec_fixture(monkeypatch):
+    fixture = json.loads((API_SPEC_FIXTURES / "error-no-hand-detected.json").read_text())
     app, _ = make_app(monkeypatch, results=(hand_result(detected=0),))
     with TestClient(app) as client:
         response = client.post(

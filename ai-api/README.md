@@ -1,6 +1,6 @@
 # AI推論API
 
-手のRGB画像から関節ごとの炎症を判定するモデルを、FastAPIでWebへ提供します。API契約の正本は [`contract/`](../contract/)、解説は [`docs/ai_api_contract.md`](../docs/ai_api_contract.md) です。
+手のRGB画像から関節ごとの炎症を判定するモデルを、FastAPIでWebへ提供します。API仕様の正本は [`api-spec/openapi.yaml`](../api-spec/openapi.yaml) と [`api-spec/fixtures/`](../api-spec/fixtures/)、解説は [`api-spec/README.md`](../api-spec/README.md) です。
 
 ## 主なファイル
 

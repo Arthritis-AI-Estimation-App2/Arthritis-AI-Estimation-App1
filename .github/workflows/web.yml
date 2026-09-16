@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - "web/**"
-      - "contract/**"
+      - "api-spec/**"
       - ".github/workflows/web.yml"
   push:
     branches: [main]
     paths:
       - "web/**"
-      - "contract/**"
+      - "api-spec/**"
       - ".github/workflows/web.yml"
 
 jobs:

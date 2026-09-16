@@ -10,12 +10,11 @@
 |---|---|---|
 | [`web/`](./web/) | Next.js、Supabase（DB・認証・Storage） | Vercel（Root Directory: `web`） |
 | [`ai-api/`](./ai-api/) | FastAPI、AI推論 | Cloud Build → Cloud Run |
-| [`contract/`](./contract/) | `/v1/ra-screening` のOpenAPIとfixtures（契約の正本） | — |
-| [`docs/`](./docs/) | API契約の解説 | — |
+| [`api-spec/`](./api-spec/) | `/v1/ra-screening` のOpenAPI、fixtures、解説 | — |
 
 Webは署名付き画像URLをAI APIへ渡し、AI APIはBearer認証後に画像を取得して推論します。`AI_API_URL` が未設定なら、Webはモック解析を使います。
 
-APIの詳細は [OpenAPI](./contract/openapi.yaml) と [契約の解説](./docs/ai_api_contract.md) を参照してください。
+APIの詳細は [OpenAPI](./api-spec/openapi.yaml) と [API仕様の解説](./api-spec/README.md) を参照してください。
 
 ## ローカル起動
 

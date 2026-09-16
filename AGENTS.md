@@ -2,7 +2,7 @@
 
 - `web/` は Next.js。`npm` コマンドと Supabase 操作は `web/` で実行する。
 - `ai-api/` は FastAPI。重み `.pt` は Git に入れない。pytest と Cloud Run へのデプロイは `ai-api/` で行う。
-- 契約の正は `contract/`（`openapi.yaml` と fixtures）。解説は `docs/ai_api_contract.md`。
+- API仕様は `api-spec/` にまとめる。正本は `openapi.yaml` と fixtures、解説は `README.md`。
 - デプロイは2系統。Web は Vercel（Root Directory は `web`）、推論は Cloud Build → Artifact Registry → Cloud Run。`web/` だけの変更で Python / Docker を回さない。
 
 患者の氏名・診断名などは保存せず、`subjects`の匿名IDで撮影記録をグルーピングする。

@@ -1,6 +1,6 @@
-# 関節炎スクリーニング REST API 契約（Cloud Run）
+# 関節炎スクリーニング REST API 仕様（Cloud Run）
 
-機械可読の正は [`contract/openapi.yaml`](../contract/openapi.yaml) と [`contract/fixtures/`](../contract/fixtures/) です。この文書は同じ契約の解説です。
+機械可読の正本は [`openapi.yaml`](./openapi.yaml) と [`fixtures/`](./fixtures/) です。この文書はAPI仕様の解説です。
 
 ## 通信の流れ
 

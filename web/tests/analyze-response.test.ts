@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { validateAnalyzeResponse } from "../src/lib/analyze-response.ts";
 
-function loadContractFixture(name: string) {
+function loadApiSpecFixture(name: string) {
   return JSON.parse(
-    readFileSync(new URL(`../../contract/fixtures/${name}`, import.meta.url), "utf8")
+    readFileSync(new URL(`../../api-spec/fixtures/${name}`, import.meta.url), "utf8")
   );
 }
 
@@ -31,8 +31,8 @@ function response(overrides: Record<string, unknown> = {}) {
   };
 }
 
-test("AI応答: 契約fixturesの正常系を受け入れる", () => {
-  const result = validateAnalyzeResponse(loadContractFixture("success-both-hands.json"), [
+test("AI応答: API仕様のfixturesの正常系を受け入れる", () => {
+  const result = validateAnalyzeResponse(loadApiSpecFixture("success-both-hands.json"), [
     "left",
     "right",
   ]);
@@ -44,8 +44,8 @@ test("AI応答: 契約fixturesの正常系を受け入れる", () => {
   assert.equal(result.model_version, "2026-09-08-v1");
 });
 
-test("AI応答: 契約fixturesの関節詳細を受け入れる", () => {
-  const fixture = loadContractFixture("success-with-joints.json");
+test("AI応答: API仕様のfixturesの関節詳細を受け入れる", () => {
+  const fixture = loadApiSpecFixture("success-with-joints.json");
   const result = validateAnalyzeResponse(fixture, ["left", "right"]);
 
   assert.deepEqual(result.hands[0].joints, fixture.hands[0].joints);

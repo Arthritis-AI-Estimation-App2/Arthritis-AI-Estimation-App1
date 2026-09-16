@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { describeJoint, describeWarning, formatProbability, parseHandSummaries } from "../src/lib/analysis-display.ts";
 
-const fixture = JSON.parse(readFileSync(new URL("../../contract/fixtures/success-both-hands.json", import.meta.url), "utf8"));
+const fixture = JSON.parse(readFileSync(new URL("../../api-spec/fixtures/success-both-hands.json", import.meta.url), "utf8"));
 test("詳細なしでもAPIの左右別集計を保持する", () => {
   const { hands, invalid } = parseHandSummaries(fixture.hands);
   assert.equal(invalid, false);
