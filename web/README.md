@@ -1,16 +1,16 @@
 # 関節炎スクリーニングAIアプリ（Web）
 
-Next.js、Supabase、AI APIで撮影・解析結果を管理するWebアプリです。スタッフ画面は `/`、管理画面は `/admin` です。全体構成と重要事項は [リポジトリのREADME](../README.md) を参照してください。
+Next.jsとSupabaseで構成したWebフロントエンドとバックエンドです。
 
 ## 技術構成
 
 - Next.js（App Router、Server Actions）、React、Tailwind CSS
 - Supabase（PostgreSQL、Auth、非公開Storage）
-- Cloud Run上のAI API。`AI_API_URL` 未設定時はモック解析
+- 画像解析はCloud Run上のAI APIを呼び出す。`AI_API_URL` 未設定時はモック解析を行う。
 
 ## セットアップ
 
-以降のコマンドは `web/` で実行します。
+`web/` ディレクトリで以下のコマンドを実行します。
 
 ```bash
 npm install
@@ -35,23 +35,23 @@ set role = 'admin',
 
 ログイン後、`/admin/clinics` で医療機関を作成し、`/admin/staffs/new` でスタッフを発行します。
 
-既存DBは、適用状況を確認して未適用の個別マイグレーションを番号順に実行してください。現在の最終は `migration_v25_account_deletion.sql` です。`migration_v2.sql` はテーブルを再作成するため、既存データのあるDBへ適用しないでください。
+既存DBの場合は、適用状況を確認して未適用の個別マイグレーションを番号順に実行してください。
 
 ### 環境変数
 
 `.env.local` に設定します。本番ではVercelの対象環境へ同じ変数を登録し、変更後に再デプロイします。
 
-| 変数 | 必須 | 用途 |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | 必須 | SupabaseのAPI URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 必須 | Publishable key。ローカルは `npx supabase status` で確認 |
-| `SUPABASE_SECRET_KEY` | 必須 | Secret key。サーバー専用 |
-| `AI_API_URL` | 実推論時 | Cloud RunのサービスURL。ローカルは `http://127.0.0.1:8080` |
-| `AI_API_KEY` | 実推論時 | AI APIと共通のBearerキー。サーバー専用 |
-| `AI_API_LOG_RESPONSE` | 任意 | `true` で成功レスポンスをサーバーログへ出力。本番は通常無効 |
-| `ENABLE_DARK_MODE` | 任意 | `true` でOS設定に応じたダークモードを有効化。既定はライト固定 |
+| 変数 | VercelのType | 必須 | 用途 |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Config | 必須 | SupabaseのAPI URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Config | 必須 | SupabaseのPublishable key。ローカルは `npx supabase status` で確認 |
+| `SUPABASE_SECRET_KEY` | Secret | 必須 | SupabaseのSecret key |
+| `AI_API_URL` | Config | 実推論時 | Cloud RunのサービスURL。ローカルは `http://127.0.0.1:8080` |
+| `AI_API_KEY` | Secret | 実推論時 | AI APIと共通の認証用キー。作成方法は[Cloud Runへデプロイ](../ai-api/README.md#cloud-runへデプロイ)を参照。 |
+| `AI_API_LOG_RESPONSE` | Config | 任意 | `true` で成功レスポンスをサーバーログへ出力 |
+| `ENABLE_DARK_MODE` | Config | 任意 | `true` でOS設定に応じたダークモードを有効化 |
 
-ホスト環境のキーはSupabaseの Settings > API Keysで取得します。推奨形式はPublishable key（`sb_publishable_...`）とSecret key（`sb_secret_...`）です。`SUPABASE_SECRET_KEY` と `AI_API_KEY` に `NEXT_PUBLIC_` を付けないでください。
+ホスト環境のキーはSupabaseの Settings > API Keysで取得します。推奨形式はPublishable key（`sb_publishable_...`）とSecret key（`sb_secret_...`）です。
 
 ### 起動
 
@@ -63,15 +63,13 @@ npm run dev
 - スタッフ画面: <http://localhost:3000/>
 - 管理画面: <http://localhost:3000/admin>
 
-カメラにはブラウザの権限が必要です。ローカルでは `localhost` から利用できます。
-
 ## 開発時の確認
 
 ### 手元の画像で解析する
 
-`/capture?debug=1` では、カメラの代わりに画像を選択できます。画像は加工せずにアップロードされるため、AI APIの結果と比較できます。条件はJPEG、10MB以下、2000万ピクセル以下です。
+撮影時、URLを手動で `/capture?debug=1` に変更するとカメラの代わりに画像を選択できます。画像は加工せずにアップロードされるため、AI APIの結果と比較できます。条件はJPEG、10MB以下、2000万ピクセル以下です。
 
-### DB型を更新する
+### DBを元にTypeScriptの型を生成
 
 DBへマイグレーションを適用したあとに実行します。
 
@@ -86,10 +84,11 @@ npm test
 npm run build
 ```
 
-RLSとStorageは、実データを含まないローカルDBまたは専用テストプロジェクトで確認します。本番プロジェクトを指定しないでください。
+RLSとStorageのテスト (`npm run test:rls`) は本番Supabaseに対して実行しないでください。ローカルDBまたは専用テストプロジェクトで確認します。
 
 ```bash
 npx supabase start
+# 以下は本番Supabaseに対して実行しないこと
 npm run test:rls
 ```
 
@@ -115,6 +114,6 @@ TEST_SUPABASE_SECRET_KEY=<test-secret-key>
 
 ## Vercelへのデプロイ
 
-VercelのFramework PresetをNext.js、Root Directoryを `web` にし、[環境変数](#環境変数)を登録します。`vercel.json` は `web/` に差分がないデプロイのビルドをスキップします。比較できない場合は安全側でビルドします。
+VercelのFramework PresetをNext.js、Root Directoryを `web` にし、[環境変数](#環境変数)を登録します。`vercel.json` は `web/` に差分がないデプロイのビルドをスキップします。
 
-本番ビルドは長時間開いたタブの更新検知用IDを生成します。同じビルドを複数台へ配布する場合は、各台で再ビルドせず成果物を共有してください。
+本番ビルドは長時間開いたタブの更新検知用IDを生成します (`app-version.json`)。同じビルドを複数台へ配布する場合は、各台で再ビルドせず成果物を共有してください。

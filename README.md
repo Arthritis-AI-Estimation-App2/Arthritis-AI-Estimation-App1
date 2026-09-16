@@ -1,16 +1,21 @@
 # 関節炎スクリーニングAIアプリ
 
-医療機関スタッフが手指を撮影し、AIによる関節炎スクリーニング結果を管理するアプリです。管理者は医療機関、スタッフ、撮影・解析データを管理します。
+医療機関スタッフが被験者の手指を撮影し、その画像をAIモデルが解析して関節炎判定を行うアプリです。患者の氏名など個人情報は保存せず、匿名の被験者IDで撮影記録をグループ化して管理します。
 
-患者の氏名や診断名は保存せず、撮影記録は匿名の被験者IDでまとめます。
+## ユーザー権限
+
+ユーザー権限に応じてログイン以降の画面が変わります。
+
+1. 医療機関スタッフ … 撮影・結果判定と自院の結果の閲覧のみ可能。解析元の撮影画像は閲覧不可。主にスマホやタブレットからの利用を想定。
+2. 管理者 … 撮影画像も含めて全データの閲覧が可能。主にPCからの利用を想定。
 
 ## 構成
 
 | ディレクトリ | 内容 | デプロイ先 |
-|---|---|---|
+| --- | --- | --- |
 | [`web/`](./web/) | Next.js、Supabase（DB・認証・Storage） | Vercel（Root Directory: `web`） |
-| [`ai-api/`](./ai-api/) | FastAPI、AI推論 | Cloud Build → Cloud Run |
-| [`api-spec/`](./api-spec/) | `/v1/ra-screening` のOpenAPI、fixtures、解説 | — |
+| [`ai-api/`](./ai-api/) | FastAPI、AI推論 | Google Cloud Build → Artifact Registry → Cloud Run |
+| [`api-spec/`](./api-spec/) | AI APIの仕様 | — |
 
 Webは署名付き画像URLをAI APIへ渡し、AI APIはBearer認証後に画像を取得して推論します。`AI_API_URL` が未設定なら、Webはモック解析を使います。
 
@@ -29,7 +34,7 @@ npm run dev
 
 Supabaseの準備と環境変数は [WebのREADME](./web/README.md) を参照してください。
 
-実推論も確認する場合は、別のターミナルでAI APIを起動します。学習済み重み `.pt` は別途必要です。
+実推論も確認する場合は、別のターミナルでAI APIを起動します。学習済み重み `ra_screening_model.pt` は別途必要です。
 
 ```bash
 cd ai-api
@@ -52,11 +57,9 @@ AI_API_KEY=local-dev-key
 
 ## 重要な設定
 
-- `SUPABASE_SECRET_KEY` と `AI_API_KEY` はサーバー専用です。`NEXT_PUBLIC_` を付けたり、ブラウザへ渡したりしないでください。
-- 手画像は非公開Storageに保存します。スタッフは撮影時のアップロードのみ、管理者は認可済み画面から閲覧・削除できます。
 - WebとAI APIの `AI_API_KEY` は同じ値にします。AI APIでは `SUPABASE_STORAGE_HOSTS` に画像取得を許可するSupabaseホストだけを設定します。
-- 新規DBには `web/supabase/schema.sql`、既存DBには未適用の個別マイグレーションを番号順に適用します。既存データのあるDBへ `migration_v2.sql` を無条件に適用しないでください。
-- 学習済み重み `.pt`、APIキー、患者情報をGitへ追加しないでください。
+- 新規DBには `web/supabase/schema.sql`、既存DBには未適用の個別マイグレーションを番号順に適用します。
+- 学習済み重み `ra_screening_model.pt` はバイナリでサイズが大きいためGitへ追加していません。AIモデルの提供元からファイルを取得して `ai-api/model/ra_screening_model.pt` に置いてください。
 
 ## デプロイ
 
@@ -66,4 +69,4 @@ AI_API_KEY=local-dev-key
 2. [AI APIのREADME](./ai-api/README.md#cloud-runへデプロイ) に従ってAI APIをCloud Runへデプロイする。
 3. VercelでRoot Directoryを `web` にし、[Webの環境変数](./web/README.md#環境変数)を登録してデプロイする。
 
-Webだけの変更ではAI APIの再デプロイは不要です。モデルまたは `ai-api/` を変更した場合だけAI APIを再デプロイします。DB変更時は、Webのデプロイ前に対象環境へマイグレーションを適用してください。
+Webだけの変更ではAI APIの再デプロイは不要です。モデルまたは `ai-api/` を変更した場合だけAI APIを再デプロイします。DB変更時は、Webのデプロイ前にSupabaseのSQL Editorを使って `web/supabase/` 内のマイグレーションを適用してください。
