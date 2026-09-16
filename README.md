@@ -48,10 +48,10 @@ Linuxでは次を実行して依存関係をインストールします。
 pip install -r requirements-test.txt
 ```
 
-macOSでは代わりに次を実行します。
+macOS（arm64、Python 3.11）では、動作確認済みの依存関係をインストールします。
 
 ```bash
-pip install -r validation/requirements-tested-macos-py311.txt -r requirements-api.txt
+pip install -r requirements-macos-py311.txt -r requirements-api.txt
 pip install pytest==8.4.2 httpx==0.28.1
 ```
 
