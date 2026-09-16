@@ -1,50 +1,36 @@
-# RA関節炎スクリーニング 推論モジュール
+# AI推論API
 
-手の写真（RGB画像）から、関節リウマチ(RA)による関節炎症の有無を関節ごとに判定するモデルの推論コード一式です。
+手のRGB画像から関節ごとの炎症を判定するモデルを、FastAPIでWebへ提供します。API契約の正本は [`contract/`](../contract/)、解説は [`docs/ai_api_contract.md`](../docs/ai_api_contract.md) です。
 
-HTTP API契約の正本は [`contract/`](../contract/) です。解説は [`docs/ai_api_contract.md`](../docs/ai_api_contract.md) を参照してください。リポジトリ全体の説明は [../README.md](../README.md) を参照してください。
+## 主なファイル
 
-## フォルダ構成
-
-```
-ai-api/
-├── api.py                    FastAPI（認証・署名付きURL取得・契約エラー）
-├── serve.py                  推論コード本体
-├── Dockerfile                Cloud Run 用イメージ
-├── cloudbuild.yaml           Cloud Build（重みをイメージに焼き込んで push）
-├── scripts/
-│   └── deploy-cloud-run.sh   Cloud Run へのデプロイ
-├── model/
-│   ├── ra_screening_model.json モデルのバージョン情報（Git管理）
-│   └── ra_screening_model.pt   学習済みモデル（重みと設定情報を含む。Gitには含まれず、別途配置）
-└── test_images/
-    └── sample_001〜005.jpg   動作確認用のサンプル画像（CG生成の合成データ）
-```
-
-`test_images/` は実患者データではなく、3DCGで生成した合成データです（研究倫理・同意の範囲外のため、実患者の写真は含めていません）。実運用では、実際の手のRGB写真（スマートフォン撮影等）を入力してください。
+| パス | 内容 |
+|---|---|
+| `api.py` | Bearer認証、署名付きURLの検証・取得、API契約 |
+| `serve.py` | モデルの読み込みと推論 |
+| `model/ra_screening_model.json` | APIが返す `model_version`（Git管理） |
+| `model/ra_screening_model.pt` | 学習済み重み（Git管理外、別途配置） |
+| `scripts/deploy-cloud-run.sh` | Cloud BuildとCloud Runへのデプロイ |
+| `test_images/` | 3DCGで生成した動作確認用画像。実患者画像は含まない |
 
 ## セットアップ
 
-重みと設定情報を含む学習済みモデル `model/ra_screening_model.pt` はサイズが大きいので Git には入れていません。clone しただけでは推論できないため、別途受け取った `.pt` を `ai-api/model/ra_screening_model.pt` に置いてください。API が返す `model_version` は、別途 Git 管理している `model/ra_screening_model.json` から読み込みます。
+Python 3.11を推奨します。モデル提供元の要件はPython 3.9以降です。
 
 ```bash
-# 受け取った重みをこのパスへコピーする（ファイル名も合わせる）
 cp /path/to/ra_screening_model.pt model/ra_screening_model.pt
-
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-test.txt
 ```
 
-重みが無い状態で `serve.py`・API・デプロイを起動すると、配置を促すエラーで停止します。Python 3.11を推奨します。GPU（CUDA）がなくても動作しますが、後述の通り推論速度が変わります。
-
-API の契約テスト（モデル重みは不要）:
+`.pt` がない状態では推論とデプロイは起動しません。API契約テストには重みは不要です。
 
 ```bash
 MPLCONFIGDIR=/tmp/ra-mpl python -m pytest -q
 ```
 
-ローカルで FastAPI を起動する場合（`.pt` が必要です）:
+ローカルでAPIを起動する場合:
 
 ```bash
 export AI_API_KEY=local-dev-key
@@ -52,48 +38,62 @@ export SUPABASE_STORAGE_HOSTS=127.0.0.1
 uvicorn api:app --host 127.0.0.1 --port 8080
 ```
 
-Web 側の `AI_API_URL` を `http://127.0.0.1:8080` に向けると、モックではなくこの API を使います。
+`GET /health` は認証なしで `{"status":"ok"}` を返します。Webから使う設定は [リポジトリのREADME](../README.md#ローカル起動) を参照してください。
 
-## HTTP API とデプロイ
+## Cloud Runへデプロイ
 
-ブラウザからは直接呼びません。呼び出し元は Next.js の Server Action（`web/src/lib/ai-api.ts`）だけです。リクエストとレスポンスの形式は契約を参照してください。
-
-`GET /health` は認証なしで `{"status":"ok"}` を返します。Cloud Run が予約する `/healthz` は使いません。
-
-Cloud Run へデプロイする前に、共有 API キーを Vercel と Secret Manager の両方へ入れます。キーをログへ出さないでください。以下の `PROJECT_ID` は対象のGoogle CloudプロジェクトID、`PROJECT_REF` はWebが使うSupabaseプロジェクトのrefに置き換えます。例えばSupabase URLが `https://abc123.supabase.co` なら、第2引数には `abc123.supabase.co` を渡します。Secret名が `ra-ai-api-key` と異なる場合は、第3引数を実際の名前に置き換えてください。
+Google Cloudで支払い方法、必要なAPI、`gcloud` の認証とIAMを準備します。共有APIキーはファイルへ安全に生成し、Secret ManagerとVercelの `AI_API_KEY` に同じ値を登録してください。キーと一時ファイルはGitへ追加しません。
 
 ```bash
-gcloud secrets create ra-ai-api-key --replication-policy=automatic
-gcloud secrets versions add ra-ai-api-key --data-file=/path/to/key-file
-scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
-# 複数のSupabaseプロジェクトを許可する場合
-scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co,ANOTHER_PROJECT_REF.supabase.co ra-ai-api-key
+umask 077
+api_key_file=$(mktemp)
+openssl rand -hex 32 | tr -d '\n' > "$api_key_file"
+gcloud secrets create ra-ai-api-key --project=PROJECT_ID --replication-policy=automatic
+gcloud secrets versions add ra-ai-api-key --project=PROJECT_ID --data-file="$api_key_file"
+# Vercelへ値を登録したあとに削除
+rm "$api_key_file"
 ```
 
-`model/ra_screening_model.pt` が無いと Cloud Build は失敗します。スクリプトは Artifact Registry のリポジトリが無ければ作り、`cloudbuild.yaml` で linux/amd64 イメージに重みを焼き込んで push し、Cloud Run へデプロイします。Cloud Build は標準の `e2-standard-2` を使い、月 2,500 分の無料枠の対象です。高性能マシンは指定しません。リージョンは `asia-northeast1`、8 vCPU、4GiB、concurrency 1、0–2 インスタンス、リクエストタイムアウト 60 秒です。PyTorch の推論スレッド数は 8 に設定しています。リクエストベース課金で、無料枠内に収まるかは起動時間や解析件数に依存します。プラットフォーム上は未認証で公開し、アプリ側の Bearer キーで守ります。
+Secretが既にある場合は `create` を省略します。次に `.pt` を配置してデプロイします。
 
-推論イメージは Artifact Registry の月 0.5GB の無料枠より大きいので、残しておくと保管料がかかります。Cloud Run はデプロイ時にイメージを取り込むため、成功後は `ra-inference` リポジトリごと消します。イメージだけ消すとレイヤーが翌日まで残るためです。起動やスケールアウトには、この取り込み済みのコピーで十分です。古い版に戻すときは再ビルドします。次のデプロイでリポジトリは作り直します。デプロイが途中で止まったときのために、直近 1 件を残し、作成から 2 日以上経ったイメージを消すクリーンアップも付けてあります。
+```bash
+scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
+```
 
-Cloud Build のソースアーカイブは `{PROJECT_ID}_cloudbuild` に残ります。Artifact Registry のクリーンアップはこのバケットには効かないため、作成から 3 日以上経ったオブジェクトを削除する Lifecycle を付けます。
+- 第1引数: Google CloudプロジェクトID
+- 第2引数: 許可するSupabaseホスト。複数はカンマ区切り
+- 第3引数: APIキーを保存したSecret名
+- 第4引数（任意）: Cloud Runサービス名。既定は `ra-image-inference`
 
-### 既存モデルの更新
+デプロイ先は `asia-northeast1`、8 vCPU、4GiB、concurrency 1、0–2インスタンス、タイムアウト60秒です。サービス自体は公開し、Bearerキーで保護します。デプロイ成功後は保管料を抑えるためArtifact Registryの一時リポジトリを削除します。古い版へ戻す場合は再ビルドが必要です。
 
-`ai-api/` で新しい重みを `model/ra_screening_model.pt` に置き換え、`model/ra_screening_model.json` の `model_version` を新しいモデルに合わせて更新します。現在の推論コードが重みを読み込めることを確認してから、既存サービスと同じ引数で再デプロイします。サービス名を第4引数で指定していた場合は、更新時も同じ名前を指定してください。
+デプロイ後はサービスURLの `GET /health` と実際の解析結果を確認します。
+
+### モデルを更新する
+
+重みとバージョンを更新し、読み込みを確認してから同じ引数で再デプロイします。
 
 ```bash
 cp /path/to/new_ra_screening_model.pt model/ra_screening_model.pt
+# model/ra_screening_model.json の model_version も更新
 python -c 'from serve import RAScreeningService; RAScreeningService.from_checkpoint("model/ra_screening_model.pt", device="cpu"); print("Model loaded successfully")'
-```
-
-読み込みが成功すると `Model loaded successfully` と表示され、コマンドは終了コード `0` で終わります。例外の traceback が出た場合は、重みと推論コードの互換性などを確認してください。読み込み確認後にデプロイします。
-
-```bash
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 ```
 
-デプロイ後は `GET /health` でサービスの起動を確認し、実際の解析結果でも新しい `model_version` を確認してください。モデルのみ更新し、サービスURLと共有キーが同じなら、Vercel側の環境変数変更やWebの再デプロイは不要です。
+サービスURLとキーが変わらなければ、Webの再デプロイは不要です。
 
-リクエストログには手の左右と署名付き画像 URL、成功レスポンスのログにはスクリーニング結果と `model_version` を含めます。署名付き URL の検証に失敗した場合は、`image_url_validation_failed` イベントに対象の左右・URLと、許可外ホスト、スキーム不一致、不正ポート、署名パス不一致、token 不足などの具体的な判定理由を記録します。画像の取得に失敗した場合は、`image_download_failed` イベントに HTTP ステータス、Content-Type、サイズ超過、タイムアウト、通信例外、画像デコード失敗などの原因を記録します。API キーと画像データは出しません。署名付き URL のトークンも Cloud Logging に記録されるため、ログの閲覧権限と保持期間を適切に制限してください。
+### ログの注意
+
+ログには左右、解析結果、`model_version`、エラー理由が含まれます。APIキーと画像データは出しませんが、署名付きURLのトークンは記録されるため、Cloud Loggingの閲覧権限と保持期間を制限してください。
+
+## モデル提供元資料
+
+<details>
+<summary>モデルの使い方・入出力仕様・内部構造・速度を開く</summary>
+
+以下はモデル提供元の説明を、リポジトリ内の配置に合う最小限の調整だけ加えて掲載しています。
+
+モデル単体の最小依存は `pip install -r requirements.txt` で導入できます。Python 3.9以降でCPU・GPUのどちらでも動作します。`test_images/` は実患者データではなく3DCGの合成画像です。実運用では、スマートフォンなどで撮影した実際の手のRGB画像を入力してください。
 
 ## 使い方
 
@@ -226,5 +226,7 @@ python serve.py --checkpoint model/ra_screening_model.pt --image-url https://exa
 
 ## 補足
 
-- 別途配置する`ra_screening_model.pt`は、ハイパーパラメータ探索（Optuna）で見つけた最良設定を使い、5分割交差検証（患者単位で分割、リーク無し）で本番学習した5つのモデルのうち、最も精度の高かった1つです。実運用に耐える精度かどうかは別途評価対象の画像で検証してください。
+- 同梱の`ra_screening_model.pt`は、ハイパーパラメータ探索（Optuna）で見つけた最良設定を使い、5分割交差検証（患者単位で分割、リーク無し）で本番学習した5つのモデルのうち、最も精度の高かった1つです。実運用に耐える精度かどうかは別途評価対象の画像で検証してください。
 - モデルは学習用の合成データ（RASH: 3DCGで生成したRA症例データセット）で事前学習し、少数の実患者データでファインチューニングしたものです。
+
+</details>
