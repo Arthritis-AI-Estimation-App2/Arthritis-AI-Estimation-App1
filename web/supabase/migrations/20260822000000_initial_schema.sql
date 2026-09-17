@@ -738,6 +738,35 @@ begin
     raise exception '手ごとの解析結果の内容が不正です';
   end if;
 
+  if exists (
+    select 1
+    from jsonb_array_elements(p_hands) as items(hand)
+    where jsonb_array_length(hand->'joints') > 0
+      and (
+        jsonb_array_length(hand->'joints') <> (hand->>'num_joints_detected')::integer
+        or (
+          select count(*)
+          from jsonb_array_elements(hand->'joints') as joint_items(joint)
+          where (joint->>'positive')::boolean
+        ) <> (hand->>'num_positive_joints')::integer
+        or (
+          select count(distinct joint->>'joint_name')
+          from jsonb_array_elements(hand->'joints') as joint_items(joint)
+        ) <> jsonb_array_length(hand->'joints')
+        or exists (
+          select 1
+          from jsonb_array_elements(hand->'joints') as joint_items(joint)
+          where jsonb_typeof(joint) <> 'object'
+            or public.ra_api_joint_name(joint->>'joint_name') is null
+            or jsonb_typeof(joint->'probability') <> 'number'
+            or (joint->>'probability')::numeric not between 0 and 1
+            or jsonb_typeof(joint->'positive') <> 'boolean'
+        )
+      )
+  ) then
+    raise exception '関節別解析結果の内容または集計値が不正です';
+  end if;
+
   if (
     select count(distinct hand->>'side')
     from jsonb_array_elements(p_hands) as items(hand)
@@ -785,10 +814,7 @@ begin
     (joint->>'positive')::boolean,
     (joint->>'probability')::double precision
   from jsonb_array_elements(p_hands) as hand_items(hand)
-  cross join lateral jsonb_array_elements(hand->'joints') as joint_items(joint)
-  where public.ra_api_joint_name(joint->>'joint_name') is not null
-    and jsonb_typeof(joint->'probability') = 'number'
-    and jsonb_typeof(joint->'positive') = 'boolean';
+  cross join lateral jsonb_array_elements(hand->'joints') as joint_items(joint);
 end;
 $$;
 
