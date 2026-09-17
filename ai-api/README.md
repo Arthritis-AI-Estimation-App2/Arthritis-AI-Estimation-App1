@@ -122,8 +122,8 @@ printf '{"model_version": "%s"}\n' "$VERSION" > model/ra_screening_model.json
 
 ```bash
 cp /path/to/new_ra_screening_model.pt model/ra_screening_model.pt
-python -c 'from serve import RAScreeningService; RAScreeningService.from_checkpoint("model/ra_screening_model.pt", device="cpu"); print("Model loaded successfully")'
-# Model loaded successfully と出力されれば成功
+python -c 'from serve import RAScreeningService; RAScreeningService.from_checkpoint("model/ra_screening_model.pt", device="cpu"); print("Checkpoint loaded successfully")'
+# Checkpoint loaded successfully と出力されれば成功
 ```
 
 問題がなければデプロイコマンドを実行します。前述の使い方と同じです。
@@ -133,9 +133,9 @@ python -c 'from serve import RAScreeningService; RAScreeningService.from_checkpo
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 ```
 
-サービスURLとキーが変わらなければ、Webの再デプロイは不要です。
+Cloud RunのサービスURL（Vercelの `AI_API_URL`）と共有APIキー（Vercelの `AI_API_KEY`）が変わらなければ、Webの再デプロイは不要です。モデルの差し替えだけなら、通常はどちらも変わりません。
 
-### ログの注意
+### ログについての注意
 
 ログには左右、解析結果、`model_version`、エラー理由が含まれます。APIキーと画像データは出しませんが、署名付きURLのトークンは記録されるため、Cloud Loggingの閲覧権限と保持期間を制限してください。
 
