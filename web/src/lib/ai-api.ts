@@ -1,4 +1,7 @@
-import { AnalysisExecutionError } from "./analysis-error.ts";
+import {
+  AnalysisExecutionError,
+  parseAiApiErrorResponse,
+} from "./analysis-error.ts";
 import { validateAnalyzeResponse } from "./analyze-response.ts";
 import type { AnalyzeResponseWithRaw, HandSide } from "./types.ts";
 import type { Json } from "./supabase/database.types.ts";
@@ -84,12 +87,15 @@ export async function requestAiAnalysis(
           error instanceof Error ? error.message : String(error)
         }]`;
       }
+      const apiError = parseAiApiErrorResponse(responseBody);
       throw new AnalysisExecutionError(
-        "api_http_error",
-        `AI APIがHTTP ${response.status}を返しました`,
+        apiError?.code ?? "api_http_error",
+        apiError?.message || `AI APIがHTTP ${response.status}を返しました`,
         {
           httpStatus: response.status,
           apiResponseBody: responseBody,
+          apiErrorSide: apiError?.side,
+          apiRequestId: apiError?.requestId,
         }
       );
     }

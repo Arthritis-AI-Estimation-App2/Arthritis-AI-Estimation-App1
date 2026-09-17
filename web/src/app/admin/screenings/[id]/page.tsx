@@ -13,10 +13,7 @@ import CopyJsonButton from "@/components/CopyJsonButton";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import { formatFullScreeningId } from "@/lib/admin-screening-filters";
-import {
-  ANALYSIS_ERROR_LABELS,
-  type AnalysisErrorCode,
-} from "@/lib/analysis-error";
+import { analysisErrorLabel } from "@/lib/analysis-error";
 import { notFound } from "next/navigation";
 import BackLink from "@/components/ui/BackLink";
 
@@ -40,11 +37,7 @@ export default async function AdminScreeningDetailPage({
     screening.status,
     screening.status_updated_at
   );
-  const analysisErrorLabel = screening.analysis_error_code
-    ? ANALYSIS_ERROR_LABELS[
-        screening.analysis_error_code as AnalysisErrorCode
-      ] ?? "不明な解析エラー"
-    : null;
+  const errorLabel = analysisErrorLabel(screening.analysis_error_code);
 
   return (
     <div className="space-y-6">
@@ -87,14 +80,14 @@ export default async function AdminScreeningDetailPage({
         </div>
       )}
 
-      {screening.status === "failed" && analysisErrorLabel && (
+      {screening.status === "failed" && errorLabel && (
         <section className="rounded-xl border border-danger-border bg-surface p-4 text-sm">
           <h2 className="font-semibold text-foreground">AI解析エラー情報</h2>
           <dl className="mt-3 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-secondary-foreground">
             <div className="contents">
               <dt className="text-muted-foreground">エラー種別</dt>
               <dd>
-                {analysisErrorLabel}{" "}
+                {errorLabel}{" "}
                 <span className="font-mono text-xs text-muted-foreground">
                   ({screening.analysis_error_code})
                 </span>

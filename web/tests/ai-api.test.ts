@@ -111,7 +111,7 @@ test("AI API: 有効化時だけ成功レスポンスをサーバーログへ出
   });
 });
 
-test("AI API: HTTPエラーを本文とステータス付きで分類する", async () => {
+test("AI API: 構造化エラーの code と side を保持する", async () => {
   const body = JSON.stringify({
     error: {
       code: "NO_HAND_DETECTED",
@@ -132,11 +132,23 @@ test("AI API: HTTPエラーを本文とステータス付きで分類する", as
     }),
     (error: unknown) => {
       assert.ok(error instanceof AnalysisExecutionError);
-      assert.equal(error.code, "api_http_error");
+      assert.equal(error.code, "NO_HAND_DETECTED");
+      assert.equal(error.message, "No hand was detected.");
       assert.equal(error.httpStatus, 422);
       assert.equal(error.apiResponseBody, body);
+      assert.equal(error.apiErrorSide, "left");
+      assert.equal(error.apiRequestId, "request-1");
       return true;
     }
+  );
+});
+
+test("AI API: 仕様外のHTTPエラー本文は api_http_error にする", async () => {
+  await expectAnalysisError(
+    requestAiAnalysis("https://ai.example", "key", IMAGES, {
+      fetchImpl: responseFetch(new Response("upstream error", { status: 502 })),
+    }),
+    "api_http_error"
   );
 });
 
@@ -203,6 +215,8 @@ test("AI解析ログ: 1行JSONへ識別情報とエラー本文を含める", ()
   assert.equal(log.error_code, "api_http_error");
   assert.equal(log.http_status, 500);
   assert.equal(log.api_error_body, "line 1\nline 2");
+  assert.equal(log.api_error_side, null);
+  assert.equal(log.api_request_id, null);
   assert.equal(log.occurred_at, "2026-09-05T01:02:03.000Z");
 });
 

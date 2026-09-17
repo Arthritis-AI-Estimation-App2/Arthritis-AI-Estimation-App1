@@ -9,6 +9,15 @@ export const ANALYSIS_ERROR_CODES = [
   "api_invalid_response",
   "result_save_failed",
   "unknown",
+  "UNAUTHORIZED",
+  "IMAGE_TOO_LARGE",
+  "UNSUPPORTED_IMAGE_TYPE",
+  "INVALID_REQUEST",
+  "INVALID_IMAGE",
+  "NO_HAND_DETECTED",
+  "IMAGE_FETCH_FAILED",
+  "IMAGE_FETCH_TIMEOUT",
+  "INFERENCE_ERROR",
 ] as const;
 
 export type AnalysisErrorCode = (typeof ANALYSIS_ERROR_CODES)[number];
@@ -24,18 +33,88 @@ export const ANALYSIS_ERROR_LABELS: Record<AnalysisErrorCode, string> = {
   api_invalid_response: "AI APIのレスポンス内容不正",
   result_save_failed: "解析結果の保存失敗",
   unknown: "不明な解析エラー",
+  UNAUTHORIZED: "AI APIの認証失敗",
+  IMAGE_TOO_LARGE: "画像サイズまたは画素数の上限超過",
+  UNSUPPORTED_IMAGE_TYPE: "JPEG・PNG以外の画像",
+  INVALID_REQUEST: "AI APIへのリクエスト形式不正",
+  INVALID_IMAGE: "破損画像",
+  NO_HAND_DETECTED: "手を検出できなかった",
+  IMAGE_FETCH_FAILED: "解析用画像の取得失敗",
+  IMAGE_FETCH_TIMEOUT: "解析用画像の取得タイムアウト",
+  INFERENCE_ERROR: "AI APIの推論エラー",
 };
+
+const ANALYSIS_ERROR_CODE_SET = new Set<string>(ANALYSIS_ERROR_CODES);
+
+export function isAnalysisErrorCode(value: string): value is AnalysisErrorCode {
+  return ANALYSIS_ERROR_CODE_SET.has(value);
+}
+
+export function analysisErrorLabel(code: string | null | undefined) {
+  if (!code) return null;
+  return isAnalysisErrorCode(code) ? ANALYSIS_ERROR_LABELS[code] : "不明な解析エラー";
+}
+
+const AI_API_ERROR_CODES = [
+  "UNAUTHORIZED",
+  "IMAGE_TOO_LARGE",
+  "UNSUPPORTED_IMAGE_TYPE",
+  "INVALID_REQUEST",
+  "INVALID_IMAGE",
+  "NO_HAND_DETECTED",
+  "IMAGE_FETCH_FAILED",
+  "IMAGE_FETCH_TIMEOUT",
+  "INFERENCE_ERROR",
+] as const;
+
+type AiApiErrorCode = (typeof AI_API_ERROR_CODES)[number];
+
+function isAiApiErrorCode(value: string): value is AiApiErrorCode {
+  return (AI_API_ERROR_CODES as readonly string[]).includes(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** AI APIの `{ error: { code, message, side? }, request_id? }` を読む。仕様外なら null。 */
+export function parseAiApiErrorResponse(body: string) {
+  let value: unknown;
+  try {
+    value = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  if (!isRecord(value) || !isRecord(value.error) || typeof value.error.code !== "string") {
+    return null;
+  }
+  if (!isAiApiErrorCode(value.error.code)) return null;
+
+  return {
+    code: value.error.code,
+    message: typeof value.error.message === "string" ? value.error.message : "",
+    side:
+      value.error.side === "left" || value.error.side === "right"
+        ? value.error.side
+        : null,
+    requestId: typeof value.request_id === "string" ? value.request_id : null,
+  };
+}
 
 interface AnalysisErrorOptions {
   cause?: unknown;
   httpStatus?: number;
   apiResponseBody?: string;
+  apiErrorSide?: "left" | "right" | null;
+  apiRequestId?: string | null;
 }
 
 export class AnalysisExecutionError extends Error {
   readonly code: AnalysisErrorCode;
   readonly httpStatus: number | null;
   readonly apiResponseBody: string | null;
+  readonly apiErrorSide: "left" | "right" | null;
+  readonly apiRequestId: string | null;
 
   constructor(
     code: AnalysisErrorCode,
@@ -47,6 +126,8 @@ export class AnalysisExecutionError extends Error {
     this.code = code;
     this.httpStatus = options.httpStatus ?? null;
     this.apiResponseBody = options.apiResponseBody ?? null;
+    this.apiErrorSide = options.apiErrorSide ?? null;
+    this.apiRequestId = options.apiRequestId ?? null;
   }
 }
 
@@ -87,6 +168,8 @@ export function createAnalysisFailureLog(
     error_code: error.code,
     http_status: error.httpStatus,
     api_error_body: error.apiResponseBody,
+    api_error_side: error.apiErrorSide,
+    api_request_id: error.apiRequestId,
     occurred_at: occurredAt,
     ...errorDetails(error),
   };
