@@ -1,6 +1,6 @@
 {
   "inference_ms": 1234,
-  "model_version": "2026-09-08-v1",
+  "model_version": "2026-09-15-v1",
   "hands": [
     {
       "side": "left",

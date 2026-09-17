@@ -4,11 +4,17 @@ OpenAPI形式の仕様書は [`openapi.yaml`](./openapi.yaml) です。この文
 
 ## 通信の流れ
 
-ブラウザはAI APIを直接呼び出しません。画像を非公開のSupabase Storageへ保存した後、Next.jsの`analyzeScreening` Server Actionがログイン状態と画像へのアクセス権を確認し、5分間有効な署名付きURLを発行してCloud Runの同期REST APIを呼び出します。検証済みの結果だけをDBへ保存します。
+ブラウザはAI APIを直接呼び出しません。画像を非公開のSupabase Storageへ保存した後、Next.jsの`analyzeScreening` Server Actionがログイン状態と、その撮影記録をRLSで参照できることを確認します。解析用の5分間有効な署名付きURLはService Roleで発行し、ブラウザには返しません。Cloud Runの同期REST APIを呼び、検証済みの結果だけをDBへ保存します。
 
 ```text
-Browser → Supabase Storage → Next.js Server Action → Cloud Run /v1/ra-screening
-                                                ← 判定JSON
+Browser ──画像アップロード──► Supabase Storage（非公開）
+Browser ──analyzeScreening──► Next.js Server Action
+Next.js ──ログイン確認・撮影記録のRLS参照──► DB
+Next.js ──Service Roleで5分の署名付きURL発行──► Storage
+Next.js ──POST /v1/ra-screening──► Cloud Run
+Cloud Run ──署名付きURLで画像取得──► Storage
+Cloud Run ──判定JSON──► Next.js
+Next.js ──検証済み結果のみ保存──► DB
 ```
 
 `AI_API_URL`が未設定の場合はアプリ内モックを使います。実APIを使う場合は`AI_API_URL`とサーバー専用の`AI_API_KEY`を両方設定します。
@@ -22,7 +28,7 @@ Content-Type: application/json
 ```
 
 Next.js側は`cache: "no-store"`を指定し、55秒でリクエストを中断します。
-`AI_API_LOG_RESPONSE=true`を設定した開発環境では、成功レスポンスをNext.jsサーバーのコンソールへ1行JSONで出力します。
+`AI_API_LOG_RESPONSE=true`のときは、成功レスポンスをNext.jsサーバーのコンソールへ1行JSONで出力します。
 
 ### リクエスト
 
@@ -47,7 +53,7 @@ Next.js側は`cache: "no-store"`を指定し、55秒でリクエストを中断�
 
 ```json
 {
-  "model_version": "2026-09-08-v1",
+  "model_version": "2026-09-15-v1",
   "inference_ms": 1234,
   "hands": [
     {
@@ -78,7 +84,7 @@ Next.js側は`cache: "no-store"`を指定し、55秒でリクエストを中断�
 
 `model_version`は使用したモデルのバージョンです。
 
-その他の項目はモデル提供元の `serve.py` が返す内容そのままです。
+手ごとの `ra_detected`、`hand_probability`、関節数、`joints`、`warnings` は、モデル提供元の `serve.py` が `to_dict()` で返す値です。`side` はAPIがリクエストの手に合わせて付与します。全体の `ra_detected` は手ごとの論理和、`total_positive_joints` は手ごとの陽性関節数の合計です。
 
 ### エラーレスポンス
 

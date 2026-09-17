@@ -41,7 +41,7 @@ test("AI応答: API仕様のfixturesの正常系を受け入れる", () => {
   assert.equal(result.hands[0].side, "left");
   assert.equal(result.ra_detected, true);
   assert.equal(result.total_positive_joints, 3);
-  assert.equal(result.model_version, "2026-09-08-v1");
+  assert.equal(result.model_version, "2026-09-15-v1");
 });
 
 test("AI応答: API仕様のfixturesの関節詳細を受け入れる", () => {
