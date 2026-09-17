@@ -343,11 +343,11 @@ if (!enabled) {
         });
         assert.ok(directResultInsert.error, "joint_resultsの直接追加は拒否されること");
 
-        const directCompletion = await staffA.rpc("complete_screening_analysis", {
+        const directCompletion = await staffA.rpc("complete_ra_screening_analysis", {
           p_screening_id: screeningId,
-          p_total_inflamed_joints: 0,
-          p_right_joints: [],
-          p_left_joints: [],
+          p_ra_detected: false,
+          p_total_positive_joints: 0,
+          p_hands: [],
         });
         assert.ok(directCompletion.error, "解析確定RPCの直接実行は拒否されること");
       });
@@ -507,21 +507,30 @@ if (!enabled) {
         assert.ifError(resultsAfterRestart.error);
         assert.equal(resultsAfterRestart.data?.length, 0, "再解析開始時に旧結果を消去すること");
 
-        const jointNames = [
-          "thumbIP", "thumbMCP", "idxDIP", "idxPIP", "idxMCP",
-          "midDIP", "midPIP", "midMCP", "ringDIP", "ringPIP", "ringMCP",
-          "pinkyDIP", "pinkyPIP", "pinkyMCP", "wrist",
+        const hands = [
+          {
+            side: "right",
+            ra_detected: true,
+            hand_probability: 0.9,
+            num_positive_joints: 1,
+            num_joints_detected: 1,
+            joints: [
+              { joint_id: 1, joint_name: "MCP1", probability: 0.9, positive: true },
+            ],
+            warnings: [],
+          },
+          {
+            side: "left",
+            ra_detected: false,
+            hand_probability: 0.1,
+            num_positive_joints: 0,
+            num_joints_detected: 1,
+            joints: [
+              { joint_id: 1, joint_name: "MCP1", probability: 0.1, positive: false },
+            ],
+            warnings: [],
+          },
         ];
-        const rightJoints = jointNames.map((joint_name, index) => ({
-          joint_name,
-          is_inflamed: index === 0,
-          confidence_score: index === 0 ? 0.9 : 0.1,
-        }));
-        const leftJoints = jointNames.map((joint_name) => ({
-          joint_name,
-          is_inflamed: false,
-          confidence_score: 0.1,
-        }));
         const staleFailure = await adminApi
           .from("screenings")
           .update({
@@ -531,12 +540,13 @@ if (!enabled) {
           })
           .eq("id", screening.data.id);
         assert.ifError(staleFailure.error);
-        const completed = await adminApi.rpc("complete_screening_analysis_with_metadata", {
+        const completed = await adminApi.rpc("complete_ra_screening_analysis_with_metadata", {
           p_screening_id: screening.data.id,
-          p_total_inflamed_joints: 1,
-          p_right_joints: rightJoints,
-          p_left_joints: leftJoints,
+          p_ra_detected: true,
+          p_total_positive_joints: 1,
+          p_hands: hands,
           p_ai_model_version: "arthritis-v1.2.0",
+          p_raw_response: { model_version: "arthritis-v1.2.0", hands },
         });
         assert.ifError(completed.error);
         const replacedResult = await adminApi
@@ -552,19 +562,20 @@ if (!enabled) {
         assert.equal(replacedResult.data?.analysis_error_code, null);
         assert.equal(replacedResult.data?.analysis_error_http_status, null);
         assert.equal(replacedResult.data?.analysis_error_at, null);
-        assert.equal(replacedResult.data?.joint_results.length, 30, "新しい解析結果だけを保存すること");
+        assert.equal(replacedResult.data?.joint_results.length, 2, "新しい解析結果だけを保存すること");
 
         const retryWithoutVersion = await adminApi.rpc("begin_screening_reanalysis", {
           p_screening_id: screening.data.id,
           p_changed_by: adminId,
         });
         assert.ifError(retryWithoutVersion.error);
-        const completeWithoutVersion = await adminApi.rpc("complete_screening_analysis_with_metadata", {
+        const completeWithoutVersion = await adminApi.rpc("complete_ra_screening_analysis_with_metadata", {
           p_screening_id: screening.data.id,
-          p_total_inflamed_joints: 1,
-          p_right_joints: rightJoints,
-          p_left_joints: leftJoints,
+          p_ra_detected: true,
+          p_total_positive_joints: 1,
+          p_hands: hands,
           p_ai_model_version: "",
+          p_raw_response: { model_version: "", hands },
         });
         assert.ifError(completeWithoutVersion.error);
         const noVersionResult = await adminApi

@@ -43,7 +43,7 @@
 
 ## DB変更
 
-- 新規DBの定義は`web/supabase/schema.sql`を更新し、ローカル向けの `web/supabase/migrations/20260822000000_initial_schema.sql` も同じ内容に揃える。既存DB向けには、既存データを削除しない個別マイグレーションを追加する。現在の最終はv25。READMEの手順とずらさない。
+- 新規DBの定義は`web/supabase/schema.sql`を更新し、ローカル向けの `web/supabase/migrations/20260822000000_initial_schema.sql` も同じ内容に揃える。既存DB向けには、既存データを削除しない個別マイグレーションを追加する。現在の最終はv26。READMEの手順とずらさない。
 - SQL変更後はRLS、テナント境界、無効アカウント、Storageアクセスを確認する。確認コマンドは`web/`で`npm run build`、`npx tsc --noEmit`、リポジトリルートで`git diff --check`。
 
 ## コミットメッセージ

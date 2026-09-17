@@ -233,25 +233,6 @@ export type Database = {
         Args: { p_changed_by: string; p_screening_id: string }
         Returns: { id: string; left_image_url: string | null; right_image_url: string | null }[]
       }
-      complete_screening_analysis: {
-        Args: {
-          p_left_joints: Json
-          p_right_joints: Json
-          p_screening_id: string
-          p_total_inflamed_joints: number
-        }
-        Returns: undefined
-      }
-      complete_screening_analysis_with_metadata: {
-        Args: {
-          p_ai_model_version: string
-          p_left_joints: Json
-          p_right_joints: Json
-          p_screening_id: string
-          p_total_inflamed_joints: number
-        }
-        Returns: undefined
-      }
       complete_ra_screening_analysis: {
         Args: {
           p_hands: Json
