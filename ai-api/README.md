@@ -70,9 +70,10 @@ gcloud secrets versions add ra-ai-api-key --project=PROJECT_ID --data-file="$api
 rm "$api_key_file"
 ```
 
-Secretが既にある場合は `create` を省略します。次に `ra_screening_model.pt` をローカルの `model` ディレクトリに配置してデプロイします。
+`ra_screening_model.pt` をローカルの `model/ra_screening_model.pt` に配置し、次のデプロイコマンドを実行します。
 
 ```bash
+# PROJECT_ID と PROJECT_REF は正しい値に置き換えてください
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 ```
 
@@ -95,11 +96,17 @@ VERSION=2026-09-15-v1
 printf '{"model_version": "%s"}\n' "$VERSION" > model/ra_screening_model.json
 ```
 
-重みとバージョンを更新し、読み込みを確認してから同じ引数で再デプロイします。
+新しいモデルをローカルの `model/ra_screening_model.pt` に配置し、読み込めることを確認します。
 
 ```bash
 cp /path/to/new_ra_screening_model.pt model/ra_screening_model.pt
 python -c 'from serve import RAScreeningService; RAScreeningService.from_checkpoint("model/ra_screening_model.pt", device="cpu"); print("Model loaded successfully")'
+# Model loaded successfully と出力されれば成功
+```
+
+問題がなければデプロイコマンドを実行します。前述の使い方と同じです。
+
+```bash
 # PROJECT_ID と PROJECT_REF は正しい値に置き換えてください
 scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 ```
