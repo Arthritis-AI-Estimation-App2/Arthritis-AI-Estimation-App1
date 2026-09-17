@@ -37,7 +37,7 @@ set role = 'admin',
 
 ### 環境変数
 
-`.env.local` に設定します。ローカルは `npx supabase start` のあと `npx supabase status` を実行し、Project URL を `NEXT_PUBLIC_SUPABASE_URL`、Publishable key を `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、Secret key を `SUPABASE_SECRET_KEY` へコピーします。本番ではVercelの対象環境へ同じ変数を登録し、変更後に再デプロイします。
+ローカルでは `.env.local` に設定します。`npx supabase start` のあと `npx supabase status` を実行し、Project URL を `NEXT_PUBLIC_SUPABASE_URL`、Publishable key を `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、Secret key を `SUPABASE_SECRET_KEY` へコピーします。本番ではVercelの対象環境へ同じ変数を登録し、変更後に再デプロイします。
 
 | 変数 | VercelのType | 必須 | 用途 |
 | --- | --- | --- | --- |
