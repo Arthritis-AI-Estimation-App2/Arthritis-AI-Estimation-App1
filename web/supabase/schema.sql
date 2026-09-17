@@ -56,6 +56,32 @@ create table if not exists public.screenings (
 
 create index if not exists idx_screenings_subject on public.screenings(subject_id, created_at desc);
 
+-- 割り当て済みは被験者の所属、未割り当ては作成スタッフの所属。
+create or replace function public.screening_clinic_id(p_screening public.screenings)
+returns uuid
+language sql
+stable
+parallel safe
+set search_path = public
+as $$
+  select coalesce(
+    (
+      select subjects.clinic_id
+      from public.subjects
+      where subjects.id = p_screening.subject_id
+    ),
+    (
+      select profiles.clinic_id
+      from public.profiles
+      where profiles.id = p_screening.created_by
+    )
+  );
+$$;
+
+revoke all on function public.screening_clinic_id(public.screenings) from public;
+grant execute on function public.screening_clinic_id(public.screenings)
+  to authenticated, service_role;
+
 -- 途中状態の滞留を検出できるよう、状態遷移時刻を自動更新する。
 create or replace function public.touch_screening_status_updated_at()
 returns trigger

@@ -144,6 +144,7 @@ export type Database = {
           status_updated_at: string
           subject_id: string | null
           total_inflamed_joints: number | null
+          screening_clinic_id: string | null
         }
         Insert: {
           ai_model_version?: string | null
@@ -265,6 +266,10 @@ export type Database = {
       get_user_clinic_id: { Args: never; Returns: string }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      screening_clinic_id: {
+        Args: { "": Database["public"]["Tables"]["screenings"]["Row"] }
+        Returns: string | null
+      }
     }
     Enums: {
       [_ in never]: never

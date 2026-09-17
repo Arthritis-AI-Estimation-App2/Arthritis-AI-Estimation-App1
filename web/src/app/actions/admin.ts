@@ -12,7 +12,6 @@ import { validateAccountEmail } from "@/lib/email";
 import { staffDisplayName } from "@/lib/staff-display-name";
 import {
   ADMIN_SCREENINGS_PAGE_SIZE,
-  clinicScreeningOrFilter,
   endOfJapanDateExclusive,
   normalizeAdminScreeningFilters,
   screeningIdPrefixBounds,
@@ -432,54 +431,24 @@ export async function getClinicDetail(clinicId: string, page = 1) {
   if (clinicError) throwSupabaseError(clinicError, "医療機関の取得");
   if (!clinic) return null;
 
-  const [staffsResult, subjectsResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, role, full_name, clinic_id, is_active, deleted_at, created_at")
-      .eq("role", "clinic_staff")
-      .eq("clinic_id", clinicId)
-      .order("created_at", { ascending: false }),
-    supabase.from("subjects").select("id").eq("clinic_id", clinicId),
-  ]);
+  const staffsResult = await supabase
+    .from("profiles")
+    .select("id, role, full_name, clinic_id, is_active, deleted_at, created_at")
+    .eq("role", "clinic_staff")
+    .eq("clinic_id", clinicId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
 
   if (staffsResult.error) {
     throwSupabaseError(staffsResult.error, "所属スタッフ一覧の取得");
   }
-  if (subjectsResult.error) {
-    throwSupabaseError(subjectsResult.error, "被験者一覧の取得");
-  }
 
-  const allStaffs = staffsResult.data ?? [];
-  // 削除済みスタッフが未割り当てで撮影した記録も医療機関詳細に残すため、
-  // 未割り当て撮影記録の検索対象IDには削除済みスタッフも含める。
-  const staffIds = allStaffs.map((staff) => staff.id);
-  const staffs = allStaffs.filter((staff) => !staff.deleted_at);
-  const subjectIds = (subjectsResult.data ?? []).map(({ id }) => id);
-  const emptyScreenings = {
-    clinic,
-    staffs,
-    screenings: [] as Array<{
-      id: string;
-      subject_id: string | null;
-      created_by: string | null;
-      status: string;
-      total_inflamed_joints: number | null;
-      created_at: string;
-      staff_name: string | null;
-    }>,
-    ...paginationMeta(0, 1, ADMIN_SCREENINGS_PAGE_SIZE),
-  };
-
-  if (subjectIds.length === 0 && staffIds.length === 0) {
-    return emptyScreenings;
-  }
-
-  const screeningScope = clinicScreeningOrFilter(subjectIds, staffIds);
+  const staffs = staffsResult.data ?? [];
   const { firstRow, lastRow } = pageRange(safePage, ADMIN_SCREENINGS_PAGE_SIZE);
   const { data, error, count } = await supabase
     .from("screenings")
     .select(CLINIC_DETAIL_SCREENING_COLUMNS, { count: "exact" })
-    .or(screeningScope)
+    .eq("screening_clinic_id", clinicId)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .range(firstRow, lastRow);
@@ -491,7 +460,7 @@ export async function getClinicDetail(clinicId: string, page = 1) {
     const { count: fallbackCount, error: countError } = await supabase
       .from("screenings")
       .select("id", { count: "exact", head: true })
-      .or(screeningScope);
+      .eq("screening_clinic_id", clinicId);
     if (countError) throwSupabaseError(countError, "撮影記録の件数取得");
     total = fallbackCount ?? 0;
   }
@@ -1025,34 +994,6 @@ export async function getScreeningsForAdmin(
     };
   }
 
-  let subjectIds: string[] | null = null;
-  let staffIds: string[] | null = null;
-
-  if (safeFilters.clinicId) {
-    const [subjectsResult, staffsResult] = await Promise.all([
-      supabase.from("subjects").select("id").eq("clinic_id", safeFilters.clinicId),
-      supabase.from("profiles").select("id").eq("clinic_id", safeFilters.clinicId),
-    ]);
-    if (subjectsResult.error) {
-      throwSupabaseError(subjectsResult.error, "医療機関の被験者一覧の取得");
-    }
-    if (staffsResult.error) {
-      throwSupabaseError(staffsResult.error, "医療機関のスタッフ一覧の取得");
-    }
-    subjectIds = (subjectsResult.data ?? []).map(({ id }) => id);
-    staffIds = (staffsResult.data ?? []).map(({ id }) => id);
-
-    if (subjectIds.length === 0 && staffIds.length === 0) {
-      return {
-        screenings: [],
-        total: 0,
-        page: 1,
-        pageSize,
-        totalPages: 1,
-      };
-    }
-  }
-
   let query = supabase
     .from("screenings")
     .select(
@@ -1060,8 +1001,8 @@ export async function getScreeningsForAdmin(
       { count: "exact" }
     );
 
-  if (subjectIds && staffIds) {
-    query = query.or(clinicScreeningOrFilter(subjectIds, staffIds));
+  if (safeFilters.clinicId) {
+    query = query.eq("screening_clinic_id", safeFilters.clinicId);
   }
   if (safeFilters.status) query = query.eq("status", safeFilters.status);
   if (safeFilters.subjectId) query = query.eq("subject_id", safeFilters.subjectId);

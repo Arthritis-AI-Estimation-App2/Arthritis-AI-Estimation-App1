@@ -171,15 +171,3 @@ export function adminScreeningExportHref(filters: AdminScreeningFilters) {
     ? `/admin/screenings/export?${query}`
     : "/admin/screenings/export";
 }
-
-/** 割り当て済みは被験者の所属、未割り当ては作成スタッフの所属で医療機関に紐づける。 */
-export function clinicScreeningOrFilter(subjectIds: string[], staffIds: string[]) {
-  const conditions: string[] = [];
-  if (subjectIds.length > 0) {
-    conditions.push(`subject_id.in.(${subjectIds.join(",")})`);
-  }
-  if (staffIds.length > 0) {
-    conditions.push(`and(subject_id.is.null,created_by.in.(${staffIds.join(",")}))`);
-  }
-  return conditions.join(",");
-}

@@ -389,6 +389,56 @@ if (!enabled) {
         assert.equal(screeningRead.data, null);
       });
 
+      await t.test("管理者は計算列で医療機関の撮影記録を絞り込める", async () => {
+        const subjectA = await staffA
+          .from("subjects")
+          .insert({ clinic_id: clinicAId })
+          .select("id")
+          .single();
+        assert.ifError(subjectA.error);
+
+        const assigned = await adminApi
+          .from("screenings")
+          .insert({
+            created_by: staffBId,
+            subject_id: subjectA.data.id,
+            status: "uploading",
+          })
+          .select("id")
+          .single();
+        assert.ifError(assigned.error);
+        createdScreeningIds.push(assigned.data.id);
+
+        const unassigned = await adminApi
+          .from("screenings")
+          .insert({ created_by: staffAId, status: "uploading" })
+          .select("id")
+          .single();
+        assert.ifError(unassigned.error);
+        createdScreeningIds.push(unassigned.data.id);
+
+        const otherClinic = await adminApi
+          .from("screenings")
+          .insert({ created_by: staffBId, status: "uploading" })
+          .select("id")
+          .single();
+        assert.ifError(otherClinic.error);
+        createdScreeningIds.push(otherClinic.data.id);
+
+        const filtered = await admin
+          .from("screenings")
+          .select("id")
+          .eq("screening_clinic_id", clinicAId)
+          .in("id", [assigned.data.id, unassigned.data.id, otherClinic.data.id]);
+        assert.ifError(filtered.error);
+        const ids = (filtered.data ?? []).map((row) => row.id).sort();
+        assert.deepEqual(
+          ids,
+          [assigned.data.id, unassigned.data.id].sort(),
+          "割り当て済みは被験者の所属、未割り当ては作成スタッフの所属で絞り込むこと"
+        );
+      });
+
       await t.test("同一医療機関のスタッフによる被験者ID訂正はService Role経由のみ更新できる", async () => {
         const [beforeSubject, afterSubject] = await Promise.all([
           staffA.from("subjects").insert({ clinic_id: clinicAId }).select("id").single(),
