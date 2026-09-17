@@ -33,8 +33,6 @@ set role = 'admin',
     is_active = true;
 ```
 
-ログイン後、`/admin/clinics` で医療機関を作成し、`/admin/staffs/new` でスタッフを発行します。
-
 既存DBの場合は、適用状況を確認して未適用の個別マイグレーションを番号順に実行してください。
 
 ### 環境変数
@@ -62,6 +60,8 @@ npm run dev
 - ログイン: <http://localhost:3000/login>
 - スタッフ画面: <http://localhost:3000/>
 - 管理画面: <http://localhost:3000/admin>
+
+最初の管理者でログインしたあと、`/admin/clinics` で医療機関を作成し、`/admin/staffs/new` でスタッフを発行します。
 
 ## 開発時の確認
 
