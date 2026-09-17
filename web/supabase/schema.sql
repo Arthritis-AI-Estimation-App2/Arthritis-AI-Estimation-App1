@@ -24,7 +24,7 @@ create table if not exists public.profiles (
 -- 被験者ID用シーケンス (keio1, keio2, keio3...)
 create sequence if not exists public.subject_number_seq start 1;
 
--- ========== subjects (匿名の被験者・患者グループ) ==========
+-- ========== subjects (匿名の被験者グループ) ==========
 create table if not exists public.subjects (
   id text primary key default ('keio' || nextval('public.subject_number_seq')::text),
   clinic_id uuid not null references public.clinics(id) on delete cascade,

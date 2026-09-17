@@ -15,7 +15,7 @@ interface ScreeningResultProps {
   hideCapturedAt?: boolean;
 }
 
-/** AI判定結果の表示（患者側・医師側で共用） */
+/** AI判定結果の表示（スタッフ画面・管理画面で共用） */
 export default function ScreeningResult({
   screening,
   joints,

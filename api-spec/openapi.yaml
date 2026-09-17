@@ -3,7 +3,7 @@ info:
   title: Arthritis screening API
   description: |
     Next.js の analyzeScreening から呼び出す同期 REST API。
-    画像本体・患者情報・Supabase のクレデンシャルは受け取らない。
+    画像本体・被験者情報・Supabase のクレデンシャルは受け取らない。
     ra_detected は関節炎スクリーニング判定を表す。診断結果ではない。
   version: 1.0.0
 servers:

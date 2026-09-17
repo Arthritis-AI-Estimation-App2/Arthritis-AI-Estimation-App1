@@ -106,7 +106,7 @@ TEST_SUPABASE_SECRET_KEY=<test-secret-key>
 
 画面上のロールの違いは [リポジトリのREADME](../README.md#ユーザー権限) を参照してください。
 
-- 患者の氏名・診断名は保存せず、`subjects` の匿名IDで撮影記録をまとめます。
+- 被験者の氏名・診断名は保存せず、`subjects` の匿名IDで撮影記録をまとめます。
 - `clinic_staff` は所属医療機関のデータのみ。`admin` は全医療機関。撮影画像の閲覧は管理者のみです。
 - `is_active = false` のアカウントはRLSとStorageポリシーでも拒否します。
 - 解析失敗時は記録を `failed` にし、管理者が再解析できる状態を保ちます。

@@ -3,7 +3,7 @@ import type { Database } from "@/lib/supabase/database.types";
 
 /**
  * Service Role クライアント。
- * 医師による患者アカウント作成など、管理者権限が必要な Server Action でのみ使用。
+ * 解析確定・再解析・被験者ID訂正など、Service Role が必要な Server Action でのみ使用。
  * クライアントサイドで絶対に import しないこと。
  */
 export function createAdminClient() {
