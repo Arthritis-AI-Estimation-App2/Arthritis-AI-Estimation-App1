@@ -43,8 +43,29 @@
 
 ## DB変更
 
-- 新規DBの定義は`web/supabase/schema.sql`を更新し、ローカル向けの `web/supabase/migrations/20260822000000_initial_schema.sql` も同じ内容に揃える。既存DB向けには、既存データを削除しない個別マイグレーションを追加する。現在の最終はv26。READMEの手順とずらさない。
-- SQL変更後はRLS、テナント境界、無効アカウント、Storageアクセスを確認する。確認コマンドは`web/`で`npm run build`、`npx tsc --noEmit`、リポジトリルートで`git diff --check`。
+ファイルの役割は次のとおり。中身の判断を別々にしない。
+
+- `web/supabase/schema.sql` … 空の新規DB向けの最終形。SQL Editorで一度実行して完成する定義。
+- `web/supabase/migrations/20260822000000_initial_schema.sql` … ローカル（`npx supabase start` / `db reset`）用。`schema.sql` と同一にする。
+- `web/supabase/migration_vN_*.sql` … 既存ホストDB向けの差分。前の最終形から新しい `schema.sql` へ揃える。既存データは削除しない。
+
+現在の最終はv26。READMEの手順とずらさない。
+
+DBを変えるときはこの順で行う。差分ファイルだけ書いて `schema.sql` を更新しない、ということをしない。
+
+1. 先に `schema.sql` を「空DBにこれを実行したら完成」の形にする。
+2. それを `initial_schema.sql` にコピーする。
+3. そのあと `migration_vN` を書く。`CREATE OR REPLACE` する関数は、`schema.sql` と同じ本体にする。
+4. 既存行の埋め戻しなど、一度きりのデータ移行は `migration_vN` にだけ書く。空の新規DBには不要。
+
+確認は次で行う。差があれば `schema.sql` とローカル用の同期漏れ。
+
+```bash
+diff -u web/supabase/schema.sql \
+  web/supabase/migrations/20260822000000_initial_schema.sql
+```
+
+SQL変更後はRLS、テナント境界、無効アカウント、Storageアクセスを確認する。確認コマンドは`web/`で`npm run build`、`npx tsc --noEmit`、リポジトリルートで`git diff --check`。
 
 ## コミットメッセージ
 
