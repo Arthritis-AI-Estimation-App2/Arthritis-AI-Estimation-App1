@@ -10,7 +10,7 @@ Next.jsとSupabaseで構成したWebフロントエンドとバックエンド�
 
 ## セットアップ
 
-`web/` ディレクトリで以下のコマンドを実行します。
+Node.js 24。`web/` ディレクトリで以下のコマンドを実行します。
 
 ```bash
 npm install
@@ -19,7 +19,7 @@ cp .env.example .env.local
 
 ### Supabaseの準備
 
-1. Supabaseプロジェクトを作成する。ローカル環境では `npx supabase start` を実行する。
+1. Supabaseプロジェクトを作成する。ローカルでは Docker を起動したうえで `npx supabase start` を実行する。
 2. ホスト環境の新規DBでは、SQL Editorで `supabase/schema.sql` を実行する。ローカル環境では初期マイグレーションが自動適用される。
 3. Authentication > Usersで最初の管理者を作成し、そのUUIDを使ってSQL Editorでプロフィールを登録する。
 
@@ -39,12 +39,12 @@ set role = 'admin',
 
 ### 環境変数
 
-`.env.local` に設定します。本番ではVercelの対象環境へ同じ変数を登録し、変更後に再デプロイします。
+`.env.local` に設定します。ローカルは `npx supabase start` のあと `npx supabase status` を実行し、Project URL を `NEXT_PUBLIC_SUPABASE_URL`、Publishable key を `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、Secret key を `SUPABASE_SECRET_KEY` へコピーします。本番ではVercelの対象環境へ同じ変数を登録し、変更後に再デプロイします。
 
 | 変数 | VercelのType | 必須 | 用途 |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Config | 必須 | SupabaseのAPI URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Config | 必須 | SupabaseのPublishable key。ローカルは `npx supabase status` で確認 |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Config | 必須 | SupabaseのPublishable key |
 | `SUPABASE_SECRET_KEY` | Secret | 必須 | SupabaseのSecret key |
 | `AI_API_URL` | Config | 実推論時 | Cloud RunのサービスURL。ローカルは `http://127.0.0.1:8080` |
 | `AI_API_KEY` | Secret | 実推論時 | AI APIと共通の認証用キー。作成方法は[Cloud Runへデプロイ](../ai-api/README.md#cloud-runへデプロイ)を参照。 |
@@ -116,11 +116,13 @@ TEST_SUPABASE_SECRET_KEY=<test-secret-key>
 
 ### 初回デプロイ
 
-VercelのFramework PresetをNext.js、Root Directoryを `web` にし、[環境変数](#環境変数)を登録します。`vercel.json` は `web/` に差分がないデプロイのビルドをスキップします。
+GitリポジトリをVercelへ接続します。Framework PresetはNext.js、Root Directoryは `web`。[環境変数](#環境変数)を Production に登録します。実推論時は `AI_API_URL` に Cloud Run のサービスURLを入れます。
 
 ### コード修正のデプロイ
 
 Vercelがセットアップ済みの場合、`main`ブランチをpushすると自動でデプロイが走ります。デプロイ結果はVercelのDeploymentsページで確認できます。
+
+`vercel.json` の設定により、`web/` に差分がないデプロイはスキップされます。
 
 ### クライアント側でのデプロイ検知
 

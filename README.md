@@ -21,6 +21,12 @@ Webは署名付き画像URLをAI APIへ渡し、AI APIはBearer認証後に画�
 
 APIの詳細は [OpenAPI](./api-spec/openapi.yaml) と [API仕様の解説](./api-spec/README.md) を参照してください。
 
+## 前提
+
+- Web: Node.js 24。ローカルSupabaseは Docker が必要
+- AI API: Python 3.11
+- Cloud Runデプロイ: Google Cloud CLI（`gcloud run deploy --max` がサポートされているバージョン）
+
 ## ローカル起動
 
 まずWebを起動します。
@@ -29,10 +35,13 @@ APIの詳細は [OpenAPI](./api-spec/openapi.yaml) と [API仕様の解説](./ap
 cd web
 npm install
 cp .env.example .env.local
-npm run dev
 ```
 
-Supabaseの準備と環境変数は [WebのREADME](./web/README.md) を参照してください。
+`.env.local` に値を入れてから `npm run dev` します。ローカルSupabaseのキーの入れ方と管理者作成は [WebのREADME](./web/README.md) を参照してください。
+
+```bash
+npm run dev
+```
 
 実推論も確認する場合は、別のターミナルでAI APIを起動します。学習済み重み `ra_screening_model.pt` は別途必要です。
 
@@ -84,6 +93,6 @@ AI_API_KEY=local-dev-key
 
 1. [WebのREADME](./web/README.md#supabaseの準備) に従ってSupabaseを準備する。
 2. [AI APIのREADME](./ai-api/README.md#cloud-runへデプロイ) に従ってAI APIをCloud Runへデプロイする。
-3. VercelでRoot Directoryを `web` にし、[Webの環境変数](./web/README.md#環境変数)を登録してデプロイする。
+3. GitリポジトリをVercelへ接続し、Root Directoryを `web` にする。[Webの環境変数](./web/README.md#環境変数)を登録する。実推論時は `AI_API_URL` に Cloud Run のサービスURLを入れる。
 
 Webだけの変更ではAI APIの再デプロイは不要です。モデルまたは `ai-api/` を変更した場合だけAI APIを再デプロイします。DB変更時は、Webのデプロイ前にSupabaseのSQL Editorを使って `web/supabase/` 内のマイグレーションを適用してください。

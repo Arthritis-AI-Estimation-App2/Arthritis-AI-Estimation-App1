@@ -55,7 +55,20 @@ uvicorn api:app --host 127.0.0.1 --port 8080
 
 ## Cloud Runへデプロイ
 
-Google Cloudで支払い方法、必要なAPI、`gcloud` の認証とIAMを準備します。以下の手順で共有APIキーを生成し、Google CloudのSecret Managerと、Vercelの `AI_API_KEY` 環境変数に、それぞれ同じ値を登録してください。
+Google Cloudの課金を有効化し、`gcloud auth login` します。次のAPIを有効化します。また、`gcloud` コマンドは `run deploy --max` がサポートされているバージョンが必要です。
+
+```bash
+# PROJECT_ID は実際のGoogle CloudプロジェクトIDに置き換えてください
+gcloud services enable \
+  run.googleapis.com \
+  cloudbuild.googleapis.com \
+  artifactregistry.googleapis.com \
+  secretmanager.googleapis.com \
+  iam.googleapis.com \
+  --project=PROJECT_ID
+```
+
+共有APIキーを生成し、Secret ManagerとVercelの `AI_API_KEY` に同じ値を登録します。
 
 ```bash
 umask 077
@@ -84,7 +97,7 @@ scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 
 デプロイ先は `asia-northeast1`、8 vCPU、4GiB、concurrency 1、0–2インスタンス、タイムアウト60秒です。サービス自体は公開し、Bearerキーで保護します。デプロイ成功後は課金を抑えるためArtifact Registryの一時リポジトリを削除します。古い版へ戻す場合は再ビルド（デプロイコマンドの再実行）が必要です。
 
-デプロイ後はサービスURLの `GET /health` と実際の解析結果を確認します。
+デプロイ後はサービスURLに対する `GET /health` で稼働を確認し、そのサービスURLを Vercel の `AI_API_URL` に設定します。
 
 ### モデルを更新する
 
