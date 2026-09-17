@@ -37,13 +37,13 @@ pip install -r requirements-macos-py311.txt -r requirements-api.txt
 pip install pytest==8.4.2 httpx==0.28.1
 ```
 
-チェックポイント（`ra_screening_model.pt`）がない状態では推論とデプロイは起動しません。API仕様適合テストでは不要です。
+チェックポイント（`ra_screening_model.pt`）がない状態では推論とデプロイは起動しません。API仕様適合テストの実行時はチェックポイントは不要です。
 
 ```bash
 MPLCONFIGDIR=/tmp/ra-mpl python -m pytest -q
 ```
 
-ローカルでAPIを起動する場合:
+ローカルでAI APIサーバーを起動する場合:
 
 ```bash
 export AI_API_KEY=local-dev-key
@@ -51,11 +51,11 @@ export SUPABASE_STORAGE_HOSTS=127.0.0.1
 uvicorn api:app --host 127.0.0.1 --port 8080
 ```
 
-`GET /health` は認証なしで `{"status":"ok"}` を返します。Webから使う設定は [Webの環境変数](../web/README.md#環境変数) を参照してください。Webの `AI_API_KEY` はこのプロセスと同じ値にします。
+`GET /health` は認証なしで `{"status":"ok"}` を返します。Webから呼び出す場合は [Webの環境変数](../web/README.md#環境変数) を設定し、`AI_API_KEY` は上記の `AI_API_KEY` と同じ値にします。
 
 ## Cloud Runへデプロイ
 
-Google Cloudの課金を有効化し、`gcloud auth login` します。次のAPIを有効化します。また、`gcloud` コマンドは `run deploy --max` がサポートされているバージョンが必要です。
+Google Cloudの課金を有効化し、`gcloud auth login` します。次のAPIを有効化します。なお、`gcloud` コマンドは `run deploy --max` がサポートされているバージョンが必要です。
 
 ```bash
 # PROJECT_ID は実際のGoogle CloudプロジェクトIDに置き換えてください
@@ -97,7 +97,16 @@ scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 
 デプロイ先は `asia-northeast1`、8 vCPU、4GiB、concurrency 1、0–2インスタンス、タイムアウト60秒です。サービス自体は公開し、Bearerキーで保護します。デプロイ成功後は課金を抑えるためArtifact Registryの一時リポジトリを削除します。古い版へ戻す場合は再ビルド（デプロイコマンドの再実行）が必要です。
 
-デプロイ後はサービスURLに対する `GET /health` で稼働を確認し、そのサービスURLを Vercel の `AI_API_URL` に設定します。
+デプロイ後はサービスURLに対する `GET /health` で稼働を確認し、そのサービスURLを Vercel の `AI_API_URL` に設定します。サービスURLはデプロイコマンド実行時に出力されます。不明な場合は次のコマンドで確認できます。
+
+```bash
+gcloud run services describe ra-image-inference \
+  --project=PROJECT_ID \
+  --region=asia-northeast1 \
+  --format='value(status.url)'
+```
+
+サービス名を第4引数で変えた場合は、`ra-image-inference` をその名前に置き換えてください。
 
 ### モデルを更新する
 
