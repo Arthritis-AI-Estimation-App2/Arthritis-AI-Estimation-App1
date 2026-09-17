@@ -51,7 +51,7 @@ export SUPABASE_STORAGE_HOSTS=127.0.0.1
 uvicorn api:app --host 127.0.0.1 --port 8080
 ```
 
-`GET /health` は認証なしで `{"status":"ok"}` を返します。Webから使う設定は [リポジトリのREADME](../README.md#ローカル起動) を参照してください。
+`GET /health` は認証なしで `{"status":"ok"}` を返します。Webから使う設定は [Webの環境変数](../web/README.md#環境変数) を参照してください。Webの `AI_API_KEY` はこのプロセスと同じ値にします。
 
 ## Cloud Runへデプロイ
 

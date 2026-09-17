@@ -47,7 +47,7 @@ set role = 'admin',
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Config | 必須 | SupabaseのPublishable key |
 | `SUPABASE_SECRET_KEY` | Secret | 必須 | SupabaseのSecret key |
 | `AI_API_URL` | Config | 実推論時 | Cloud RunのサービスURL。ローカルは `http://127.0.0.1:8080` |
-| `AI_API_KEY` | Secret | 実推論時 | AI APIと共通の認証用キー。作成方法は[Cloud Runへデプロイ](../ai-api/README.md#cloud-runへデプロイ)を参照。 |
+| `AI_API_KEY` | Secret | 実推論時 | AI APIと共通の認証用キー。ローカルはAPI起動時と同じ値（例: `local-dev-key`）。本番の作成方法は[Cloud Runへデプロイ](../ai-api/README.md#cloud-runへデプロイ)を参照。 |
 | `AI_API_LOG_RESPONSE` | Config | 任意 | `true` で成功レスポンスをサーバーログへ出力 |
 | `ENABLE_DARK_MODE` | Config | 任意 | `true` でOS設定に応じたダークモードを有効化 |
 
@@ -104,9 +104,10 @@ TEST_SUPABASE_SECRET_KEY=<test-secret-key>
 
 ## データと権限
 
+画面上のロールの違いは [リポジトリのREADME](../README.md#ユーザー権限) を参照してください。
+
 - 患者の氏名・診断名は保存せず、`subjects` の匿名IDで撮影記録をまとめます。
-- `clinic_staff` は所属医療機関のデータだけを扱えます。撮影、被験者IDへの紐付け・訂正、結果の閲覧ができます。撮影画像は閲覧できません。
-- `admin` は全医療機関の管理、画像・解析結果の閲覧、再解析、撮影記録の完全削除ができます。
+- `clinic_staff` は所属医療機関のデータのみ。`admin` は全医療機関。撮影画像の閲覧は管理者のみです。
 - `is_active = false` のアカウントはRLSとStorageポリシーでも拒否します。
 - 解析失敗時は記録を `failed` にし、管理者が再解析できる状態を保ちます。
 
