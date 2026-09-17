@@ -77,6 +77,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function parseErrorSide(value: unknown): "left" | "right" | null {
+  return value === "left" || value === "right" ? value : null;
+}
+
 /** AI APIの `{ error: { code, message, side? }, request_id? }` を読む。仕様外なら null。 */
 export function parseAiApiErrorResponse(body: string) {
   let value: unknown;
@@ -93,10 +97,7 @@ export function parseAiApiErrorResponse(body: string) {
   return {
     code: value.error.code,
     message: typeof value.error.message === "string" ? value.error.message : "",
-    side:
-      value.error.side === "left" || value.error.side === "right"
-        ? value.error.side
-        : null,
+    side: parseErrorSide(value.error.side),
     requestId: typeof value.request_id === "string" ? value.request_id : null,
   };
 }

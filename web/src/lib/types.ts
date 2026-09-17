@@ -3,7 +3,8 @@ import type { Json, Tables } from "@/lib/supabase/database.types";
 export type Clinic = Tables<"clinics">;
 export type Profile = Tables<"profiles">;
 export type Subject = Tables<"subjects">;
-export type Screening = Tables<"screenings">;
+// screening_clinic_id は絞り込み用の計算列で、画面用の撮影記録には含めない。
+export type Screening = Omit<Tables<"screenings">, "screening_clinic_id">;
 export type JointResult = Tables<"joint_results">;
 
 // PostgreSQLのtext + CHECK制約はSupabaseの生成型ではstringになるため、
