@@ -57,13 +57,13 @@ set role = 'admin',
 npm run dev
 ```
 
-- ログイン: <http://localhost:3000/login>
-- スタッフ画面: <http://localhost:3000/>
-- 管理画面: <http://localhost:3000/admin>
+<http://localhost:3000> を開きます。未ログインならログイン画面へ、ログイン後は権限に応じた画面へ進みます。
 
-最初の管理者でログインしたあと、`/admin/clinics` で医療機関を作成し、`/admin/staffs/new` でスタッフを発行します。
+最初の管理者でログインしたあと、医療機関を作成し、スタッフアカウントを発行します。
 
-## 開発時の確認
+## 開発中によく使う操作
+
+開発やデバッグに便利な機能を説明します。
 
 ### 手元の画像で解析する
 
@@ -111,7 +111,7 @@ TEST_SUPABASE_SECRET_KEY=<test-secret-key>
 - `is_active = false` のアカウントはRLSとStorageポリシーでも拒否します。
 - 解析失敗時は記録を `failed` にし、管理者が再解析できる状態を保ちます。
 
-認可の最終境界はRLSです。Server Actionでも認証、アカウント状態、ロール、対象医療機関を検証してからService Roleを使用します。
+認可は最終的にRLSで制限します。Server Actionでも認証、アカウント状態、ロール、対象医療機関を検証してからService Roleを使用します。
 
 ## Vercelへのデプロイ
 
