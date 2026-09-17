@@ -1,7 +1,7 @@
 # 開発ガイド
 
 - `web/` は Next.js。`npm` コマンドと Supabase 操作は `web/` で実行する。
-- `ai-api/` は FastAPI。重み `.pt` は Git に入れない。pytest と Cloud Run へのデプロイは `ai-api/` で行う。
+- `ai-api/` は FastAPI。チェックポイント `.pt`（重みとしきい値などを含む）は Git に入れない。pytest と Cloud Run へのデプロイは `ai-api/` で行う。
 - API仕様は `api-spec/` にまとめる。正本は `openapi.yaml` と fixtures、解説は `README.md`。
 - デプロイは2系統。Web は Vercel（Root Directory は `web`）、推論は Cloud Build → Artifact Registry → Cloud Run。`web/` だけの変更で Python / Docker を回さない。
 
@@ -14,7 +14,7 @@
 - Server Actionは公開されたサーバー側入口であり、`"use server"`だけでは認可されない。各Actionで入力値と権限を検証する。
 - `clinic_staff`は所属医療機関のデータのみ、`admin`は全医療機関を扱える。
 - `is_active = false`のユーザーは、Server ActionだけでなくRLSとStorageポリシーでも拒否する。
-- 読み取りは、Cookieセッション付きの通常クライアント（Publishable key）とRLSを使う。RLSを最終的な認可境界とする。
+- 読み取りは、Cookieセッション付きの通常クライアント（Publishable key）とRLSを使う。認可は最終的にRLSで制限する。
 - `screenings` / `joint_results`の書き込みと、解析確定・再解析・被験者ID訂正などのRPCはService Roleを使う。Service RoleはRLSを迂回するため、使用前に必ず認証・`is_active`・ロール・対象テナントを確認する。
 - `SUPABASE_SECRET_KEY`と`AI_API_KEY`はブラウザへ公開しない。
 - 新しいテーブル、Storage操作、直接Supabaseアクセスを追加する場合は、アプリ側のチェックだけでなくRLS／Storageポリシーも確認する。
@@ -65,7 +65,7 @@ diff -u web/supabase/schema.sql \
   web/supabase/migrations/20260822000000_initial_schema.sql
 ```
 
-SQL変更後はRLS、テナント境界、無効アカウント、Storageアクセスを確認する。確認コマンドは`web/`で`npm run build`、`npx tsc --noEmit`、リポジトリルートで`git diff --check`。
+SQL変更後はRLS、医療機関ごとのデータ分離、無効アカウント、Storageアクセスを確認する。確認コマンドは`web/`で`npm run build`、`npx tsc --noEmit`、リポジトリルートで`git diff --check`。
 
 ## コミットメッセージ
 

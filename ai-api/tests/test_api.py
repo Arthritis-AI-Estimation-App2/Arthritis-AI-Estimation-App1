@@ -281,7 +281,7 @@ def test_missing_checkpoint_prevents_startup(monkeypatch, tmp_path):
             pass
 
 
-def test_from_checkpoint_requires_a_local_weight_file(tmp_path):
+def test_from_checkpoint_requires_a_local_checkpoint(tmp_path):
     with pytest.raises(FileNotFoundError, match="not stored in git"):
         serve.RAScreeningService.from_checkpoint(str(tmp_path / "missing.pt"))
 

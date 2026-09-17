@@ -1,9 +1,9 @@
-# Cloud Build: bake weights into the image and push to Artifact Registry.
+# Cloud Build: bake the checkpoint into the image and push to Artifact Registry.
 # Cloud Run への反映は scripts/deploy-cloud-run.sh がこの設定を呼んだあと行う。
 substitutions:
   _IMAGE: asia-northeast1-docker.pkg.dev/PROJECT/ra-inference/ra-image-inference:tag
 steps:
-  - id: require-weights
+  - id: require-checkpoint
     name: gcr.io/cloud-builders/gcloud
     env:
       - CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=true

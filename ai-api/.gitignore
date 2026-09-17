@@ -1,4 +1,4 @@
-# Weight files are delivered separately and must be placed locally after clone.
+# Checkpoints are delivered separately and must be placed locally after clone.
 *.pt
 .venv/
 __pycache__/

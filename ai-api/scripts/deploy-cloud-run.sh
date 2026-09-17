@@ -11,7 +11,7 @@ if [[ $# -lt 3 || $# -gt 4 ]]; then
 fi
 
 if [[ ! -f model/ra_screening_model.pt ]]; then
-  echo "model/ra_screening_model.pt is missing. This weight file is not stored in git; place the delivered checkpoint at that path before deploying." >&2
+  echo "model/ra_screening_model.pt is missing. This checkpoint is not stored in git; place the delivered file at that path before deploying." >&2
   exit 1
 fi
 

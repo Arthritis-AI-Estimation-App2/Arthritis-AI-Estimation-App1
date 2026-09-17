@@ -9,7 +9,7 @@
 | `api.py` | FastAPI、Bearer認証、画像ダウンロード |
 | `serve.py` | モデルの読み込みと推論 |
 | `model/ra_screening_model.json` | APIが返す `model_version`（Git管理） |
-| `model/ra_screening_model.pt` | 学習済み重み（Git管理外、別途配置） |
+| `model/ra_screening_model.pt` | チェックポイント（Git管理外、別途配置） |
 | `scripts/deploy-cloud-run.sh` | Cloud BuildとCloud Runへのデプロイ |
 | `MODEL.md` | モデルの使い方、入出力仕様、内部構造、推論速度（提供元資料） |
 | `test_images/` | モデル提供元が3DCGで生成した動作確認用画像 |
@@ -37,7 +37,7 @@ pip install -r requirements-macos-py311.txt -r requirements-api.txt
 pip install pytest==8.4.2 httpx==0.28.1
 ```
 
-`ra_screening_model.pt` がない状態では推論とデプロイは起動しません。API仕様適合テストには重みは不要です。
+チェックポイント（`ra_screening_model.pt`）がない状態では推論とデプロイは起動しません。API仕様適合テストでは不要です。
 
 ```bash
 MPLCONFIGDIR=/tmp/ra-mpl python -m pytest -q
@@ -83,7 +83,7 @@ gcloud secrets versions add ra-ai-api-key --project=PROJECT_ID --data-file="$api
 rm "$api_key_file"
 ```
 
-`ra_screening_model.pt` をローカルの `model/ra_screening_model.pt` に配置し、次のデプロイコマンドを実行します。
+チェックポイントをローカルの `model/ra_screening_model.pt` に配置し、次のデプロイコマンドを実行します。
 
 ```bash
 # PROJECT_ID と PROJECT_REF は正しい値に置き換えてください
@@ -109,7 +109,7 @@ VERSION=2026-09-15-v1
 printf '{"model_version": "%s"}\n' "$VERSION" > model/ra_screening_model.json
 ```
 
-新しいモデルをローカルの `model/ra_screening_model.pt` に配置し、読み込めることを確認します。
+新しいチェックポイントをローカルの `model/ra_screening_model.pt` に配置し、読み込めることを確認します。
 
 ```bash
 cp /path/to/new_ra_screening_model.pt model/ra_screening_model.pt
