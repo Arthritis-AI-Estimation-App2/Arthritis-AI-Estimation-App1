@@ -91,7 +91,7 @@ scripts/deploy-cloud-run.sh PROJECT_ID PROJECT_REF.supabase.co ra-ai-api-key
 新しいモデルを識別するためのバージョン名を付けます。
 
 ```bash
-# 新しいバージョン名（任意の形式でOK）
+# この例では 2026-09-15-v1 がバージョン名となる。任意の形式でOK。
 VERSION=2026-09-15-v1
 printf '{"model_version": "%s"}\n' "$VERSION" > model/ra_screening_model.json
 ```
