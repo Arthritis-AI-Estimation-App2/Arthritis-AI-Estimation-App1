@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import type { ReactNode } from "react";
 
 /** 詳細・編集画面から親一覧へ戻るリンク。見出しの直上に置く。 */

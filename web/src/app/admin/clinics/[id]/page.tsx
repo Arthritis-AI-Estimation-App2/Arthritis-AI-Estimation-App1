@@ -12,7 +12,7 @@ import {
   normalizePage,
   paginatedListHref,
 } from "@/lib/staff-pagination";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { notFound, redirect } from "next/navigation";
 
 export const metadata = { title: "医療機関の詳細" };

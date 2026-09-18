@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { useRouter } from "next/navigation";
 import CameraCapture from "@/components/CameraCapture";
 import CaptureLeaveGuard from "@/components/CaptureLeaveGuard";

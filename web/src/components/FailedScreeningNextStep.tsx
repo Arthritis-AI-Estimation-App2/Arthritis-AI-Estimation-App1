@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { formatScreeningId } from "@/lib/admin-screening-filters";
 
 export default function FailedScreeningNextStep({

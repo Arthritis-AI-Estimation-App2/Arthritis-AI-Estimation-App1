@@ -1,7 +1,7 @@
 import { getStaffs } from "@/app/actions/admin";
 import ActiveBadge from "@/components/ActiveBadge";
 import { Card, CardContent } from "@/components/ui/Card";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import Button from "@/components/ui/Button";
 import { roleLabel } from "@/lib/types";
 

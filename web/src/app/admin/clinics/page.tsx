@@ -3,7 +3,7 @@ import { getClinics } from "@/app/actions/admin";
 import NewClinicForm from "@/components/NewClinicForm";
 import { Card, CardContent } from "@/components/ui/Card";
 import { formatJapanDate } from "@/lib/japan-date-time";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 
 export const metadata = { title: "医療機関の管理" };
 

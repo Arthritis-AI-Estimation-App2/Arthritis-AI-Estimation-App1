@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { getRecentScreenings } from "@/app/actions/screenings";
 import StatusBadge from "@/components/StatusBadge";
 import NavigationHint from "@/components/ui/NavigationHint";

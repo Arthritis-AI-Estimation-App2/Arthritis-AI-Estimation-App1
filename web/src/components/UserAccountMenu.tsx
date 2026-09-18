@@ -8,7 +8,7 @@ import {
   DropdownMenuLinkItem,
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { usePathname } from "next/navigation";
 import { requestCaptureLeave } from "@/lib/capture-leave-request";
 

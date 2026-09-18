@@ -1,7 +1,7 @@
 "use client";
 
 import AdminAccountMenu, { ADMIN_ACCOUNT_LINKS } from "@/components/AdminAccountMenu";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { usePathname } from "next/navigation";
 
 function isUnder(pathname: string, prefix: string) {

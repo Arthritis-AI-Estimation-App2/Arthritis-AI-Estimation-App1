@@ -4,7 +4,7 @@ import NavigationHint from "@/components/ui/NavigationHint";
 import PaginationNav from "@/components/PaginationNav";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import type { Subject } from "@/lib/types";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 
 export type SubjectListItem = Subject & { screening_count: number };
 

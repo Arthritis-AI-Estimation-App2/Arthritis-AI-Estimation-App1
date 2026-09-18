@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import AdminNav from "@/components/AdminNav";
 import UserAccountMenu from "@/components/UserAccountMenu";
 

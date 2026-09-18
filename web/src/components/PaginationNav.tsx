@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { paginatedListHref } from "@/lib/staff-pagination";
 
 interface Props {

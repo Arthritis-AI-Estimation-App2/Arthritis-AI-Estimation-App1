@@ -2,7 +2,7 @@
 
 import PatientBottomNav from "@/components/PatientBottomNav";
 import UserAccountMenu from "@/components/UserAccountMenu";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { usePathname } from "next/navigation";
 
 export default function ClinicStaffChrome({

@@ -1,7 +1,7 @@
 import { getAdmins } from "@/app/actions/admin";
 import { Card, CardContent } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 
 export const metadata = { title: "管理者一覧" };
 

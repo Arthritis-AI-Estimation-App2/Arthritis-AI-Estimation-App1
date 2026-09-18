@@ -15,7 +15,7 @@ import {
 import { isStaleProcessing } from "@/lib/screening-staleness";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import { staffDisplayName } from "@/lib/staff-display-name";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { redirect } from "next/navigation";
 
 export const metadata = { title: "撮影記録" };
