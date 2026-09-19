@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, type ChangeEvent } from "react";
 import Button from "@/components/ui/Button";
 import { cameraCrop } from "@/lib/camera-crop";
+import { HAND_GUIDE, debugImageGuide, guideInSavedImage, type CapturedImage, type QualityEllipse } from "@/lib/image-quality";
 import {
   DEBUG_UPLOAD_DECODE_FAILED_MESSAGE,
   rejectDebugUploadImage,
@@ -10,7 +11,8 @@ import {
 
 interface CameraCaptureProps {
   /** 撮影完了時のコールバック（圧縮済みJPEGのBlob、またはデバッグ用に選んだJPEGファイル） */
-  onCapture: (blob: Blob) => void;
+  onCapture: (capture: CapturedImage) => void;
+  onBusyChange: (busy: boolean) => void;
   handLabel: string;
   instruction?: string;
   className?: string;
@@ -23,7 +25,7 @@ const MAX_EDGE = 1280;
 const JPEG_QUALITY = 0.8;
 
 /** 表示中の映像範囲を切り出し、最大辺1280px・JPEG品質0.8に圧縮 */
-async function compressImage(source: HTMLVideoElement): Promise<Blob> {
+async function compressImage(source: HTMLVideoElement, ellipse: SVGEllipseElement | null): Promise<CapturedImage> {
   const viewport = source.getBoundingClientRect();
   const crop = cameraCrop(source.videoWidth, source.videoHeight, viewport.width, viewport.height);
   const canvas = document.createElement("canvas");
@@ -34,12 +36,15 @@ async function compressImage(source: HTMLVideoElement): Promise<Blob> {
   canvas.width = Math.max(1, Math.round(crop.width * scale));
   canvas.height = Math.max(1, Math.round(crop.height * scale));
 
+  const guide = ellipse
+    ? guideInSavedImage(viewport, ellipse.getBoundingClientRect(), canvas.width, canvas.height)
+    : null;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("画像の変換に失敗"))),
+      (blob) => (blob ? resolve({ blob, guide }) : reject(new Error("画像の変換に失敗"))),
       "image/jpeg",
       JPEG_QUALITY
     );
@@ -53,6 +58,7 @@ async function hasJpegSignature(file: File): Promise<boolean> {
 
 export default function CameraCapture({
   onCapture,
+  onBusyChange,
   handLabel,
   instruction,
   className = "",
@@ -60,6 +66,9 @@ export default function CameraCapture({
   allowFileUpload = false,
 }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const guideRef = useRef<SVGEllipseElement>(null);
+  const captureBusyRef = useRef(false);
+  const captureGeneration = useRef(0);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +78,8 @@ export default function CameraCapture({
   const [capturing, setCapturing] = useState(false);
   const [cameraAttempt, setCameraAttempt] = useState(0);
   const flashTimerRef = useRef<number | null>(null);
+
+  useEffect(() => () => { captureGeneration.current++; }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,21 +126,29 @@ export default function CameraCapture({
   }, []);
 
   const handleCapture = useCallback(async () => {
-    if (!videoRef.current || capturing || disabled) return;
+    if (!videoRef.current || captureBusyRef.current || disabled) return;
+    captureBusyRef.current = true;
+    const generation = ++captureGeneration.current;
+    onBusyChange(true);
     setCapturing(true);
     setFileError(null);
     setFlash(true);
     if (flashTimerRef.current != null) window.clearTimeout(flashTimerRef.current);
     flashTimerRef.current = window.setTimeout(() => setFlash(false), 140);
     try {
-      const blob = await compressImage(videoRef.current);
-      onCapture(blob);
+      const capture = await compressImage(videoRef.current, guideRef.current);
+      if (generation === captureGeneration.current) onCapture(capture);
     } catch {
+      if (generation !== captureGeneration.current) return;
       setError("撮影に失敗しました。もう一度お試しください。");
     } finally {
-      setCapturing(false);
+      if (generation === captureGeneration.current) {
+        captureBusyRef.current = false;
+        setCapturing(false);
+        onBusyChange(false);
+      }
     }
-  }, [onCapture, capturing, disabled]);
+  }, [onCapture, onBusyChange, disabled]);
 
   /** デバッグ用。解析結果を手元と突き合わせられるよう、選んだJPEGを変換せずそのまま渡す。 */
   const handleFileChange = useCallback(
@@ -137,15 +156,20 @@ export default function CameraCapture({
       const input = event.currentTarget;
       const file = input.files?.[0];
       input.value = ""; // 同じファイルを続けて選べるようにする
-      if (!file || capturing || disabled) return;
+      if (!file || captureBusyRef.current || disabled) return;
 
+      captureBusyRef.current = true;
+      const generation = ++captureGeneration.current;
+      onBusyChange(true);
       setCapturing(true);
       setFileError(null);
       try {
         const signature = await hasJpegSignature(file);
         const bitmap = await createImageBitmap(file);
         let reason: string | null;
+        let guide: QualityEllipse;
         try {
+          guide = debugImageGuide(bitmap.width, bitmap.height);
           reason = rejectDebugUploadImage({
             type: file.type,
             size: file.size,
@@ -157,18 +181,24 @@ export default function CameraCapture({
           bitmap.close();
         }
 
+        if (generation !== captureGeneration.current) return;
         if (reason) {
           setFileError(reason);
           return;
         }
-        onCapture(file);
+        onCapture({ blob: file, guide });
       } catch {
+        if (generation !== captureGeneration.current) return;
         setFileError(DEBUG_UPLOAD_DECODE_FAILED_MESSAGE);
       } finally {
-        setCapturing(false);
+        if (generation === captureGeneration.current) {
+          captureBusyRef.current = false;
+          setCapturing(false);
+          onBusyChange(false);
+        }
       }
     },
-    [onCapture, capturing, disabled]
+    [onCapture, onBusyChange, disabled]
   );
 
   const fileInput = allowFileUpload ? (
@@ -227,16 +257,17 @@ export default function CameraCapture({
       {/* 5:8 を保ちつつ、タブレットでは手のガイドとして過大にならないよう上限を設ける */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 pb-24 pt-14">
         <svg
-          viewBox="0 0 80 128"
+          viewBox={`0 0 ${HAND_GUIDE.width} ${HAND_GUIDE.height}`}
           className="h-[min(100%,32rem)] w-auto max-w-[min(100%,20rem)]"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <ellipse
-            cx="40"
-            cy="64"
-            rx="36"
-            ry="58"
+            ref={guideRef}
+            cx={HAND_GUIDE.cx}
+            cy={HAND_GUIDE.cy}
+            rx={HAND_GUIDE.rx}
+            ry={HAND_GUIDE.ry}
             fill="none"
             stroke="white"
             strokeOpacity="0.8"

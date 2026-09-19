@@ -4,6 +4,9 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "@/components/ui/Link";
 import { useRouter } from "next/navigation";
 import CameraCapture from "@/components/CameraCapture";
+import ImageQualityNotice from "@/components/ImageQualityNotice";
+import { checkImageQuality } from "@/lib/check-image-quality";
+import type { CapturedImage, CheckedCapture, ImageQuality } from "@/lib/image-quality";
 import CaptureLeaveGuard from "@/components/CaptureLeaveGuard";
 import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import Button from "@/components/ui/Button";
@@ -113,10 +116,12 @@ function ImagePreview({
   blob,
   label,
   onRetake,
+  quality,
 }: {
   blob: Blob;
   label: string;
-  onRetake: () => void;
+  onRetake?: () => void;
+  quality?: ImageQuality;
 }) {
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -141,7 +146,8 @@ function ImagePreview({
         className="aspect-[3/4] w-full rounded-lg bg-surface-muted object-contain"
       />
       <p className="mt-1 text-sm text-secondary-foreground">{label}</p>
-      <Button
+      {quality && <ImageQualityNotice quality={quality} />}
+      {onRetake && <Button
         type="button"
         variant="secondary"
         size="sm"
@@ -149,7 +155,7 @@ function ImagePreview({
         onClick={onRetake}
       >
         {label}を撮り直す
-      </Button>
+      </Button>}
     </div>
   );
 }
@@ -161,28 +167,69 @@ export default function CaptureFlow({
 }) {
   const router = useRouter();
   const [step, setStep] = useState<CaptureStep>("left");
-  const [rightImage, setRightImage] = useState<Blob | null>(null);
-  const [leftImage, setLeftImage] = useState<Blob | null>(null);
+  const [rightCapture, setRightCapture] = useState<CheckedCapture | null>(null);
+  const [leftCapture, setLeftCapture] = useState<CheckedCapture | null>(null);
+  const rightImage = rightCapture?.blob ?? null;
+  const leftImage = leftCapture?.blob ?? null;
+  const [pending, setPending] = useState<(CapturedImage & { quality?: ImageQuality }) | null>(null);
+  const [cameraBusy, setCameraBusy] = useState(false);
+  const [cameraKey, setCameraKey] = useState(0);
+  const qualityTask = useRef<AbortController | null>(null);
+  const pendingRef = useRef<CheckedCapture | null>(null);
+  const submitting = useRef(false);
+
+  const cancelQuality = useCallback(() => {
+    qualityTask.current?.abort();
+    qualityTask.current = null;
+    pendingRef.current = null;
+    setPending(null);
+  }, []);
+
+  useEffect(() => () => { qualityTask.current?.abort(); }, []);
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<AnalysisWaitPhase>("creating");
   const [capturedNotice, setCapturedNotice] = useState<"left" | null>(null);
 
-  const handleCapture = useCallback(
-    (blob: Blob) => {
+  const acceptCapture = useCallback(
+    (capture: CheckedCapture) => {
       if (step === "left") {
-        setLeftImage(blob);
+        setLeftCapture(capture);
         if (rightImage) {
           setStep("confirm");
         } else {
           setCapturedNotice("left");
         }
       } else if (step === "right") {
-        setRightImage(blob);
+        setRightCapture(capture);
         setStep("confirm");
       }
     },
     [step, rightImage]
   );
+
+  const handleCapture = useCallback(async (capture: CapturedImage) => {
+    cancelQuality();
+    const controller = new AbortController();
+    qualityTask.current = controller;
+    setPending(capture);
+    const quality = await checkImageQuality(capture, controller.signal);
+    if (controller.signal.aborted || qualityTask.current !== controller) return;
+    const checked = { ...capture, quality };
+    if (quality.status === "ok") {
+      cancelQuality();
+      acceptCapture(checked);
+    } else {
+      pendingRef.current = checked;
+      setPending(checked);
+    }
+  }, [acceptCapture, cancelQuality]);
+
+  const usePendingCapture = useCallback(() => {
+    const capture = pendingRef.current;
+    if (!capture) return;
+    cancelQuality();
+    acceptCapture(capture);
+  }, [acceptCapture, cancelQuality]);
 
   useEffect(() => {
     if (capturedNotice !== "left") return;
@@ -199,17 +246,21 @@ export default function CaptureFlow({
   }, []);
 
   const discardDraft = useCallback(() => {
-    setLeftImage(null);
-    setRightImage(null);
+    cancelQuality();
+    setCameraBusy(false);
+    setCameraKey((key) => key + 1);
+    setLeftCapture(null);
+    setRightCapture(null);
     setCapturedNotice(null);
     setError(null);
     setPhase("creating");
     setStep("left");
-  }, []);
+  }, [cancelQuality]);
 
   /** アップロード → AI解析まで一気に実行 */
   const submit = useCallback(async () => {
-    if (!rightImage || !leftImage) return;
+    if (!rightImage || !leftImage || pending || cameraBusy || submitting.current) return;
+    submitting.current = true;
     setStep("uploading");
     setError(null);
     let screeningId: string | null = null;
@@ -288,12 +339,14 @@ export default function CaptureFlow({
 
       setError(errorMessage);
       setStep("confirm");
+    } finally {
+      submitting.current = false;
     }
-  }, [rightImage, leftImage, router]);
+  }, [rightImage, leftImage, pending, cameraBusy, router]);
 
   const isShooting = step === "right" || step === "left";
   const isRetaking = isShooting && Boolean(rightImage && leftImage);
-  const hasPendingImages = step !== "uploading" && Boolean(rightImage || leftImage);
+  const hasPendingImages = step !== "uploading" && Boolean(rightImage || leftImage || pending || cameraBusy);
   const stepStates = getCaptureStepStates({
     step,
     hasLeftImage: Boolean(leftImage),
@@ -357,14 +410,16 @@ export default function CaptureFlow({
                 variant="secondary"
                 size="sm"
                 className="shrink-0"
-                onClick={() => setStep("confirm")}
+                disabled={cameraBusy}
+                onClick={() => { cancelQuality(); setStep("confirm"); }}
               >
                 確認に戻る
               </Button>
             </div>
           )}
-          <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl">
+          <div className={`relative min-h-0 flex-1 overflow-hidden rounded-xl ${pending ? "hidden" : ""}`}>
             <CameraCapture
+              key={`${step}-${cameraKey}`}
               className="h-full min-h-[12rem]"
               handLabel={step === "left" ? "左手" : "右手"}
               instruction={
@@ -372,7 +427,8 @@ export default function CaptureFlow({
                   ? "次は右手です。ガイド枠に合わせてください（手首まで写してください）"
                   : undefined
               }
-              disabled={capturedNotice != null}
+              disabled={capturedNotice != null || pending != null}
+              onBusyChange={setCameraBusy}
               allowFileUpload={allowFileUpload}
               onCapture={handleCapture}
             />
@@ -384,6 +440,19 @@ export default function CaptureFlow({
               />
             )}
           </div>
+          {pending && (
+            <div className="min-h-0 flex-1 overflow-y-auto space-y-3 rounded-xl border border-border bg-surface p-3">
+              <ImagePreview blob={pending.blob} label={step === "left" ? "左手" : "右手"} />
+              {pending.quality ? (
+                <>
+                  <div role="status" aria-live="polite"><ImageQualityNotice quality={pending.quality} /></div>
+                  <Button type="button" className="w-full" onClick={cancelQuality}>撮り直す</Button>
+                  <Button type="button" variant="secondary" className="w-full" onClick={usePendingCapture}>この画像を使う</Button>
+                </>
+              ) : <p role="status" aria-live="polite" className="text-center text-secondary-foreground">画像を確認しています</p>}
+            </div>
+          )}
+          {cameraBusy && !pending && <p role="status" className="text-center text-sm text-secondary-foreground">画像を確認しています</p>}
         </div>
       )}
 
@@ -392,11 +461,13 @@ export default function CaptureFlow({
           <div className="grid grid-cols-2 gap-3">
             <ImagePreview
               blob={leftImage}
+              quality={leftCapture?.quality}
               label="左手"
               onRetake={() => retakeHand("left")}
             />
             <ImagePreview
               blob={rightImage}
+              quality={rightCapture?.quality}
               label="右手"
               onRetake={() => retakeHand("right")}
             />
