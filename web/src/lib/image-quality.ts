@@ -1,6 +1,8 @@
+import { handQualityMask } from "./hand-quality-mask.ts";
+
 /** Provisional, warning-only settings. Changes require real-photo re-evaluation. */
 export const IMAGE_QUALITY_CONFIG = {
-  version: "guide-v1",
+  version: "hand-guide-v2",
   maxEdge: 512,
   minEdge: 64,
   darkMean: 40,
@@ -13,8 +15,9 @@ export const IMAGE_QUALITY_CONFIG = {
 } as const;
 
 export const HAND_GUIDE = { width: 80, height: 128, cx: 40, cy: 64, rx: 36, ry: 58 } as const;
-export interface QualityEllipse { cx: number; cy: number; rx: number; ry: number }
-export interface CapturedImage { blob: Blob; guide: QualityEllipse | null }
+export interface QualityRegion { shape: "hand"; mirror: boolean }
+export interface QualityGuide { cx: number; cy: number; rx: number; ry: number; region?: QualityRegion }
+export interface CapturedImage { blob: Blob; guide: QualityGuide | null }
 export type QualityReason = "dark" | "bright" | "blur" | "resolution" | "region" | "processing";
 export interface QualityMetrics {
   meanLuminance: number;
@@ -45,43 +48,46 @@ export function uncheckedQuality(reason: "resolution" | "region" | "processing")
 
 type Rect = { left: number; top: number; width: number; height: number };
 /** The saved object-cover crop is exactly the visible video viewport. */
-export function guideInSavedImage(viewport: Rect, ellipse: Rect, width: number, height: number): QualityEllipse | null {
-  const values = [viewport.left, viewport.top, viewport.width, viewport.height, ellipse.left, ellipse.top, ellipse.width, ellipse.height, width, height];
-  if (!values.every(Number.isFinite) || [viewport.width, viewport.height, ellipse.width, ellipse.height, width, height].some((n) => n <= 0)) return null;
+export function guideInSavedImage(viewport: Rect, bounds: Rect, width: number, height: number, region?: QualityRegion): QualityGuide | null {
+  const values = [viewport.left, viewport.top, viewport.width, viewport.height, bounds.left, bounds.top, bounds.width, bounds.height, width, height];
+  if (!values.every(Number.isFinite) || [viewport.width, viewport.height, bounds.width, bounds.height, width, height].some((n) => n <= 0)) return null;
   const guide = {
-    cx: (ellipse.left + ellipse.width / 2 - viewport.left) * width / viewport.width,
-    cy: (ellipse.top + ellipse.height / 2 - viewport.top) * height / viewport.height,
-    rx: ellipse.width / 2 * width / viewport.width,
-    ry: ellipse.height / 2 * height / viewport.height,
+    cx: (bounds.left + bounds.width / 2 - viewport.left) * width / viewport.width,
+    cy: (bounds.top + bounds.height / 2 - viewport.top) * height / viewport.height,
+    rx: bounds.width / 2 * width / viewport.width,
+    ry: bounds.height / 2 * height / viewport.height,
+    ...(region ? { region } : {}),
   };
   return validGuide(guide, width, height) ? guide : null;
 }
 
-export function debugImageGuide(width: number, height: number): QualityEllipse {
+export function debugImageGuide(width: number, height: number): QualityGuide {
   const scale = Math.min(width / HAND_GUIDE.width, height / HAND_GUIDE.height);
   return { cx: width / 2, cy: height / 2, rx: HAND_GUIDE.rx * scale, ry: HAND_GUIDE.ry * scale };
 }
 
-export function validGuide(guide: QualityEllipse, width: number, height: number): boolean {
-  return Object.values(guide).every(Number.isFinite) && guide.rx > 0 && guide.ry > 0 &&
+export function validGuide(guide: QualityGuide, width: number, height: number): boolean {
+  return [guide.cx, guide.cy, guide.rx, guide.ry].every(Number.isFinite) &&
+    (!guide.region || (guide.region.shape === "hand" && typeof guide.region.mirror === "boolean")) && guide.rx > 0 && guide.ry > 0 &&
     guide.cx - guide.rx >= -0.01 && guide.cy - guide.ry >= -0.01 &&
     guide.cx + guide.rx <= width + 0.01 && guide.cy + guide.ry <= height + 0.01;
 }
 
-/** Pure pixel calculation used by the Worker and tests. The input is the ellipse's bounding box. */
-export function evaluateImageQuality(pixels: Uint8ClampedArray, width: number, height: number): ImageQuality {
+/** Workerとテストで共有。手のガイドはviewBox全体、デバッグ画像は従来の楕円の外接矩形。 */
+export function evaluateImageQuality(pixels: Uint8ClampedArray, width: number, height: number, region?: QualityRegion): ImageQuality {
   const config = IMAGE_QUALITY_CONFIG;
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < config.minEdge || height < config.minEdge) return uncheckedQuality("resolution");
   if (width > config.maxEdge || height > config.maxEdge || pixels.length !== width * height * 4) return uncheckedQuality("processing");
+  if (region && (region.shape !== "hand" || typeof region.mirror !== "boolean")) return uncheckedQuality("region");
   const luminance = new Float64Array(width * height);
-  const mask = new Uint8Array(width * height);
+  const mask = region ? handQualityMask(width, height, region.mirror) : new Uint8Array(width * height);
   let count = 0, sum = 0, dark = 0, bright = 0;
   // Leave a two-pixel inset so resampling at the ellipse edge is not measured.
   const rx = width / 2 - 2, ry = height / 2 - 2;
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = y * width + x;
-      if (((x + 0.5 - width / 2) / rx) ** 2 + ((y + 0.5 - height / 2) / ry) ** 2 > 1) continue;
+      if (region ? !mask[i] : ((x + 0.5 - width / 2) / rx) ** 2 + ((y + 0.5 - height / 2) / ry) ** 2 > 1) continue;
       const p = i * 4;
       const value = (299 * pixels[p] + 587 * pixels[p + 1] + 114 * pixels[p + 2]) / 1000;
       luminance[i] = value;

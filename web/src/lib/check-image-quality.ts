@@ -47,7 +47,7 @@ export function checkImageQuality(capture: CapturedImage, signal: AbortSignal): 
         worker.onmessage = (event: MessageEvent<ImageQuality>) => finish(event.data);
         worker.onerror = (event) => { event.preventDefault(); finish(uncheckedQuality("processing")); };
         worker.onmessageerror = abort;
-        worker.postMessage({ pixels: data, width: canvas.width, height: canvas.height }, [data.buffer]);
+        worker.postMessage({ pixels: data, width: canvas.width, height: canvas.height, region: guide.region }, [data.buffer]);
       } catch {
         finish(uncheckedQuality("processing"));
       }

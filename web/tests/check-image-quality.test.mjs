@@ -107,3 +107,22 @@ test("5秒で終わらないWorkerは未確認にし、タイムアウト後の�
     assert.equal(stats.closed, 1);
   });
 });
+
+
+test("手のviewBoxと左右情報をWorkerへ渡す", async () => {
+  await withBrowser(async ({ stats }) => {
+    const original = { blob: new Blob(["jpeg"]), guide: {
+      cx: 400, cy: 640, rx: 312, ry: 400, region: { shape: "hand", mirror: true },
+    } };
+    const promise = checkImageQuality(original, new AbortController().signal);
+    await tick();
+    const worker = stats.workers[0];
+    assert.deepEqual(worker.data.region, original.guide.region);
+    assert.equal(stats.draws[0][1], 88);
+    assert.equal(stats.draws[0][2], 240);
+    assert.equal(stats.draws[0][3], 624);
+    assert.equal(stats.draws[0][4], 800);
+    worker.onmessage({ data: evaluateImageQuality(worker.data.pixels, worker.data.width, worker.data.height, worker.data.region) });
+    assert.deepEqual((await promise).reasons, ["blur"]);
+  });
+});
