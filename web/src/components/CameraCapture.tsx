@@ -258,39 +258,42 @@ export default function CameraCapture({
         onEmptied={() => setReady(false)}
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
-      {/* 案内とシャッターの領域を確保し、残りの画面に収まる最大サイズで表示する。 */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-1 pb-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))] pt-12">
-        <svg
-          viewBox={`0 0 ${CAPTURE_HAND_WIDTH} ${CAPTURE_HAND_HEIGHT}`}
-          className="h-full w-full"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        >
-          <g transform={mirror ? `translate(${CAPTURE_HAND_WIDTH} 0) scale(-1 1)` : undefined}>
-            <path
-              ref={guideRef}
-              d={CAPTURE_HAND_OUTLINE}
-              fill="none"
-              stroke="white"
-              strokeOpacity="0.8"
-              strokeWidth="4"
-              strokeDasharray="10 8"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          </g>
-        </svg>
+      {/* SVG内の余白を含めて幅85%とし、手の輪郭は画面幅の約75%を目安にする。高さが足りない場合は縮小する。 */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 pt-4">
+        <div className="z-10 shrink-0 px-3 text-center">
+          <span className="inline-block rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white">
+            {instruction ??
+              `${handLabel}をガイド枠に合わせてください（手首まで写してください）`}
+          </span>
+        </div>
+        {/* 案内文の折り返し分も確保してから、その下にガイドを配置する。 */}
+        <div className="flex min-h-0 flex-1 items-center justify-center px-1 pb-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))]">
+          <svg
+            viewBox={`0 0 ${CAPTURE_HAND_WIDTH} ${CAPTURE_HAND_HEIGHT}`}
+            className="h-full w-[85%]"
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
+          >
+            <g transform={mirror ? `translate(${CAPTURE_HAND_WIDTH} 0) scale(-1 1)` : undefined}>
+              <path
+                ref={guideRef}
+                d={CAPTURE_HAND_OUTLINE}
+                fill="none"
+                stroke="white"
+                strokeOpacity="0.8"
+                strokeWidth="4"
+                strokeDasharray="10 8"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </g>
+          </svg>
+        </div>
       </div>
       {flash && (
         <div className="pointer-events-none absolute inset-0 z-10 bg-white/80" aria-hidden="true" />
       )}
-      <div className="pointer-events-none absolute top-4 left-0 right-0 z-10 px-3 text-center">
-        <span className="inline-block rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white">
-          {instruction ??
-            `${handLabel}をガイド枠に合わせてください（手首まで写してください）`}
-        </span>
-      </div>
       {fileErrorMessage && (
         <div className="absolute bottom-24 left-0 right-0 z-10 mx-auto max-w-sm px-3">
           {fileErrorMessage}
