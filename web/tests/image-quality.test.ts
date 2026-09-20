@@ -57,7 +57,7 @@ test("楕円外を変更しても露出と鮮明さは変わらず、境界を�
   const second = evaluateImageQuality(pixels(width, height, (x, y) => inside(x, y) ? 128 : (x + y) % 2 * 255), width, height);
   assert.deepEqual(first, second);
   assert.equal(first.metrics!.laplacianVariance, 0);
-  assert.equal(first.version, "hand-guide-v2");
+  assert.equal(first.version, "hand-guide-v3");
 });
 
 test("低解像度・不正な画素データは正常ではなく未確認", () => {

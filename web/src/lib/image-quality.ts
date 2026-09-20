@@ -2,7 +2,7 @@ import { handQualityMask } from "./hand-quality-mask.ts";
 
 /** Provisional, warning-only settings. Changes require real-photo re-evaluation. */
 export const IMAGE_QUALITY_CONFIG = {
-  version: "hand-guide-v2",
+  version: "hand-guide-v3",
   maxEdge: 512,
   minEdge: 64,
   darkMean: 40,
