@@ -55,13 +55,37 @@ function CloseIcon({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
-function CaptureCancelLink() {
+const captureCloseClassName =
+  "absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50";
+
+function CaptureCloseControl({
+  disabled = false,
+  onReturnToConfirm,
+}: {
+  disabled?: boolean;
+  onReturnToConfirm?: () => void;
+}) {
+  if (onReturnToConfirm) {
+    return (
+      <button
+        type="button"
+        aria-label="確認に戻る"
+        title="確認に戻る"
+        className={captureCloseClassName}
+        disabled={disabled}
+        onClick={onReturnToConfirm}
+      >
+        <CloseIcon />
+      </button>
+    );
+  }
+
   return (
     <Link
       href="/"
       aria-label="撮影を中止して戻る"
       title="撮影を中止して戻る"
-      className="absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:bg-surface-hover"
+      className={captureCloseClassName}
     >
       <CloseIcon />
     </Link>
@@ -346,6 +370,10 @@ export default function CaptureFlow({
 
   const isShooting = step === "right" || step === "left";
   const isRetaking = isShooting && Boolean(rightImage && leftImage);
+  const returnToConfirm = useCallback(() => {
+    cancelQuality();
+    setStep("confirm");
+  }, [cancelQuality]);
   const hasPendingImages = step !== "uploading" && Boolean(rightImage || leftImage || pending || cameraBusy);
   const stepStates = getCaptureStepStates({
     step,
@@ -364,7 +392,10 @@ export default function CaptureFlow({
 
       {/* ステップインジケーター */}
       <div className="relative mb-3 flex min-h-8 shrink-0 items-center justify-center gap-2 pl-9">
-        <CaptureCancelLink />
+        <CaptureCloseControl
+          disabled={isRetaking && cameraBusy}
+          onReturnToConfirm={isRetaking ? returnToConfirm : undefined}
+        />
         {CAPTURE_STEPS.map((s, i) => {
           const state = stepStates[s.key];
           const isComplete = state === "complete";
@@ -403,20 +434,6 @@ export default function CaptureFlow({
 
       {isShooting && (
         <div className="flex min-h-0 flex-1 flex-col gap-2">
-          {isRetaking && (
-            <div className="flex shrink-0 justify-end">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="shrink-0"
-                disabled={cameraBusy}
-                onClick={() => { cancelQuality(); setStep("confirm"); }}
-              >
-                確認に戻る
-              </Button>
-            </div>
-          )}
           <div className={`relative min-h-0 flex-1 overflow-hidden rounded-xl ${pending ? "hidden" : ""}`}>
             <CameraCapture
               key={`${step}-${cameraKey}`}
