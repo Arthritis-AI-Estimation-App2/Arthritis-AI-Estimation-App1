@@ -3,7 +3,7 @@ export const CAPTURE_HAND_WIDTH = 780;
 export const CAPTURE_HAND_HEIGHT = 1000;
 
 /** 放射状の開き方を保ち、指の輪郭を太めにデフォルメする。 */
-export const CAPTURE_HAND_SEGMENTS = [
+const HAND_SEGMENTS = [
   ["M", 320, 950],
   ["C", 315, 900, 307, 850, 299, 815],
   ["C", 291, 780, 256, 757, 227, 717],
@@ -43,5 +43,15 @@ export const CAPTURE_HAND_SEGMENTS = [
   ["C", 549, 838, 559, 896, 572, 950],
   // 腕の下端は閉じず、切断面のように見える横線を描かない。
 ] as const;
+
+// 輪郭の左右端（x=22.895〜708.027）の中心をviewBoxの中央（390）に揃える。
+// 表示と品質判定が同じ移動済み座標を使うことで、反転時も左右中央を保つ。
+export const CAPTURE_HAND_OFFSET_X = 24.539364;
+export const CAPTURE_HAND_SEGMENTS = HAND_SEGMENTS.map((segment) => {
+  const dx = CAPTURE_HAND_OFFSET_X;
+  return segment[0] === "M"
+    ? ["M", segment[1] + dx, segment[2]] as const
+    : ["C", segment[1] + dx, segment[2], segment[3] + dx, segment[4], segment[5] + dx, segment[6]] as const;
+});
 
 export const CAPTURE_HAND_OUTLINE = CAPTURE_HAND_SEGMENTS.map((segment) => segment.join(" ")).join(" ");

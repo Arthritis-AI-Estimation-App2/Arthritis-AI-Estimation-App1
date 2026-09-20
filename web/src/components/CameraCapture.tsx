@@ -258,8 +258,8 @@ export default function CameraCapture({
         onEmptied={() => setReady(false)}
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
-      {/* SVG内の余白を含めて幅85%とし、手の輪郭は画面幅の約75%を目安にする。高さが足りない場合は縮小する。 */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 pt-4">
+      {/* SVGを全幅に広げ、輪郭の横幅をカメラ領域の約90%にする。高さが足りない場合は縮小する。 */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col gap-5 pt-4">
         <div className="z-10 shrink-0 px-3 text-center">
           <span className="inline-block rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white">
             {instruction ??
@@ -267,14 +267,14 @@ export default function CameraCapture({
           </span>
         </div>
         {/* 案内文の折り返し分も確保してから、その下にガイドを配置する。 */}
-        <div className="flex min-h-0 flex-1 items-center justify-center px-1 pb-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))]">
+        <div className="flex min-h-0 flex-1 items-center justify-center pb-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))]">
           <svg
             viewBox={`0 0 ${CAPTURE_HAND_WIDTH} ${CAPTURE_HAND_HEIGHT}`}
-            className="h-full w-[85%]"
-            preserveAspectRatio="xMidYMid meet"
+            className="h-full w-full"
+            preserveAspectRatio="xMidYMax meet"
             aria-hidden="true"
           >
-            {/* viewBoxの実表示範囲を使い、meetの余白・左右反転と判定座標を揃える。 */}
+            {/* 下寄せ後のviewBoxの実表示範囲を使い、余白・左右反転と判定座標を揃える。 */}
             <rect ref={guideRef} width={CAPTURE_HAND_WIDTH} height={CAPTURE_HAND_HEIGHT} fill="none" />
             <g transform={mirror ? `translate(${CAPTURE_HAND_WIDTH} 0) scale(-1 1)` : undefined}>
               <path
