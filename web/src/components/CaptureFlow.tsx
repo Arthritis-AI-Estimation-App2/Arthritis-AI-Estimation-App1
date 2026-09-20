@@ -422,6 +422,7 @@ export default function CaptureFlow({
               key={`${step}-${cameraKey}`}
               className="h-full min-h-[12rem]"
               handLabel={step === "left" ? "左手" : "右手"}
+              mirror={step === "left"}
               instruction={
                 step === "right"
                   ? "次は右手です。ガイド枠に合わせてください（手首まで写してください）"

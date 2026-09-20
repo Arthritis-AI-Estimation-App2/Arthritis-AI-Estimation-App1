@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useCallback, type ChangeEvent } from "react";
 import Button from "@/components/ui/Button";
 import { cameraCrop } from "@/lib/camera-crop";
-import { HAND_GUIDE, debugImageGuide, guideInSavedImage, type CapturedImage, type QualityEllipse } from "@/lib/image-quality";
+import { debugImageGuide, guideInSavedImage, type CapturedImage, type QualityEllipse } from "@/lib/image-quality";
+import { CAPTURE_HAND_HEIGHT, CAPTURE_HAND_WIDTH, CAPTURE_HAND_OUTLINE } from "@/lib/capture-hand-guide";
 import {
   DEBUG_UPLOAD_DECODE_FAILED_MESSAGE,
   rejectDebugUploadImage,
@@ -14,6 +15,8 @@ interface CameraCaptureProps {
   onCapture: (capture: CapturedImage) => void;
   onBusyChange: (busy: boolean) => void;
   handLabel: string;
+  /** 左手表示用の反転フラグ */
+  mirror?: boolean;
   instruction?: string;
   className?: string;
   disabled?: boolean;
@@ -25,7 +28,7 @@ const MAX_EDGE = 1280;
 const JPEG_QUALITY = 0.8;
 
 /** 表示中の映像範囲を切り出し、最大辺1280px・JPEG品質0.8に圧縮 */
-async function compressImage(source: HTMLVideoElement, ellipse: SVGEllipseElement | null): Promise<CapturedImage> {
+async function compressImage(source: HTMLVideoElement, guideEl: SVGGraphicsElement | null): Promise<CapturedImage> {
   const viewport = source.getBoundingClientRect();
   const crop = cameraCrop(source.videoWidth, source.videoHeight, viewport.width, viewport.height);
   const canvas = document.createElement("canvas");
@@ -36,8 +39,8 @@ async function compressImage(source: HTMLVideoElement, ellipse: SVGEllipseElemen
   canvas.width = Math.max(1, Math.round(crop.width * scale));
   canvas.height = Math.max(1, Math.round(crop.height * scale));
 
-  const guide = ellipse
-    ? guideInSavedImage(viewport, ellipse.getBoundingClientRect(), canvas.width, canvas.height)
+  const guide = guideEl
+    ? guideInSavedImage(viewport, guideEl.getBoundingClientRect(), canvas.width, canvas.height)
     : null;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
@@ -60,13 +63,14 @@ export default function CameraCapture({
   onCapture,
   onBusyChange,
   handLabel,
+  mirror = false,
   instruction,
   className = "",
   disabled = false,
   allowFileUpload = false,
 }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const guideRef = useRef<SVGEllipseElement>(null);
+  const guideRef = useRef<SVGPathElement>(null);
   const captureBusyRef = useRef(false);
   const captureGeneration = useRef(0);
   const streamRef = useRef<MediaStream | null>(null);
@@ -254,27 +258,28 @@ export default function CameraCapture({
         onEmptied={() => setReady(false)}
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
-      {/* 5:8 を保ちつつ、タブレットでは手のガイドとして過大にならないよう上限を設ける */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 pb-24 pt-14">
+      {/* 案内とシャッターの領域を確保し、残りの画面に収まる最大サイズで表示する。 */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-1 pb-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))] pt-12">
         <svg
-          viewBox={`0 0 ${HAND_GUIDE.width} ${HAND_GUIDE.height}`}
-          className="h-[min(100%,32rem)] w-auto max-w-[min(100%,20rem)]"
+          viewBox={`0 0 ${CAPTURE_HAND_WIDTH} ${CAPTURE_HAND_HEIGHT}`}
+          className="h-full w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
-          <ellipse
-            ref={guideRef}
-            cx={HAND_GUIDE.cx}
-            cy={HAND_GUIDE.cy}
-            rx={HAND_GUIDE.rx}
-            ry={HAND_GUIDE.ry}
-            fill="none"
-            stroke="white"
-            strokeOpacity="0.8"
-            strokeWidth="4"
-            strokeDasharray="10 8"
-            vectorEffect="non-scaling-stroke"
-          />
+          <g transform={mirror ? `translate(${CAPTURE_HAND_WIDTH} 0) scale(-1 1)` : undefined}>
+            <path
+              ref={guideRef}
+              d={CAPTURE_HAND_OUTLINE}
+              fill="none"
+              stroke="white"
+              strokeOpacity="0.8"
+              strokeWidth="4"
+              strokeDasharray="10 8"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
         </svg>
       </div>
       {flash && (
