@@ -10,6 +10,8 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
       status: "completed",
       total_inflamed_joints: 3,
       ai_model_version: "model-v2",
+      analysis_thr_node: 0.34396984924623114,
+      analysis_thr_wrist: 0.4344221105527638,
       analyzed_at: "2026-09-05T01:02:03.000Z",
       created_at: "2026-09-04T15:00:00.000Z",
       subjects: { clinics: { name: "慶應,病院" } },
@@ -45,14 +47,16 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
       (match) => match[1].replaceAll('""', '"')
     )
   );
-  assert.equal(header.length, 69);
-  assert.equal(row.length, 69);
+  assert.equal(header.length, 71);
+  assert.equal(row.length, 71);
   assert.equal(header[6], "陽性関節数");
   assert.equal(row[6], "3");
   assert.equal(header[9], "右手 拇指IP (thumbIP) 判定");
   assert.equal(row[9], "炎症あり");
   assert.equal(header[68], "左手 手関節 (wrist) 信頼度 (0-1)");
   assert.equal(row[68], "0.08");
+  assert.deepEqual(header.slice(-2), ["thr_node (0-1)", "thr_wrist (0-1)"]);
+  assert.deepEqual(row.slice(-2), ["0.34396984924623114", "0.4344221105527638"]);
   assert.ok(csv.endsWith("\r\n"));
 });
 
@@ -64,6 +68,8 @@ test("未割り当て記録はスタッフの医療機関を使用し、数式�
       status: "failed",
       total_inflamed_joints: null,
       ai_model_version: null,
+      analysis_thr_node: null,
+      analysis_thr_wrist: null,
       analyzed_at: null,
       created_at: "2026-09-04T15:00:00.000Z",
       subjects: null,
@@ -89,6 +95,8 @@ test("削除済みスタッフの記録は担当スタッフを(削除済みユ�
       status: "completed",
       total_inflamed_joints: 0,
       ai_model_version: null,
+      analysis_thr_node: null,
+      analysis_thr_wrist: null,
       analyzed_at: "2026-09-06T00:00:00.000Z",
       created_at: "2026-09-05T15:00:00.000Z",
       subjects: { clinics: { name: "テスト医院" } },
@@ -98,4 +106,5 @@ test("削除済みスタッフの記録は担当スタッフを(削除済みユ�
   ]);
 
   assert.match(csv, /"\(削除済みユーザー\)"/);
+  assert.ok(csv.endsWith(',"",""\r\n'));
 });

@@ -49,7 +49,7 @@
 - `web/supabase/migrations/20260822000000_initial_schema.sql` … ローカル（`npx supabase start` / `db reset`）用。`schema.sql` と同一にする。
 - `web/supabase/migration_vN_*.sql` … 既存ホストDB向けの差分。前の最終形から新しい `schema.sql` へ揃える。既存データは削除しない。
 
-現在の最終はv27。READMEの手順とずらさない。
+現在の最終はv28。READMEの手順とずらさない。
 
 DBを変えるときはこの順で行う。差分ファイルだけ書いて `schema.sql` を更新しない、ということをしない。
 

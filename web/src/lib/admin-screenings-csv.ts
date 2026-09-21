@@ -11,6 +11,8 @@ type AdminScreeningCsvSource = {
   status: string;
   total_inflamed_joints: number | null;
   ai_model_version: string | null;
+  analysis_thr_node: number | null;
+  analysis_thr_wrist: number | null;
   analyzed_at: string | null;
   created_at: string;
   subjects: Relation<{
@@ -45,6 +47,8 @@ const CSV_HEADERS = [
       `${side === "right" ? "右手" : "左手"} ${JOINT_LABELS[jointName]} (${jointName}) 信頼度 (0-1)`,
     ])
   ),
+  "thr_node (0-1)",
+  "thr_wrist (0-1)",
 ];
 
 function singleRelation<T>(value: Relation<T> | undefined) {
@@ -109,6 +113,8 @@ export function buildAdminScreeningsCsv(rows: AdminScreeningCsvSource[]) {
       row.ai_model_version,
       formatJapanDateTime(row.analyzed_at),
       ...jointCells,
+      hasAnalysis ? row.analysis_thr_node : null,
+      hasAnalysis ? row.analysis_thr_wrist : null,
     ]
       .map(csvCell)
       .join(",");

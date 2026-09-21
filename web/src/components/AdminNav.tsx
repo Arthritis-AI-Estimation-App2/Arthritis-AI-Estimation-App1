@@ -17,6 +17,10 @@ const NAV_ITEMS = [
     href: "/admin/screenings",
     label: "撮影記録",
   },
+  {
+    href: "/admin/settings",
+    label: "判定設定",
+  },
 ] as const;
 
 function isNavItemCurrent(pathname: string, href: string) {

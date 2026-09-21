@@ -45,6 +45,13 @@ create table if not exists public.screenings (
   ra_detected boolean,
   ai_hands jsonb,
   ai_model_version text,
+  analysis_thr_node numeric,
+  analysis_thr_wrist numeric,
+  constraint screenings_analysis_thresholds_check check (
+    (analysis_thr_node is null and analysis_thr_wrist is null) or
+    (analysis_thr_node is not null and analysis_thr_wrist is not null
+     and analysis_thr_node between 0 and 1 and analysis_thr_wrist between 0 and 1)
+  ),
   analyzed_at timestamptz,
   analysis_error_code text,
   analysis_error_http_status integer,
@@ -524,6 +531,8 @@ begin
       ra_detected = null,
       ai_hands = null,
       ai_model_version = null,
+      analysis_thr_node = null,
+      analysis_thr_wrist = null,
       analyzed_at = null,
       analysis_error_code = null,
       analysis_error_http_status = null,
@@ -646,6 +655,8 @@ begin
       ra_detected = p_ra_detected,
       ai_hands = p_hands,
       ai_model_version = null,
+      analysis_thr_node = null,
+      analysis_thr_wrist = null,
       analyzed_at = now(),
       analysis_error_code = null,
       analysis_error_http_status = null,
@@ -741,3 +752,87 @@ $$;
 revoke all on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text, jsonb) from public;
 revoke all on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text, jsonb) from authenticated;
 grant execute on function public.complete_ra_screening_analysis_with_metadata(uuid, boolean, integer, jsonb, text, jsonb) to service_role;
+
+-- ========== 関節判定の共通閾値 ==========
+create table if not exists public.screening_threshold_settings (
+  id boolean primary key default true check (id),
+  thr_node numeric not null check (thr_node between 0 and 1),
+  thr_wrist numeric not null check (thr_wrist between 0 and 1)
+);
+
+-- 2026-09-15-v1 checkpointの初期値。モデル差し替えでも既存設定を上書きしない。
+insert into public.screening_threshold_settings (id, thr_node, thr_wrist)
+values (true, 0.34396984924623114, 0.4344221105527638)
+on conflict (id) do nothing;
+
+alter table public.screening_threshold_settings enable row level security;
+revoke all on public.screening_threshold_settings from anon, authenticated;
+grant select, update on public.screening_threshold_settings to authenticated;
+grant all on public.screening_threshold_settings to service_role;
+create policy "threshold_settings_read_active"
+  on public.screening_threshold_settings for select to authenticated
+  using (public.is_active_user());
+create policy "threshold_settings_update_admin"
+  on public.screening_threshold_settings for update to authenticated
+  using (public.is_active_user() and public.is_admin())
+  with check (public.is_active_user() and public.is_admin());
+
+-- API原文とは別に、Webで閾値を適用した結果と使用値を原子的に確定する。
+create or replace function public.complete_screening_analysis_with_thresholds(
+  p_screening_id uuid,
+  p_ra_detected boolean,
+  p_total_positive_joints integer,
+  p_hands jsonb,
+  p_ai_model_version text,
+  p_raw_response jsonb,
+  p_thr_node numeric,
+  p_thr_wrist numeric
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if p_thr_node is null or p_thr_wrist is null
+     or not (p_thr_node between 0 and 1) or not (p_thr_wrist between 0 and 1) then
+    raise exception '判定閾値は0〜1で指定してください';
+  end if;
+
+  -- 既存の検証・保存も同じトランザクション内。以降の検証失敗は全体をロールバックする。
+  perform public.complete_ra_screening_analysis_with_metadata(
+    p_screening_id, p_ra_detected, p_total_positive_joints,
+    p_hands, p_ai_model_version, p_raw_response
+  );
+
+  if exists (
+    select 1 from jsonb_array_elements(p_hands) as h(hand)
+    where jsonb_array_length(hand->'joints') is distinct from (hand->>'num_joints_detected')::integer
+       or (hand->>'num_joints_detected')::integer not between 0 and 11
+       or (hand->>'num_positive_joints')::integer is distinct from (
+         select count(*)::integer from jsonb_array_elements(hand->'joints') as j(joint)
+         where (joint->>'positive')::boolean
+       )
+  ) or exists (
+    select 1 from jsonb_array_elements(p_hands) as h(hand)
+    cross join lateral jsonb_array_elements(hand->'joints') as j(joint)
+    where jsonb_typeof(joint->'probability') is distinct from 'number'
+       or jsonb_typeof(joint->'positive') is distinct from 'boolean'
+       or (joint->>'probability')::double precision not between 0 and 1
+       or public.ra_api_joint_name(joint->>'joint_name') is null
+       or (joint->>'positive')::boolean is distinct from (
+         (joint->>'probability')::numeric >=
+           case when joint->>'joint_name' = 'Wrist' then p_thr_wrist else p_thr_node end
+       )
+  ) then
+    raise exception '関節結果と判定閾値が一致しません';
+  end if;
+
+  update public.screenings
+  set analysis_thr_node = p_thr_node, analysis_thr_wrist = p_thr_wrist
+  where id = p_screening_id;
+end;
+$$;
+
+revoke all on function public.complete_screening_analysis_with_thresholds(uuid, boolean, integer, jsonb, text, jsonb, numeric, numeric) from public, authenticated;
+grant execute on function public.complete_screening_analysis_with_thresholds(uuid, boolean, integer, jsonb, text, jsonb, numeric, numeric) to service_role;

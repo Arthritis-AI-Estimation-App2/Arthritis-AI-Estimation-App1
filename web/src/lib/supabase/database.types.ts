@@ -126,8 +126,28 @@ export type Database = {
           },
         ]
       }
+      screening_threshold_settings: {
+        Row: {
+          id: boolean
+          thr_node: number
+          thr_wrist: number
+        }
+        Insert: {
+          id?: boolean
+          thr_node: number
+          thr_wrist: number
+        }
+        Update: {
+          id?: boolean
+          thr_node?: number
+          thr_wrist?: number
+        }
+        Relationships: []
+      }
       screenings: {
         Row: {
+          analysis_thr_node: number | null
+          analysis_thr_wrist: number | null
           ai_model_version: string | null
           analysis_error_at: string | null
           analysis_error_code: string | null
@@ -147,6 +167,8 @@ export type Database = {
           screening_clinic_id: string | null
         }
         Insert: {
+          analysis_thr_node?: number | null
+          analysis_thr_wrist?: number | null
           ai_model_version?: string | null
           analysis_error_at?: string | null
           analysis_error_code?: string | null
@@ -165,6 +187,8 @@ export type Database = {
           total_inflamed_joints?: number | null
         }
         Update: {
+          analysis_thr_node?: number | null
+          analysis_thr_wrist?: number | null
           ai_model_version?: string | null
           analysis_error_at?: string | null
           analysis_error_code?: string | null
@@ -250,6 +274,19 @@ export type Database = {
           p_ra_detected: boolean
           p_raw_response: Json
           p_screening_id: string
+          p_total_positive_joints: number
+        }
+        Returns: undefined
+      }
+      complete_screening_analysis_with_thresholds: {
+        Args: {
+          p_ai_model_version: string
+          p_hands: Json
+          p_ra_detected: boolean
+          p_raw_response: Json
+          p_screening_id: string
+          p_thr_node: number
+          p_thr_wrist: number
           p_total_positive_joints: number
         }
         Returns: undefined

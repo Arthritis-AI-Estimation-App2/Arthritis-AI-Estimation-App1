@@ -154,6 +154,41 @@ if (!enabled) {
       staffB = await signIn(staffBEmail);
       admin = await signIn(adminEmail);
 
+      await t.test("閾値設定は有効管理者だけが更新できる", async () => {
+        const original = await admin.from("screening_threshold_settings").select("*").single();
+        assert.ifError(original.error);
+        const anonymous = createClient(url, publishableKey);
+        try {
+          for (const client of [staffA, staffB]) {
+            const read = await client.from("screening_threshold_settings").select("*").single();
+            assert.ifError(read.error);
+            const write = await client.from("screening_threshold_settings").update({ thr_node: 0.1 }).eq("id", true).select("id");
+            assert.equal(write.data?.length ?? 0, 0);
+          }
+          assert.ok((await anonymous.from("screening_threshold_settings").select("*")).error);
+          assert.ok((await anonymous.from("screening_threshold_settings").update({ thr_node: 0.1 }).eq("id", true)).error);
+          assert.ok((await admin.from("screening_threshold_settings").insert({ id: true, thr_node: 0, thr_wrist: 1 })).error);
+          assert.ok((await admin.from("screening_threshold_settings").delete().eq("id", true)).error);
+          for (const values of [{ thr_node: -1 }, { thr_wrist: 1.1 }, { thr_node: null }]) {
+            assert.ok((await admin.from("screening_threshold_settings").update(values).eq("id", true)).error);
+          }
+          assert.ifError((await admin.from("screening_threshold_settings").update({ thr_node: 0.4, thr_wrist: 0.6 }).eq("id", true)).error);
+          const read = await staffA.from("screening_threshold_settings").select("thr_node, thr_wrist").single();
+          assert.deepEqual(read.data, { thr_node: 0.4, thr_wrist: 0.6 });
+          const precise = { thr_node: 0.34396984924623114, thr_wrist: 0.4344221105527638 };
+          assert.ifError((await admin.from("screening_threshold_settings").update(precise).eq("id", true)).error);
+          const exact = await admin.from("screening_threshold_settings").select("thr_node, thr_wrist").single();
+          assert.ifError(exact.error);
+          assert.deepEqual(exact.data, precise, "閾値のJSON応答で末尾を丸めないこと");
+          assert.ifError((await adminApi.from("profiles").update({ is_active: false }).eq("id", adminId)).error);
+          assert.equal((await admin.from("screening_threshold_settings").select("*")).data?.length ?? 0, 0);
+          assert.equal((await admin.from("screening_threshold_settings").update({ thr_node: 0.1 }).eq("id", true).select("id")).data?.length ?? 0, 0);
+        } finally {
+          assert.ifError((await adminApi.from("profiles").update({ is_active: true }).eq("id", adminId)).error);
+          assert.ifError((await adminApi.from("screening_threshold_settings").update({ thr_node: original.data.thr_node, thr_wrist: original.data.thr_wrist }).eq("id", true)).error);
+        }
+      });
+
       await t.test("未認証ユーザーはDBとStorageのデータにアクセスできない", async () => {
         const unauthenticated = createClient(url, publishableKey, {
           auth: { autoRefreshToken: false, persistSession: false },
@@ -331,8 +366,8 @@ if (!enabled) {
         const directScreeningUpdate = await staffA
           .from("screenings")
           .update({ status: "completed", total_inflamed_joints: 30 })
-          .eq("id", screeningId);
-        assert.ok(directScreeningUpdate.error, "screeningsの直接更新は拒否されること");
+          .eq("id", screeningId).select("id");
+        assert.ok(directScreeningUpdate.error || directScreeningUpdate.data?.length === 0, "screeningsの直接更新は拒否されること");
 
         const directResultInsert = await staffA.from("joint_results").insert({
           screening_id: screeningId,
@@ -732,6 +767,7 @@ if (!enabled) {
           p_total_positive_joints: 2,
           p_hands: hands,
           p_ai_model_version: "2026-09-08-v1",
+          p_raw_response: { model_version: "2026-09-08-v1", hands },
         });
         assert.ifError(completed.error);
 
@@ -1069,6 +1105,63 @@ if (!enabled) {
         const images = await adminApi.storage.from("hand-images").list(`${staffAId}/${screening.data.id}`);
         assert.ifError(images.error);
         assert.deepEqual(images.data, [], "画像が残らないこと");
+      });
+
+      await t.test("使用閾値と関節結果を原子的に保存し、再解析・旧RPCとの互換性を維持する", async () => {
+        const created = await adminApi.from("screenings").insert({ created_by: staffAId, status: "analyzing" }).select("id").single();
+        assert.ifError(created.error);
+        const id = created.data.id;
+        createdScreeningIds.push(id);
+        const hands = ["left", "right"].map((side) => ({
+          side, ra_detected: true, hand_probability: 0.5, num_positive_joints: 1, num_joints_detected: 2,
+          joints: [
+            { joint_id: 1, joint_name: "MCP1", probability: 0.5, positive: true },
+            { joint_id: 15, joint_name: "Wrist", probability: 0.5, positive: false },
+          ], warnings: [],
+        }));
+        const args = {
+          p_screening_id: id, p_ra_detected: true, p_total_positive_joints: 2,
+          p_hands: hands, p_ai_model_version: "threshold-test", p_raw_response: { untouched: true },
+          p_thr_node: 0.5, p_thr_wrist: 0.6,
+        };
+        for (const client of [staffA, admin]) {
+          assert.ok((await client.rpc("complete_screening_analysis_with_thresholds", args)).error);
+        }
+        for (const thresholds of [{ p_thr_node: -1 }, { p_thr_wrist: 1.1 }, { p_thr_node: null }, { p_thr_wrist: 0.4 }]) {
+          assert.ok((await adminApi.rpc("complete_screening_analysis_with_thresholds", { ...args, ...thresholds })).error);
+        }
+        const missing = structuredClone(hands);
+        missing[0].joints = [];
+        assert.ok((await adminApi.rpc("complete_screening_analysis_with_thresholds", { ...args, p_hands: missing })).error);
+        const rejected = await adminApi.from("screenings").select("status, analysis_thr_node, joint_results(id)").eq("id", id).single();
+        assert.equal(rejected.data.status, "analyzing");
+        assert.equal(rejected.data.analysis_thr_node, null);
+        assert.equal(rejected.data.joint_results.length, 0);
+        assert.equal((await adminApi.from("screening_analysis_debug_responses").select("screening_id").eq("screening_id", id)).data.length, 0);
+        assert.ifError((await adminApi.rpc("complete_screening_analysis_with_thresholds", args)).error);
+        const saved = await staffA.from("screenings").select("status, analysis_thr_node, analysis_thr_wrist, total_inflamed_joints, joint_results(joint_name, is_inflamed)").eq("id", id).single();
+        assert.ifError(saved.error);
+        assert.equal(saved.data.analysis_thr_node, 0.5);
+        assert.equal(saved.data.analysis_thr_wrist, 0.6);
+        assert.equal(saved.data.total_inflamed_joints, 2);
+        assert.equal(saved.data.joint_results.filter((j) => j.joint_name === "wrist" && !j.is_inflamed).length, 2);
+        assert.equal((await staffB.from("screenings").select("analysis_thr_node").eq("id", id)).data.length, 0);
+        const original = await admin.from("screening_threshold_settings").select("thr_node, thr_wrist").single();
+        try {
+          assert.ifError((await admin.from("screening_threshold_settings").update({ thr_node: 0.9, thr_wrist: 0.1 }).eq("id", true)).error);
+          const unchanged = await staffA.from("screenings").select("analysis_thr_node, analysis_thr_wrist").eq("id", id).single();
+          assert.deepEqual(unchanged.data, { analysis_thr_node: 0.5, analysis_thr_wrist: 0.6 });
+        } finally {
+          assert.ifError((await admin.from("screening_threshold_settings").update(original.data).eq("id", true)).error);
+        }
+        assert.ifError((await adminApi.rpc("begin_screening_reanalysis", { p_screening_id: id, p_changed_by: adminId })).error);
+        const restarted = await adminApi.from("screenings").select("analysis_thr_node, analysis_thr_wrist").eq("id", id).single();
+        assert.deepEqual(restarted.data, { analysis_thr_node: null, analysis_thr_wrist: null });
+        const { p_thr_node, p_thr_wrist, ...legacyArgs } = args;
+        void p_thr_node; void p_thr_wrist;
+        assert.ifError((await adminApi.rpc("complete_ra_screening_analysis_with_metadata", legacyArgs)).error);
+        const legacy = await adminApi.from("screenings").select("analysis_thr_node, analysis_thr_wrist").eq("id", id).single();
+        assert.deepEqual(legacy.data, { analysis_thr_node: null, analysis_thr_wrist: null });
       });
 
       await t.test("無効化済みスタッフはDBとStorageにアクセスできない", async () => {

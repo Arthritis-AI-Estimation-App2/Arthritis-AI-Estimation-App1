@@ -997,7 +997,7 @@ export async function getScreeningsForAdmin(
   let query = supabase
     .from("screenings")
     .select(
-      "id, subject_id, created_by, status, status_updated_at, total_inflamed_joints, ai_model_version, analyzed_at, created_at, subjects(id, clinic_id, clinics(name)), profiles:created_by(full_name, deleted_at, clinic_id, clinics(name)), joint_results(side, joint_name, is_inflamed, confidence_score)",
+      "id, subject_id, created_by, status, status_updated_at, total_inflamed_joints, ai_model_version, analysis_thr_node, analysis_thr_wrist, analyzed_at, created_at, subjects(id, clinic_id, clinics(name)), profiles:created_by(full_name, deleted_at, clinic_id, clinics(name)), joint_results(side, joint_name, is_inflamed, confidence_score)",
       { count: "exact" }
     );
 

@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth";
+import { applyScreeningThresholds, isThreshold } from "@/lib/screening-thresholds";
+import { API_JOINTS } from "@/lib/analyze-response";
 import { requestAiAnalysis } from "@/lib/ai-api";
 import {
   AnalysisExecutionError,
@@ -28,8 +30,12 @@ import { revalidatePath } from "next/cache";
 
 /** AI_API_URLが未設定のローカル開発用モック。 */
 function mockHandAnalyze(side: HandSide): AiHandResult {
-  const numPositiveJoints = Math.floor(Math.random() * 5);
-  const handProbability = Math.round(Math.random() * 100) / 100;
+  const joints = API_JOINTS.map(({ id, name }) => {
+    const probability = Math.random();
+    return { joint_id: id, joint_name: name, probability, positive: probability >= 0.5 };
+  });
+  const numPositiveJoints = joints.filter((joint) => joint.positive).length;
+  const handProbability = Math.max(...joints.map((joint) => joint.probability));
 
   return {
     side,
@@ -37,7 +43,7 @@ function mockHandAnalyze(side: HandSide): AiHandResult {
     hand_probability: handProbability,
     num_positive_joints: numPositiveJoints,
     num_joints_detected: 11,
-    joints: [],
+    joints,
     warnings: [],
   };
 }
@@ -93,6 +99,14 @@ async function runAnalysis(
       );
     }
 
+    // API呼び出し前に一度取得し、実行中の設定変更から切り離す。
+    const supabase = await createClient();
+    const { data: thresholds, error: thresholdError } = await supabase
+      .from("screening_threshold_settings").select("thr_node, thr_wrist").eq("id", true).single();
+    if (thresholdError || !thresholds || !isThreshold(thresholds.thr_node) || !isThreshold(thresholds.thr_wrist)) {
+      throw new AnalysisExecutionError("threshold_configuration_error", "判定設定を取得できませんでした", { cause: thresholdError });
+    }
+
     // 手画像のStorage参照は管理者のみ。解析用URLは認可済みの
     // このServer ActionからService Roleで発行する。
     let imageUrls: { right: string | null; left: string | null };
@@ -119,16 +133,24 @@ async function runAnalysis(
       );
     }
 
-    const result = await callAiApi(imageUrls.right, imageUrls.left);
+    const apiResult = await callAiApi(imageUrls.right, imageUrls.left);
+    let result;
+    try {
+      result = applyScreeningThresholds(apiResult, thresholds);
+    } catch (cause) {
+      throw new AnalysisExecutionError("api_invalid_response", "関節結果から閾値判定できませんでした", { cause });
+    }
 
     // AIレスポンスを検証したこのServer Actionからだけ確定できるよう、
-    // complete_ra_screening_analysis_with_metadata の実行権限はservice_roleに限定する。
+    // complete_screening_analysis_with_thresholds の実行権限はservice_roleに限定する。
     const adminClient = createAdminClient();
     try {
       const { error: completeError } = await adminClient.rpc(
-        "complete_ra_screening_analysis_with_metadata",
+        "complete_screening_analysis_with_thresholds",
         {
           p_screening_id: screening.id,
+          p_thr_node: result.thresholds.thr_node,
+          p_thr_wrist: result.thresholds.thr_wrist,
           p_ra_detected: result.ra_detected,
           p_total_positive_joints: result.total_positive_joints,
           p_ai_model_version: result.model_version ?? "",

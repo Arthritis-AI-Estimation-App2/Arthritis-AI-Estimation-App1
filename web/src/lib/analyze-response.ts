@@ -13,7 +13,7 @@ function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
-const API_JOINTS = [
+export const API_JOINTS = [
   { id: 1, name: "MCP1" },
   { id: 2, name: "MCP2" },
   { id: 3, name: "MCP3" },

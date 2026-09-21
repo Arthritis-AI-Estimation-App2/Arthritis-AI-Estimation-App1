@@ -1,4 +1,5 @@
 import HandJointDiagram from "@/components/HandJointDiagram";
+import { formatThreshold } from "@/lib/screening-thresholds";
 import StatusBadge from "@/components/StatusBadge";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import { JOINT_NAMES } from "@/lib/joints";
@@ -88,6 +89,10 @@ export default function ScreeningResult({
               </span>
             </p>
           </div>
+          <dl className="space-y-1 text-sm text-secondary-foreground">
+            <div className="flex flex-wrap gap-x-3"><dt>手関節以外の判定閾値</dt><dd>{formatThreshold(screening.analysis_thr_node)}</dd></div>
+            <div className="flex flex-wrap gap-x-3"><dt>手関節の判定閾値</dt><dd>{formatThreshold(screening.analysis_thr_wrist)}</dd></div>
+          </dl>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {handImages.map(({ side, label }) => {
               const summary = summaries.hands[side];
