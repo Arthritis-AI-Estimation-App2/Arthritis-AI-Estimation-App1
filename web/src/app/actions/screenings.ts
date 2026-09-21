@@ -464,8 +464,9 @@ export async function getScreeningDetail(screeningId: string) {
     .eq("screening_id", screeningId);
   if (jointsError) throwSupabaseError(jointsError, "関節解析結果の取得");
 
-  // 撮影画像の閲覧は管理者のみ。スタッフにはパスも返さない。
-  const canViewImages = current.profile.role === "admin";
+  // 管理用の画像・解析情報・判定閾値は管理者にだけ返す。
+  const canViewAdminDetails = current.profile.role === "admin";
+  const canViewImages = canViewAdminDetails;
   const debugResponse = canViewImages
     ? await supabase
         .from("screening_analysis_debug_responses")
@@ -502,10 +503,13 @@ export async function getScreeningDetail(screeningId: string) {
           analysis_error_code: null,
           analysis_error_http_status: null,
           analysis_error_at: null,
+          analysis_thr_node: null,
+          analysis_thr_wrist: null,
         },
     joints: joints ?? [],
     images,
     rawAiApiResponse: canViewImages ? debugResponse.data?.raw_response ?? null : null,
     canRetryAnalysis,
+    canViewThresholds: canViewAdminDetails,
   };
 }

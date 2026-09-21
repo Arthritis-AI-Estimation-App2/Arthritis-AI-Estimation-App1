@@ -23,7 +23,7 @@ export default async function ResultPage({
   ]);
   if (!detail) notFound();
 
-  const { screening, joints, canRetryAnalysis } = detail;
+  const { screening, joints, canRetryAnalysis, canViewThresholds } = detail;
   const isProcessing = isProcessingStatus(screening.status);
   const isInterrupted = isStaleProcessing(
     screening.status,
@@ -75,7 +75,12 @@ export default async function ResultPage({
           note="完了するとこの画面は自動的に更新されます"
         />
       )}
-      <ScreeningResult screening={screening} joints={joints} hideCapturedAt />
+      <ScreeningResult
+        screening={screening}
+        joints={joints}
+        hideCapturedAt
+        showThresholds={canViewThresholds}
+      />
 
     </div>
   );

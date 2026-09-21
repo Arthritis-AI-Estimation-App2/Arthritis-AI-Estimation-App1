@@ -57,7 +57,11 @@ export default function GroupingScreeningDetail({ screeningId }: { screeningId: 
             {(detail.screening.status === "uploading" || detail.screening.status === "analyzing") && (
               <p className="text-sm text-muted-foreground">処理中です。詳細を開き直すと最新の状態を確認できます。</p>
             )}
-            <ScreeningResult screening={detail.screening} joints={detail.joints} />
+            <ScreeningResult
+              screening={detail.screening}
+              joints={detail.joints}
+              showThresholds={detail.canViewThresholds}
+            />
           </>
         )}
       </div>

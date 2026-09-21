@@ -31,7 +31,14 @@ export default async function AdminScreeningDetailPage({
   ]);
   if (!detail) notFound();
 
-  const { screening, joints, images, rawAiApiResponse, canRetryAnalysis } = detail;
+  const {
+    screening,
+    joints,
+    images,
+    rawAiApiResponse,
+    canRetryAnalysis,
+    canViewThresholds,
+  } = detail;
   const isProcessing = isProcessingStatus(screening.status);
   const isInterrupted = isStaleProcessing(
     screening.status,
@@ -133,6 +140,7 @@ export default async function AdminScreeningDetailPage({
         joints={joints}
         images={images}
         hideCapturedAt
+        showThresholds={canViewThresholds}
       />
 
       {screening.status === "completed" && canRetryAnalysis && (
