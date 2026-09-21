@@ -23,7 +23,7 @@ export default async function ResultPage({
   ]);
   if (!detail) notFound();
 
-  const { screening, joints, canRetryAnalysis, canViewThresholds } = detail;
+  const { screening, joints, canRetryAnalysis } = detail;
   const isProcessing = isProcessingStatus(screening.status);
   const isInterrupted = isStaleProcessing(
     screening.status,
@@ -79,7 +79,6 @@ export default async function ResultPage({
         screening={screening}
         joints={joints}
         hideCapturedAt
-        showThresholds={canViewThresholds}
       />
 
     </div>

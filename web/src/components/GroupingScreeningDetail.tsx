@@ -60,7 +60,6 @@ export default function GroupingScreeningDetail({ screeningId }: { screeningId: 
             <ScreeningResult
               screening={detail.screening}
               joints={detail.joints}
-              showThresholds={detail.canViewThresholds}
             />
           </>
         )}

@@ -14,6 +14,7 @@ import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import { formatFullScreeningId } from "@/lib/admin-screening-filters";
 import { analysisErrorLabel } from "@/lib/analysis-error";
+import { formatThreshold } from "@/lib/screening-thresholds";
 import { notFound } from "next/navigation";
 import BackLink from "@/components/ui/BackLink";
 
@@ -140,7 +141,6 @@ export default async function AdminScreeningDetailPage({
         joints={joints}
         images={images}
         hideCapturedAt
-        showThresholds={canViewThresholds}
       />
 
       {screening.status === "completed" && canRetryAnalysis && (
@@ -150,17 +150,29 @@ export default async function AdminScreeningDetailPage({
       {screening.status === "completed" && (
         <section className="rounded-xl border border-border bg-surface p-4 text-sm">
           <h2 className="font-semibold text-foreground">AI解析情報</h2>
-          <dl className="mt-3 space-y-1 text-secondary-foreground">
-            <div className="flex gap-3">
-              <dt className="w-20 text-muted-foreground">モデル</dt>
+          <dl className="mt-3 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-secondary-foreground">
+            <div className="contents">
+              <dt className="text-muted-foreground">解析日時</dt>
+              <dd>{screening.analyzed_at ? formatJapanDateTime(screening.analyzed_at) : "-"}</dd>
+            </div>
+            <div className="contents">
+              <dt className="text-muted-foreground">モデル</dt>
               <dd>
                 {screening.ai_model_version ?? "未提供"}
               </dd>
             </div>
-            <div className="flex gap-3">
-              <dt className="w-20 text-muted-foreground">解析日時</dt>
-              <dd>{screening.analyzed_at ? formatJapanDateTime(screening.analyzed_at) : "-"}</dd>
-            </div>
+            {canViewThresholds && (
+              <>
+                <div className="contents">
+                  <dt className="text-muted-foreground">手関節以外の判定閾値</dt>
+                  <dd>{formatThreshold(screening.analysis_thr_node)}</dd>
+                </div>
+                <div className="contents">
+                  <dt className="text-muted-foreground">手関節の判定閾値</dt>
+                  <dd>{formatThreshold(screening.analysis_thr_wrist)}</dd>
+                </div>
+              </>
+            )}
           </dl>
           <details className="mt-4 border-t border-border pt-4 text-xs text-secondary-foreground">
             <summary className="cursor-pointer font-medium text-muted-foreground">
