@@ -40,6 +40,8 @@ const CSV_HEADERS = [
   "解析ステータス",
   "陽性関節数",
   "AIモデルバージョン",
+  "thr_node (0-1)",
+  "thr_wrist (0-1)",
   "解析日時",
   ...(["right", "left"] as const).flatMap((side) =>
     JOINT_NAMES.flatMap((jointName) => [
@@ -47,8 +49,6 @@ const CSV_HEADERS = [
       `${side === "right" ? "右手" : "左手"} ${JOINT_LABELS[jointName]} (${jointName}) 信頼度 (0-1)`,
     ])
   ),
-  "thr_node (0-1)",
-  "thr_wrist (0-1)",
 ];
 
 function singleRelation<T>(value: Relation<T> | undefined) {
@@ -111,10 +111,10 @@ export function buildAdminScreeningsCsv(rows: AdminScreeningCsvSource[]) {
         : row.status,
       hasAnalysis ? row.total_inflamed_joints : null,
       row.ai_model_version,
-      formatJapanDateTime(row.analyzed_at),
-      ...jointCells,
       hasAnalysis ? row.analysis_thr_node : null,
       hasAnalysis ? row.analysis_thr_wrist : null,
+      formatJapanDateTime(row.analyzed_at),
+      ...jointCells,
     ]
       .map(csvCell)
       .join(",");

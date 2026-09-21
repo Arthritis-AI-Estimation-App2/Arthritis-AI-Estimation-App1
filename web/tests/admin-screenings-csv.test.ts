@@ -51,12 +51,12 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
   assert.equal(row.length, 71);
   assert.equal(header[6], "陽性関節数");
   assert.equal(row[6], "3");
-  assert.equal(header[9], "右手 拇指IP (thumbIP) 判定");
-  assert.equal(row[9], "炎症あり");
-  assert.equal(header[68], "左手 手関節 (wrist) 信頼度 (0-1)");
-  assert.equal(row[68], "0.08");
-  assert.deepEqual(header.slice(-2), ["thr_node (0-1)", "thr_wrist (0-1)"]);
-  assert.deepEqual(row.slice(-2), ["0.34396984924623114", "0.4344221105527638"]);
+  assert.deepEqual(header.slice(7, 10), ["AIモデルバージョン", "thr_node (0-1)", "thr_wrist (0-1)"]);
+  assert.deepEqual(row.slice(7, 10), ["model-v2", "0.34396984924623114", "0.4344221105527638"]);
+  assert.equal(header[11], "右手 拇指IP (thumbIP) 判定");
+  assert.equal(row[11], "炎症あり");
+  assert.equal(header[70], "左手 手関節 (wrist) 信頼度 (0-1)");
+  assert.equal(row[70], "0.08");
   assert.ok(csv.endsWith("\r\n"));
 });
 
