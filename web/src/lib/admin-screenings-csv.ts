@@ -10,7 +10,6 @@ type AdminScreeningCsvSource = {
   subject_id: string | null;
   status: string;
   total_inflamed_joints: number | null;
-  ra_detected: boolean | null;
   ai_model_version: string | null;
   analyzed_at: string | null;
   created_at: string;
@@ -37,7 +36,6 @@ const CSV_HEADERS = [
   "撮影日時",
   "担当スタッフ",
   "解析ステータス",
-  "関節炎スクリーニング判定",
   "陽性関節数",
   "AIモデルバージョン",
   "解析日時",
@@ -107,11 +105,6 @@ export function buildAdminScreeningsCsv(rows: AdminScreeningCsvSource[]) {
       row.status in SCREENING_STATUS_LABELS
         ? SCREENING_STATUS_LABELS[row.status as ScreeningStatus]
         : row.status,
-      hasAnalysis
-        ? (row.ra_detected ?? (row.total_inflamed_joints ?? 0) > 0)
-          ? "陽性"
-          : "陰性"
-        : null,
       hasAnalysis ? row.total_inflamed_joints : null,
       row.ai_model_version,
       formatJapanDateTime(row.analyzed_at),

@@ -9,7 +9,6 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
       subject_id: "keio47",
       status: "completed",
       total_inflamed_joints: 3,
-      ra_detected: true,
       ai_model_version: "model-v2",
       analyzed_at: "2026-09-05T01:02:03.000Z",
       created_at: "2026-09-04T15:00:00.000Z",
@@ -33,14 +32,27 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
   ]);
 
   assert.ok(csv.startsWith("\uFEFF"));
-  assert.match(csv, /"関節炎スクリーニング判定"/);
+  assert.doesNotMatch(csv, /"関節炎スクリーニング判定"/);
   assert.match(csv, /"慶應,病院"/);
   assert.match(csv, /"山田 ""太郎"""/);
-  assert.match(csv, /"解析完了","陽性","3","model-v2"/);
+  assert.match(csv, /"解析完了","3","model-v2"/);
   assert.match(csv, /"2026\/09\/05 10:02:03"/);
   assert.match(csv, /"右手 拇指IP \(thumbIP\) 判定"/);
   assert.match(csv, /"炎症あり","0\.91"/);
   assert.match(csv, /"炎症なし","0\.08"/);
+  const [header, row] = csv.slice(1).trimEnd().split("\r\n").map(
+    (line) => [...line.matchAll(/"((?:[^"]|"")*)"(?:,|$)/g)].map(
+      (match) => match[1].replaceAll('""', '"')
+    )
+  );
+  assert.equal(header.length, 69);
+  assert.equal(row.length, 69);
+  assert.equal(header[6], "陽性関節数");
+  assert.equal(row[6], "3");
+  assert.equal(header[9], "右手 拇指IP (thumbIP) 判定");
+  assert.equal(row[9], "炎症あり");
+  assert.equal(header[68], "左手 手関節 (wrist) 信頼度 (0-1)");
+  assert.equal(row[68], "0.08");
   assert.ok(csv.endsWith("\r\n"));
 });
 
@@ -51,7 +63,6 @@ test("未割り当て記録はスタッフの医療機関を使用し、数式�
       subject_id: null,
       status: "failed",
       total_inflamed_joints: null,
-      ra_detected: null,
       ai_model_version: null,
       analyzed_at: null,
       created_at: "2026-09-04T15:00:00.000Z",
@@ -67,7 +78,7 @@ test("未割り当て記録はスタッフの医療機関を使用し、数式�
 
   assert.match(csv, /"テスト医院","未割り当て"/);
   assert.match(csv, /"'=IMPORTXML\(A1\)"/);
-  assert.match(csv, /"解析失敗","","","",""/);
+  assert.match(csv, /"解析失敗","","",""/);
 });
 
 test("削除済みスタッフの記録は担当スタッフを(削除済みユーザー)と表示する", () => {
@@ -77,7 +88,6 @@ test("削除済みスタッフの記録は担当スタッフを(削除済みユ�
       subject_id: "keio48",
       status: "completed",
       total_inflamed_joints: 0,
-      ra_detected: false,
       ai_model_version: null,
       analyzed_at: "2026-09-06T00:00:00.000Z",
       created_at: "2026-09-05T15:00:00.000Z",
