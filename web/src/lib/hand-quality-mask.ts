@@ -25,7 +25,7 @@ function outlinePoints(): [number, number][] {
 const points = outlinePoints();
 
 /** ガイド全体のviewBoxに対応するマスク。開いた腕の下端は閉じ、前腕は評価しない。 */
-export function handQualityMask(width: number, height: number, mirror: boolean): Uint8Array {
+export function handQualityMask(width: number, height: number, mirror: boolean, rotation: 0 | 180 = 0): Uint8Array {
   const mask = new Uint8Array(width * height);
   for (let y = 0; y < height; y++) {
     const guideY = (y + 0.5) * CAPTURE_HAND_HEIGHT / height;
@@ -62,5 +62,6 @@ export function handQualityMask(width: number, height: number, mirror: boolean):
       - integral[bottom * stride + left] + integral[top * stride + left];
     if (sum === area) inner[y * width + x] = 1;
   }
-  return inner;
+  // 180度回転は行・列の両方を反転する。前腕の除外範囲も表示に追従する。
+  return rotation === 180 ? inner.reverse() : inner;
 }

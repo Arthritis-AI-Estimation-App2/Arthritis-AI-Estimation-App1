@@ -15,7 +15,7 @@ export const IMAGE_QUALITY_CONFIG = {
 } as const;
 
 export const HAND_GUIDE = { width: 80, height: 128, cx: 40, cy: 64, rx: 36, ry: 58 } as const;
-export interface QualityRegion { shape: "hand"; mirror: boolean }
+export interface QualityRegion { shape: "hand"; mirror: boolean; rotation?: 0 | 180 }
 export interface QualityGuide { cx: number; cy: number; rx: number; ry: number; region?: QualityRegion }
 export interface CapturedImage { blob: Blob; guide: QualityGuide | null }
 export type QualityReason = "dark" | "bright" | "blur" | "resolution" | "region" | "processing";
@@ -66,9 +66,14 @@ export function debugImageGuide(width: number, height: number): QualityGuide {
   return { cx: width / 2, cy: height / 2, rx: HAND_GUIDE.rx * scale, ry: HAND_GUIDE.ry * scale };
 }
 
+function validRegion(region: QualityRegion): boolean {
+  return region.shape === "hand" && typeof region.mirror === "boolean" &&
+    (region.rotation === undefined || region.rotation === 0 || region.rotation === 180);
+}
+
 export function validGuide(guide: QualityGuide, width: number, height: number): boolean {
   return [guide.cx, guide.cy, guide.rx, guide.ry].every(Number.isFinite) &&
-    (!guide.region || (guide.region.shape === "hand" && typeof guide.region.mirror === "boolean")) && guide.rx > 0 && guide.ry > 0 &&
+    (!guide.region || validRegion(guide.region)) && guide.rx > 0 && guide.ry > 0 &&
     guide.cx - guide.rx >= -0.01 && guide.cy - guide.ry >= -0.01 &&
     guide.cx + guide.rx <= width + 0.01 && guide.cy + guide.ry <= height + 0.01;
 }
@@ -78,9 +83,9 @@ export function evaluateImageQuality(pixels: Uint8ClampedArray, width: number, h
   const config = IMAGE_QUALITY_CONFIG;
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < config.minEdge || height < config.minEdge) return uncheckedQuality("resolution");
   if (width > config.maxEdge || height > config.maxEdge || pixels.length !== width * height * 4) return uncheckedQuality("processing");
-  if (region && (region.shape !== "hand" || typeof region.mirror !== "boolean")) return uncheckedQuality("region");
+  if (region && !validRegion(region)) return uncheckedQuality("region");
   const luminance = new Float64Array(width * height);
-  const mask = region ? handQualityMask(width, height, region.mirror) : new Uint8Array(width * height);
+  const mask = region ? handQualityMask(width, height, region.mirror, region.rotation) : new Uint8Array(width * height);
   let count = 0, sum = 0, dark = 0, bright = 0;
   // Leave a two-pixel inset so resampling at the ellipse edge is not measured.
   const rx = width / 2 - 2, ry = height / 2 - 2;

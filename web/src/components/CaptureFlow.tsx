@@ -198,6 +198,7 @@ export default function CaptureFlow({
   const [pending, setPending] = useState<(CapturedImage & { quality?: ImageQuality }) | null>(null);
   const [cameraBusy, setCameraBusy] = useState(false);
   const [cameraKey, setCameraKey] = useState(0);
+  const [guideRotation, setGuideRotation] = useState<0 | 180>(180);
   const qualityTask = useRef<AbortController | null>(null);
   const pendingRef = useRef<CheckedCapture | null>(null);
   const submitting = useRef(false);
@@ -440,6 +441,8 @@ export default function CaptureFlow({
               className="h-full min-h-[12rem]"
               handLabel={step === "left" ? "左手" : "右手"}
               mirror={step === "left"}
+              guideRotation={guideRotation}
+              onGuideRotationChange={setGuideRotation}
               instruction={
                 step === "right"
                   ? "次は右手です。ガイド枠に合わせてください（手首まで写してください）"

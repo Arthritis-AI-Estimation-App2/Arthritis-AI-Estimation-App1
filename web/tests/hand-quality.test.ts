@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { handQualityMask } from "../src/lib/hand-quality-mask.ts";
-import { evaluateImageQuality, guideInSavedImage } from "../src/lib/image-quality.ts";
+import { evaluateImageQuality, guideInSavedImage, validGuide, type QualityRegion } from "../src/lib/image-quality.ts";
 
 const width = 390, height = 500;
 const region = { shape: "hand", mirror: false } as const;
@@ -98,5 +98,53 @@ test("ピンボケ相当の平滑化と縦横のブレで鮮明さが下がり�
     const result = evaluateImageQuality(blurred, width, height, region);
     assert.ok(result.metrics!.laplacianVariance < sharp.metrics!.laplacianVariance);
     assert.deepEqual(result.reasons, ["blur"]);
+  }
+});
+
+
+test("左右それぞれで180度回転したマスクは元の行・列反転と一致する", () => {
+  for (const [w, h] of [[100, 128], [200, 256], [399, 512]]) {
+    for (const mirror of [false, true]) {
+      const normal = handQualityMask(w, h, mirror, 0);
+      const rotated = handQualityMask(w, h, mirror, 180);
+      assert.deepEqual(rotated, normal.slice().reverse());
+      assert.deepEqual(handQualityMask(w, h, mirror), normal);
+    }
+  }
+});
+
+test("左右と回転の4通りで画像と手領域が追従し、品質判定が一致する", () => {
+  const original = image((x, y) => (x * 7 + y * 3) % 160 + 45);
+  const baseline = evaluateImageQuality(original, width, height, region);
+  for (const mirror of [false, true]) for (const rotation of [0, 180] as const) {
+    const transformed = image((x, y) => {
+      const rx = rotation === 180 ? width - 1 - x : x;
+      const ry = rotation === 180 ? height - 1 - y : y;
+      return original[(ry * width + (mirror ? width - 1 - rx : rx)) * 4];
+    });
+    const result = evaluateImageQuality(transformed, width, height, { ...region, mirror, rotation });
+    assert.deepEqual(result.reasons, baseline.reasons);
+    for (const key of ["meanLuminance", "darkRatio", "brightRatio", "laplacianVariance"] as const) {
+      assert.ok(Math.abs(result.metrics![key] - baseline.metrics![key]) < 1e-6, key);
+    }
+    const mask = handQualityMask(width, height, mirror, rotation);
+    const darkHand = evaluateImageQuality(image((x, y) => mask[y * width + x] ? 10 : 128),
+      width, height, { ...region, mirror, rotation });
+    assert.deepEqual(darkHand.reasons, ["dark"]);
+  }
+});
+
+test("回転角は保存画像のガイドへ引き継ぎ、省略・0・180だけ受け付ける", () => {
+  const bounds = { left: 0, top: 0, width, height };
+  for (const rotation of [undefined, 0, 180] as const) {
+    const rotatedRegion = { ...region, rotation };
+    const guide = guideInSavedImage(bounds, bounds, width, height, rotatedRegion)!;
+    assert.deepEqual(guide.region, rotatedRegion);
+    assert.ok(validGuide(guide, width, height));
+  }
+  for (const rotation of [90, -180, 360, null, "180", NaN]) {
+    const invalidRegion = { ...region, rotation } as unknown as QualityRegion;
+    assert.equal(guideInSavedImage(bounds, bounds, width, height, invalidRegion), null);
+    assert.deepEqual(evaluateImageQuality(image(() => 128), width, height, invalidRegion).reasons, ["region"]);
   }
 });

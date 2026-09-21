@@ -17,6 +17,8 @@ interface CameraCaptureProps {
   handLabel: string;
   /** 左手表示用の反転フラグ */
   mirror?: boolean;
+  guideRotation: 0 | 180;
+  onGuideRotationChange: (rotation: 0 | 180) => void;
   instruction?: string;
   className?: string;
   disabled?: boolean;
@@ -28,7 +30,7 @@ const MAX_EDGE = 1280;
 const JPEG_QUALITY = 0.8;
 
 /** 表示中の映像範囲を切り出し、最大辺1280px・JPEG品質0.8に圧縮 */
-async function compressImage(source: HTMLVideoElement, guideEl: SVGGraphicsElement | null, mirror: boolean): Promise<CapturedImage> {
+async function compressImage(source: HTMLVideoElement, guideEl: SVGGraphicsElement | null, mirror: boolean, rotation: 0 | 180): Promise<CapturedImage> {
   const viewport = source.getBoundingClientRect();
   const crop = cameraCrop(source.videoWidth, source.videoHeight, viewport.width, viewport.height);
   const canvas = document.createElement("canvas");
@@ -40,7 +42,7 @@ async function compressImage(source: HTMLVideoElement, guideEl: SVGGraphicsEleme
   canvas.height = Math.max(1, Math.round(crop.height * scale));
 
   const guide = guideEl
-    ? guideInSavedImage(viewport, guideEl.getBoundingClientRect(), canvas.width, canvas.height, { shape: "hand", mirror })
+    ? guideInSavedImage(viewport, guideEl.getBoundingClientRect(), canvas.width, canvas.height, { shape: "hand", mirror, rotation })
     : null;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
@@ -64,6 +66,8 @@ export default function CameraCapture({
   onBusyChange,
   handLabel,
   mirror = false,
+  guideRotation,
+  onGuideRotationChange,
   instruction,
   className = "",
   disabled = false,
@@ -140,7 +144,7 @@ export default function CameraCapture({
     if (flashTimerRef.current != null) window.clearTimeout(flashTimerRef.current);
     flashTimerRef.current = window.setTimeout(() => setFlash(false), 140);
     try {
-      const capture = await compressImage(videoRef.current, guideRef.current, mirror);
+      const capture = await compressImage(videoRef.current, guideRef.current, mirror, guideRotation);
       if (generation === captureGeneration.current) onCapture(capture);
     } catch {
       if (generation !== captureGeneration.current) return;
@@ -152,7 +156,7 @@ export default function CameraCapture({
         onBusyChange(false);
       }
     }
-  }, [onCapture, onBusyChange, disabled, mirror]);
+  }, [onCapture, onBusyChange, disabled, mirror, guideRotation]);
 
   /** デバッグ用。解析結果を手元と突き合わせられるよう、選んだJPEGを変換せずそのまま渡す。 */
   const handleFileChange = useCallback(
@@ -266,28 +270,34 @@ export default function CameraCapture({
               `${handLabel}をガイド枠に合わせてください（手首まで写してください）`}
           </span>
         </div>
-        {/* 案内文の折り返し分も確保してから、その下にガイドを配置する。 */}
-        <div className="flex min-h-0 flex-1 items-center justify-center pb-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))]">
+        {/* 手首が上のときは下の余白を増やし、指先をシャッターから離す。 */}
+        <div className={`flex min-h-0 flex-1 items-center justify-center ${
+          guideRotation === 180
+            ? "pb-[max(7rem,calc(env(safe-area-inset-bottom)+6rem))]"
+            : "pb-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))]"
+        }`}>
           <svg
             viewBox={`0 0 ${CAPTURE_HAND_WIDTH} ${CAPTURE_HAND_HEIGHT}`}
             className="h-full w-full"
             preserveAspectRatio="xMidYMax meet"
             aria-hidden="true"
           >
-            {/* 下寄せ後のviewBoxの実表示範囲を使い、余白・左右反転と判定座標を揃える。 */}
+            {/* 下寄せ後のviewBoxの実表示範囲を使い、余白・左右反転・回転と判定座標を揃える。 */}
             <rect ref={guideRef} width={CAPTURE_HAND_WIDTH} height={CAPTURE_HAND_HEIGHT} fill="none" />
-            <g transform={mirror ? `translate(${CAPTURE_HAND_WIDTH} 0) scale(-1 1)` : undefined}>
-              <path
-                d={CAPTURE_HAND_OUTLINE}
-                fill="none"
-                stroke="white"
-                strokeOpacity="0.8"
-                strokeWidth="4"
-                strokeDasharray="10 8"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
+            <g transform={`rotate(${guideRotation} ${CAPTURE_HAND_WIDTH / 2} ${CAPTURE_HAND_HEIGHT / 2})`}>
+              <g transform={mirror ? `translate(${CAPTURE_HAND_WIDTH} 0) scale(-1 1)` : undefined}>
+                <path
+                  d={CAPTURE_HAND_OUTLINE}
+                  fill="none"
+                  stroke="white"
+                  strokeOpacity="0.8"
+                  strokeWidth="4"
+                  strokeDasharray="10 8"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </g>
             </g>
           </svg>
         </div>
@@ -300,14 +310,14 @@ export default function CameraCapture({
           {fileErrorMessage}
         </div>
       )}
-      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-0 right-0 z-10 flex justify-center">
+      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-0 right-0 z-10 grid grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-2 px-2">
         {allowFileUpload && (
           <button
             type="button"
             onClick={openFilePicker}
             disabled={capturing || disabled}
             aria-label={`${handLabel}の画像をファイルから選択`}
-            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full border border-white/70 bg-black/60 px-4 py-2 text-sm font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
+            className="col-start-1 row-start-1 justify-self-start rounded-full border border-white/70 bg-black/60 px-2 py-2 text-xs font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
           >
             画像を選択
           </button>
@@ -316,8 +326,20 @@ export default function CameraCapture({
           onClick={handleCapture}
           disabled={!ready || capturing || disabled}
           aria-label={`${handLabel}を撮影`}
-          className="h-16 w-16 rounded-full border-4 border-white bg-white/30 transition hover:bg-white/50 disabled:opacity-40"
+          className="col-start-2 row-start-1 h-16 w-16 rounded-full border-4 border-white bg-white/30 transition hover:bg-white/50 disabled:opacity-40"
         />
+        <button
+          type="button"
+          onClick={() => {
+            if (captureBusyRef.current || disabled) return;
+            onGuideRotationChange(guideRotation === 180 ? 0 : 180);
+          }}
+          disabled={capturing || disabled}
+          aria-label={`ガイドを180度回転（現在は手首が${guideRotation === 180 ? "上" : "下"}）`}
+          className="col-start-3 row-start-1 justify-self-end rounded-full border border-white/70 bg-black/60 px-2 py-2 text-xs font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
+        >
+          ガイドを回転
+        </button>
       </div>
       {fileInput}
     </div>

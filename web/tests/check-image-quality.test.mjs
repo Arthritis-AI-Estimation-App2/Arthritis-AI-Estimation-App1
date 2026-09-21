@@ -109,10 +109,10 @@ test("5秒で終わらないWorkerは未確認にし、タイムアウト後の�
 });
 
 
-test("手のviewBoxと左右情報をWorkerへ渡す", async () => {
+test("手のviewBoxと左右・回転情報をWorkerへ渡す", async () => {
   await withBrowser(async ({ stats }) => {
     const original = { blob: new Blob(["jpeg"]), guide: {
-      cx: 400, cy: 640, rx: 312, ry: 400, region: { shape: "hand", mirror: true },
+      cx: 400, cy: 640, rx: 312, ry: 400, region: { shape: "hand", mirror: true, rotation: 180 },
     } };
     const promise = checkImageQuality(original, new AbortController().signal);
     await tick();
