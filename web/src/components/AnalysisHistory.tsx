@@ -1,5 +1,5 @@
 import { getAnalysisHistory } from "@/app/actions/analysis-history";
-import { analysisRunJoints, analysisRunKindLabel, analysisRunSourceLabel } from "@/lib/analysis-history";
+import { analysisRunJoints, analysisRunKindLabel } from "@/lib/analysis-history";
 import { formatJapanDateTime } from "@/lib/japan-date-time";
 import { formatThreshold } from "@/lib/screening-thresholds";
 import { analysisErrorLabel } from "@/lib/analysis-error";
@@ -42,7 +42,7 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
             <dl className="space-y-1 break-all text-xs text-secondary-foreground">
               {[
                 ["実行ID", run.id], ["実行者ID", run.executed_by ?? "未記録"],
-                ["実行元", analysisRunSourceLabel(run.source)], ["モデル", run.ai_model_version ?? "未記録"],
+                ["モデル", run.ai_model_version ?? "未記録"],
               ].map(([label, value]) => (
                 <div key={label} className="flex gap-2"><dt>{label}:</dt><dd>{value}</dd></div>
               ))}

@@ -22,22 +22,22 @@ function parseCsv(csv: string) {
     [...line.matchAll(/"((?:[^"]|"")*)"(?:,|$)/g)].map((m) => m[1].replaceAll('""', '"')));
 }
 
-test("履歴CSVは各実行の閾値・実行者・日時・関節確率を81列で出力する", () => {
+test("履歴CSVは各実行の閾値・実行者・日時・関節確率を80列で出力する", () => {
   const csv = buildAnalysisHistoryCsv([row]);
   assert.ok(csv.startsWith("\uFEFF"));
   assert.ok(csv.endsWith("\r\n"));
   const [headers, values] = parseCsv(csv);
-  assert.equal(headers.length, 81);
-  assert.equal(values.length, 81);
+  assert.equal(headers.length, 80);
+  assert.equal(values.length, 80);
   assert.equal(values[1], '病院,"A"');
   assert.equal(values[8], "'=TEST(\"name\")");
   assert.equal(values[9], "2026/09/22 09:00:00");
-  assert.equal(values[14], "0.34396984924623114");
-  assert.equal(values[15], "0.4344221105527638");
-  assert.equal(values[17], "0");
+  assert.equal(values[13], "0.34396984924623114");
+  assert.equal(values[14], "0.4344221105527638");
+  assert.equal(values[16], "0");
   assert.equal(values.at(-2), "炎症なし");
   assert.equal(values.at(-1), "0.2");
-  assert.equal(values[21], "", "未検出関節を陰性としない");
+  assert.equal(values[20], "", "未検出関節を陰性としない");
 });
 
 test("失敗・解析中・実行区分のない行も別行で残し、不明な値は空欄にする", () => {
@@ -53,12 +53,12 @@ test("失敗・解析中・実行区分のない行も別行で残し、不明�
   assert.equal(legacy[6], "");
   assert.equal(legacy[1], "所属医院");
   assert.deepEqual(legacy.slice(7, 11), ["", "", "", ""]);
-  assert.deepEqual(legacy.slice(13, 18), ["", "", "", "", ""]);
+  assert.deepEqual(legacy.slice(12, 17), ["", "", "", "", ""]);
   assert.equal(failed[11], "解析失敗");
-  assert.equal(failed[18], "api_http_error");
-  assert.equal(failed[19], "503");
+  assert.equal(failed[17], "api_http_error");
+  assert.equal(failed[18], "503");
   assert.equal(running[11], "解析中");
-  assert.ok(failed.slice(21).every((cell) => cell === ""));
+  assert.ok(failed.slice(20).every((cell) => cell === ""));
 });
 
 test("履歴CSVリンクは一覧の全条件を引き継ぎ、ページ番号を除く", () => {

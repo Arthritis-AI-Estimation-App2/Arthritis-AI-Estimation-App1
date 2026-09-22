@@ -5,10 +5,6 @@ export function analysisRunKindLabel(kind: string) {
   return ({ initial: "初回解析", retry: "再解析", legacy: "" } as Record<string, string>)[kind] ?? kind;
 }
 
-export function analysisRunSourceLabel(source: string | null) {
-  return source === "api" ? "AI API" : source === "mock" ? "モック" : "未記録";
-}
-
 /** 移行元の関節行も扱い、欠損を陰性・確率0で補わない。 */
 export function analysisRunJoints(value: Json | null): JointResult[] {
   if (!Array.isArray(value)) return [];
