@@ -31,7 +31,7 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
             <span className="mr-2 font-semibold">記録{run.run_number}{kindLabel && `・${kindLabel}`}</span>
             <StatusBadge status={run.status} />
             <span className="mt-2 block text-xs text-secondary-foreground">
-              開始: {run.started_at ? formatJapanDateTime(run.started_at) : "未記録"}
+              解析日時: {run.finished_at ? formatJapanDateTime(run.finished_at) : "未記録"}
               {" ／ "}実行者: {run.executor_name ?? "未記録"}
               {" ／ "}指関節: {formatThreshold(run.analysis_thr_node)}
               {" ／ "}手首: {formatThreshold(run.analysis_thr_wrist)}
@@ -42,7 +42,6 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
             <dl className="space-y-1 break-all text-xs text-secondary-foreground">
               {[
                 ["実行ID", run.id], ["実行者ID", run.executed_by ?? "未記録"],
-                ["終了", run.finished_at ? formatJapanDateTime(run.finished_at) : "未記録"],
                 ["実行元", analysisRunSourceLabel(run.source)], ["モデル", run.ai_model_version ?? "未記録"],
               ].map(([label, value]) => (
                 <div key={label} className="flex gap-2"><dt>{label}:</dt><dd>{value}</dd></div>
