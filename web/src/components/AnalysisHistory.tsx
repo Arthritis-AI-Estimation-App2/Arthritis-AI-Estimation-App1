@@ -10,7 +10,7 @@ import CopyJsonButton from "@/components/CopyJsonButton";
 import Link from "@/components/ui/Link";
 
 export default async function AnalysisHistory({ screening, page }: { screening: Screening; page: number }) {
-  const history = await getAnalysisHistory(screening.id, page);
+  const history = await getAnalysisHistory(screening.id, page, screening.current_analysis_run_id);
   return (
     <section id="analysis-history" className="space-y-3 rounded-xl border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -20,9 +20,9 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
         </a>
       </div>
       <p className="text-xs text-muted-foreground">
-        各回の条件と結果を保存しています。記録番号は保存済み履歴の順番です。
+        上に表示している最新の結果より前の解析です。記録番号は保存した順番です。
       </p>
-      {history.runs.length === 0 && <p className="text-sm text-muted-foreground">このページに解析履歴はありません。</p>}
+      {history.runs.length === 0 && <p className="text-sm text-muted-foreground">これより前の解析はありません。</p>}
       {history.runs.map((run) => {
         const kindLabel = analysisRunKindLabel(run.kind);
         return (

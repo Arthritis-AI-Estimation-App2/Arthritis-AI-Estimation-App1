@@ -15,14 +15,18 @@ async function requireHistoryAdmin() {
   }
 }
 
-export async function getAnalysisHistory(screeningId: string, requestedPage = 1) {
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function getAnalysisHistory(screeningId: string, requestedPage = 1, currentRunId?: string | null) {
   await requireHistoryAdmin();
-  if (typeof screeningId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(screeningId)) throw new Error("撮影IDが不正です");
+  if (typeof screeningId !== "string" || !UUID_PATTERN.test(screeningId)) throw new Error("撮影IDが不正です");
   const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
   const pageSize = 20;
   const supabase = await createClient();
-  const { data, error, count } = await supabase.from("screening_analysis_runs")
-    .select("*", { count: "exact" }).eq("screening_id", screeningId)
+  let query = supabase.from("screening_analysis_runs")
+    .select("*", { count: "exact" }).eq("screening_id", screeningId);
+  if (typeof currentRunId === "string" && UUID_PATTERN.test(currentRunId)) query = query.neq("id", currentRunId);
+  const { data, error, count } = await query
     .order("run_number", { ascending: false }).range((page - 1) * pageSize, page * pageSize - 1);
   if (error) throwSupabaseError(error, "解析履歴の取得");
   return { runs: data ?? [], total: count ?? 0, page, totalPages: Math.max(1, Math.ceil((count ?? 0) / pageSize)) };
