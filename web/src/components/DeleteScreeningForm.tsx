@@ -30,7 +30,7 @@ export default function DeleteScreeningForm({
           onSubmit={(event) => {
             if (
               !window.confirm(
-                "この撮影記録を画像も含めて完全に削除します。この操作は取り消せません。続行しますか？"
+                "この撮影記録を画像・すべての解析履歴も含めて完全に削除します。この操作は取り消せません。続行しますか？"
               )
             ) {
               event.preventDefault();
@@ -40,7 +40,7 @@ export default function DeleteScreeningForm({
         >
           <input type="hidden" name="screening_id" value={screeningId} />
           <p className="text-xs text-muted-foreground">
-            削除すると、手画像、関節判定、AIレスポンスを含むこの撮影記録は復元できません。
+            削除すると、手画像、すべての解析履歴・関節判定・AIレスポンスを含むこの撮影記録は復元できません。
           </p>
           {state.error && (
             <p role="alert" className="rounded-lg bg-danger p-3 text-sm text-danger-foreground">

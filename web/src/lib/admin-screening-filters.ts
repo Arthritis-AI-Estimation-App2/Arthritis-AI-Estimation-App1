@@ -171,3 +171,7 @@ export function adminScreeningExportHref(filters: AdminScreeningFilters) {
     ? `/admin/screenings/export?${query}`
     : "/admin/screenings/export";
 }
+
+export function adminAnalysisHistoryExportHref(filters: AdminScreeningFilters) {
+  return adminScreeningExportHref(filters).replace("/export", "/history-export");
+}

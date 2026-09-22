@@ -8,7 +8,6 @@ import { API_JOINTS } from "@/lib/analyze-response";
 import { requestAiAnalysis } from "@/lib/ai-api";
 import {
   AnalysisExecutionError,
-  createAnalysisFailureUpdate,
   logAnalysisFailure,
   logAnalysisFailurePersistenceError,
   normalizeAnalysisError,
@@ -18,13 +17,12 @@ import {
   isProcessingStatus,
   isStaleProcessing,
 } from "@/lib/screening-staleness";
-import type { Json } from "@/lib/supabase/database.types";
+import type { Json, Tables } from "@/lib/supabase/database.types";
 import type {
   AiHandResult,
   AnalyzeResponse,
   AnalyzeResponseWithRaw,
   HandSide,
-  Screening,
 } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
@@ -89,22 +87,20 @@ async function callAiApi(
 }
 
 async function runAnalysis(
-  screening: Pick<Screening, "id" | "right_image_url" | "left_image_url">
+  run: Tables<"screening_analysis_runs">
 ): Promise<{ error: string | null }> {
   try {
-    if (!screening.right_image_url || !screening.left_image_url) {
+    if (!run.right_image_url || !run.left_image_url) {
       throw new AnalysisExecutionError(
         "missing_images",
         "左右両方の画像が登録されていません"
       );
     }
 
-    // API呼び出し前に一度取得し、実行中の設定変更から切り離す。
-    const supabase = await createClient();
-    const { data: thresholds, error: thresholdError } = await supabase
-      .from("screening_threshold_settings").select("thr_node, thr_wrist").eq("id", true).single();
-    if (thresholdError || !thresholds || !isThreshold(thresholds.thr_node) || !isThreshold(thresholds.thr_wrist)) {
-      throw new AnalysisExecutionError("threshold_configuration_error", "判定設定を取得できませんでした", { cause: thresholdError });
+    // 開始RPCが保存した値だけを使い、実行中の設定変更から切り離す。
+    const thresholds = { thr_node: run.analysis_thr_node, thr_wrist: run.analysis_thr_wrist };
+    if (!isThreshold(thresholds.thr_node) || !isThreshold(thresholds.thr_wrist)) {
+      throw new AnalysisExecutionError("threshold_configuration_error", "判定設定を取得できませんでした");
     }
 
     // 手画像のStorage参照は管理者のみ。解析用URLは認可済みの
@@ -114,8 +110,8 @@ async function runAnalysis(
       imageUrls = await createSignedHandImageUrls(
         createAdminClient(),
         {
-          right: screening.right_image_url,
-          left: screening.left_image_url,
+          right: run.right_image_url,
+          left: run.left_image_url,
         },
         300
       );
@@ -136,21 +132,20 @@ async function runAnalysis(
     const apiResult = await callAiApi(imageUrls.right, imageUrls.left);
     let result;
     try {
-      result = applyScreeningThresholds(apiResult, thresholds);
+      result = applyScreeningThresholds(apiResult, { thr_node: thresholds.thr_node, thr_wrist: thresholds.thr_wrist });
     } catch (cause) {
       throw new AnalysisExecutionError("api_invalid_response", "関節結果から閾値判定できませんでした", { cause });
     }
 
     // AIレスポンスを検証したこのServer Actionからだけ確定できるよう、
-    // complete_screening_analysis_with_thresholds の実行権限はservice_roleに限定する。
+    // complete_screening_analysis_run の実行権限はservice_roleに限定する。
     const adminClient = createAdminClient();
     try {
-      const { error: completeError } = await adminClient.rpc(
-        "complete_screening_analysis_with_thresholds",
+      const { data: completed, error: completeError } = await adminClient.rpc(
+        "complete_screening_analysis_run",
         {
-          p_screening_id: screening.id,
-          p_thr_node: result.thresholds.thr_node,
-          p_thr_wrist: result.thresholds.thr_wrist,
+          p_screening_id: run.screening_id,
+          p_run_id: run.id,
           p_ra_detected: result.ra_detected,
           p_total_positive_joints: result.total_positive_joints,
           p_ai_model_version: result.model_version ?? "",
@@ -173,6 +168,7 @@ async function runAnalysis(
       );
 
       if (completeError) throw completeError;
+      if (!completed) return { error: "この解析は中断または更新されています。画面を更新してください。" };
     } catch (error) {
       throw new AnalysisExecutionError(
         "result_save_failed",
@@ -185,24 +181,55 @@ async function runAnalysis(
   } catch (e) {
     const error = normalizeAnalysisError(e);
     const occurredAt = new Date().toISOString();
-    logAnalysisFailure(screening.id, error, occurredAt);
+    logAnalysisFailure(run.screening_id, error, occurredAt);
     try {
       const adminClient = createAdminClient();
-      const { error: persistenceError } = await adminClient
-        .from("screenings")
-        .update(createAnalysisFailureUpdate(error, occurredAt))
-        .eq("id", screening.id)
-        .eq("status", "analyzing");
+      const { error: persistenceError } = await adminClient.rpc("fail_screening_analysis_run", {
+        p_screening_id: run.screening_id,
+        p_run_id: run.id,
+        p_error_code: error.code,
+        p_http_status: error.httpStatus,
+      });
       if (persistenceError) throw persistenceError;
     } catch (persistenceError) {
       logAnalysisFailurePersistenceError(
-        screening.id,
+        run.screening_id,
         persistenceError,
         new Date().toISOString()
       );
     }
     return { error: "AI解析に失敗しました。再度お試しください。" };
+  } finally {
+    revalidateAnalysis(run.screening_id);
   }
+}
+
+function revalidateAnalysis(screeningId: string) {
+  for (const path of ["/", "/admin/screenings", `/results/${screeningId}`,
+    `/admin/screenings/${screeningId}`, "/screenings"]) revalidatePath(path);
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function validUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_PATTERN.test(value);
+}
+
+async function beginAndRun(
+  screeningId: string, actorId: string, kind: "initial" | "retry",
+  expectedRunId: string | null, runId: string,
+): Promise<{ error: string | null }> {
+  const { data, error } = await createAdminClient().rpc("begin_screening_analysis_run", {
+    p_screening_id: screeningId, p_run_id: runId, p_actor_id: actorId,
+    p_expected_run_id: expectedRunId, p_kind: kind,
+    p_source: process.env.AI_API_URL?.trim() ? "api" : "mock",
+  });
+  if (error) {
+    console.error("解析開始エラー:", error);
+    return { error: "解析の開始に失敗しました" };
+  }
+  const run = data?.[0];
+  if (!run) return { error: "解析はすでに受け付けられたか、状態が更新されています。画面を更新してください。" };
+  return runAnalysis(run);
 }
 
 /** AI解析を実行し、結果をDBに保存する */
@@ -210,8 +237,9 @@ export async function analyzeScreening(
   screeningId: string
 ): Promise<{ error: string | null }> {
   const current = await getCurrentUser();
-  if (!current) return { error: "ログインが必要です" };
+  if (!current || !current.profile.is_active) return { error: "ログインが必要です" };
 
+  if (!validUuid(screeningId)) return { error: "撮影記録の指定が不正です" };
   const supabase = await createClient();
 
   const { data: screening, error: fetchError } = await supabase
@@ -237,7 +265,7 @@ export async function analyzeScreening(
     };
   }
 
-  return runAnalysis(screening);
+  return beginAndRun(screeningId, current.userId, "initial", null, crypto.randomUUID());
 }
 
 /** 10分以上更新されていない途中状態を failed にして、管理者が再解析できる状態へ戻す。 */
@@ -245,11 +273,12 @@ export async function markInterruptedScreeningFailed(
   screeningId: string
 ): Promise<{ error: string | null }> {
   const current = await getCurrentUser();
-  if (!current) return { error: "ログインが必要です" };
+  if (!current || !current.profile.is_active) return { error: "ログインが必要です" };
   if (current.profile.role !== "admin") {
     return { error: "中断状態の復旧は管理者のみ実行できます" };
   }
 
+  if (!validUuid(screeningId)) return { error: "撮影記録の指定が不正です" };
   const supabase = await createClient();
   const { data: screening, error: fetchError } = await supabase
     .from("screenings")
@@ -270,14 +299,11 @@ export async function markInterruptedScreeningFailed(
   }
 
   const adminClient = createAdminClient();
-  const { data: recovered, error: updateError } = await adminClient
-    .from("screenings")
-    .update({ status: "failed" })
-    .eq("id", screening.id)
-    .eq("status", screening.status)
-    .eq("status_updated_at", screening.status_updated_at)
-    .select("id")
-    .maybeSingle();
+  const { data: recovered, error: updateError } = await adminClient.rpc("recover_interrupted_screening", {
+    p_screening_id: screening.id,
+    p_actor_id: current.userId,
+    p_expected_updated_at: screening.status_updated_at,
+  });
 
   if (updateError) {
     console.error("中断状態の復旧エラー:", updateError);
@@ -297,14 +323,20 @@ export async function markInterruptedScreeningFailed(
 
 /** 管理者が完了または失敗したスクリーニングを再実行する */
 export async function retryAnalysis(
-  screeningId: string
+  screeningId: string,
+  expectedRunId: string | null,
+  runId: string,
 ): Promise<{ error: string | null }> {
   const current = await getCurrentUser();
-  if (!current) return { error: "ログインが必要です" };
+  if (!current || !current.profile.is_active) return { error: "ログインが必要です" };
   if (current.profile.role !== "admin") {
     return { error: "再解析は管理者のみ実行できます" };
   }
 
+  if ((expectedRunId !== null && !validUuid(expectedRunId)) || !validUuid(runId)) {
+    return { error: "解析実行の指定が不正です" };
+  }
+  if (!validUuid(screeningId)) return { error: "撮影記録の指定が不正です" };
   const supabase = await createClient();
   const { data: screening, error: fetchError } = await supabase
     .from("screenings")
@@ -320,20 +352,5 @@ export async function retryAnalysis(
     return { error: "解析完了または解析失敗の撮影記録のみ再解析できます" };
   }
 
-  const adminClient = createAdminClient();
-  const { data, error } = await adminClient.rpc("begin_screening_reanalysis", {
-    p_screening_id: screeningId,
-    p_changed_by: current.userId,
-  });
-
-  if (error) {
-    console.error("再解析開始エラー:", error);
-    return { error: "再解析の開始に失敗しました" };
-  }
-  const reanalysis = data?.[0];
-  if (!reanalysis) {
-    return { error: "再解析を開始できる状態ではありません" };
-  }
-
-  return runAnalysis(reanalysis);
+  return beginAndRun(screeningId, current.userId, "retry", expectedRunId, runId);
 }

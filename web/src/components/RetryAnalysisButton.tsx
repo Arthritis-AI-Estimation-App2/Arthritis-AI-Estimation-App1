@@ -9,32 +9,40 @@ import Button from "@/components/ui/Button";
 
 export default function RetryAnalysisButton({
   screeningId,
-  confirmOverwrite = false,
+  confirmRetry = false,
+  currentRunId,
 }: {
   screeningId: string;
-  confirmOverwrite?: boolean;
+  confirmRetry?: boolean;
+  currentRunId: string | null;
 }) {
   const router = useRouter();
+  const runIdRef = useRef<string | null>(null);
+  const submittingRef = useRef(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleRetry = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    runIdRef.current ??= crypto.randomUUID();
     setDialogOpen(false);
     setLoading(true);
     setError(null);
 
     try {
-      const result = await retryAnalysis(screeningId);
+      const result = await retryAnalysis(screeningId, currentRunId, runIdRef.current);
       if (result.error) {
         setError(result.error);
         return;
       }
-      router.refresh();
     } catch {
       setError("再解析に失敗しました。時間をおいて再度お試しください。");
     } finally {
+      submittingRef.current = false;
+      router.refresh();
       setLoading(false);
     }
   };
@@ -49,15 +57,15 @@ export default function RetryAnalysisButton({
         ref={triggerRef}
         type="button"
         onClick={() => {
-          if (confirmOverwrite) {
+          if (confirmRetry) {
             setDialogOpen(true);
           } else {
             void handleRetry();
           }
         }}
-        variant={confirmOverwrite ? "secondary" : "primary"}
-        size={confirmOverwrite ? "sm" : "md"}
-        className={confirmOverwrite ? "" : "w-full"}
+        variant={confirmRetry ? "secondary" : "primary"}
+        size={confirmRetry ? "sm" : "md"}
+        className={confirmRetry ? "" : "w-full"}
       >
         再解析を実行する
       </Button>
@@ -72,7 +80,7 @@ export default function RetryAnalysisButton({
               再解析を実行しますか？
             </AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-sm leading-relaxed text-secondary-foreground">
-              現在の解析結果を削除して、同じ画像で再解析します。
+              同じ画像で再解析し、履歴を追加します。これまでの解析結果と条件は履歴に残ります。
             </AlertDialog.Description>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button

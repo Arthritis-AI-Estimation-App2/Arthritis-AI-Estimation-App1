@@ -62,32 +62,6 @@ export type Database = {
           },
         ]
       }
-      screening_analysis_debug_responses: {
-        Row: {
-          created_at: string
-          raw_response: Json
-          screening_id: string
-        }
-        Insert: {
-          created_at?: string
-          raw_response: Json
-          screening_id: string
-        }
-        Update: {
-          created_at?: string
-          raw_response?: Json
-          screening_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "screening_analysis_debug_responses_screening_id_fkey"
-            columns: ["screening_id"]
-            isOneToOne: true
-            referencedRelation: "screenings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           clinic_id: string | null
@@ -126,6 +100,128 @@ export type Database = {
           },
         ]
       }
+      screening_analysis_debug_responses: {
+        Row: {
+          created_at: string
+          raw_response: Json
+          screening_id: string
+        }
+        Insert: {
+          created_at?: string
+          raw_response: Json
+          screening_id: string
+        }
+        Update: {
+          created_at?: string
+          raw_response?: Json
+          screening_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_analysis_debug_responses_screening_id_fkey"
+            columns: ["screening_id"]
+            isOneToOne: true
+            referencedRelation: "screenings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      screening_analysis_runs: {
+        Row: {
+          ai_hands: Json | null
+          ai_model_version: string | null
+          analysis_error_at: string | null
+          analysis_error_code: string | null
+          analysis_error_http_status: number | null
+          analysis_thr_node: number | null
+          analysis_thr_wrist: number | null
+          created_at: string
+          executed_by: string | null
+          executor_name: string | null
+          finished_at: string | null
+          id: string
+          joint_results: Json
+          kind: string
+          left_image_url: string | null
+          ra_detected: boolean | null
+          raw_response: Json | null
+          right_image_url: string | null
+          run_number: number
+          screening_id: string
+          source: string | null
+          started_at: string | null
+          status: string
+          total_inflamed_joints: number | null
+        }
+        Insert: {
+          ai_hands?: Json | null
+          ai_model_version?: string | null
+          analysis_error_at?: string | null
+          analysis_error_code?: string | null
+          analysis_error_http_status?: number | null
+          analysis_thr_node?: number | null
+          analysis_thr_wrist?: number | null
+          created_at?: string
+          executed_by?: string | null
+          executor_name?: string | null
+          finished_at?: string | null
+          id: string
+          joint_results?: Json
+          kind: string
+          left_image_url?: string | null
+          ra_detected?: boolean | null
+          raw_response?: Json | null
+          right_image_url?: string | null
+          run_number: number
+          screening_id: string
+          source?: string | null
+          started_at?: string | null
+          status: string
+          total_inflamed_joints?: number | null
+        }
+        Update: {
+          ai_hands?: Json | null
+          ai_model_version?: string | null
+          analysis_error_at?: string | null
+          analysis_error_code?: string | null
+          analysis_error_http_status?: number | null
+          analysis_thr_node?: number | null
+          analysis_thr_wrist?: number | null
+          created_at?: string
+          executed_by?: string | null
+          executor_name?: string | null
+          finished_at?: string | null
+          id?: string
+          joint_results?: Json
+          kind?: string
+          left_image_url?: string | null
+          ra_detected?: boolean | null
+          raw_response?: Json | null
+          right_image_url?: string | null
+          run_number?: number
+          screening_id?: string
+          source?: string | null
+          started_at?: string | null
+          status?: string
+          total_inflamed_joints?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_analysis_runs_executed_by_fkey"
+            columns: ["executed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screening_analysis_runs_screening_id_fkey"
+            columns: ["screening_id"]
+            isOneToOne: false
+            referencedRelation: "screenings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       screening_threshold_settings: {
         Row: {
           id: boolean
@@ -146,16 +242,18 @@ export type Database = {
       }
       screenings: {
         Row: {
-          analysis_thr_node: number | null
-          analysis_thr_wrist: number | null
+          screening_clinic_id: string | null
+          ai_hands: Json | null
           ai_model_version: string | null
           analysis_error_at: string | null
           analysis_error_code: string | null
           analysis_error_http_status: number | null
+          analysis_thr_node: number | null
+          analysis_thr_wrist: number | null
           analyzed_at: string | null
-          ai_hands: Json | null
           created_at: string
           created_by: string | null
+          current_analysis_run_id: string | null
           id: string
           left_image_url: string | null
           ra_detected: boolean | null
@@ -164,19 +262,19 @@ export type Database = {
           status_updated_at: string
           subject_id: string | null
           total_inflamed_joints: number | null
-          screening_clinic_id: string | null
         }
         Insert: {
-          analysis_thr_node?: number | null
-          analysis_thr_wrist?: number | null
+          ai_hands?: Json | null
           ai_model_version?: string | null
           analysis_error_at?: string | null
           analysis_error_code?: string | null
           analysis_error_http_status?: number | null
+          analysis_thr_node?: number | null
+          analysis_thr_wrist?: number | null
           analyzed_at?: string | null
-          ai_hands?: Json | null
           created_at?: string
           created_by?: string | null
+          current_analysis_run_id?: string | null
           id?: string
           left_image_url?: string | null
           ra_detected?: boolean | null
@@ -187,16 +285,17 @@ export type Database = {
           total_inflamed_joints?: number | null
         }
         Update: {
-          analysis_thr_node?: number | null
-          analysis_thr_wrist?: number | null
+          ai_hands?: Json | null
           ai_model_version?: string | null
           analysis_error_at?: string | null
           analysis_error_code?: string | null
           analysis_error_http_status?: number | null
+          analysis_thr_node?: number | null
+          analysis_thr_wrist?: number | null
           analyzed_at?: string | null
-          ai_hands?: Json | null
           created_at?: string
           created_by?: string | null
+          current_analysis_run_id?: string | null
           id?: string
           left_image_url?: string | null
           ra_detected?: boolean | null
@@ -212,6 +311,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screenings_current_analysis_run_id_fkey"
+            columns: ["current_analysis_run_id"]
+            isOneToOne: false
+            referencedRelation: "screening_analysis_runs"
             referencedColumns: ["id"]
           },
           {
@@ -254,9 +360,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      begin_screening_reanalysis: {
-        Args: { p_changed_by: string; p_screening_id: string }
-        Returns: { id: string; left_image_url: string | null; right_image_url: string | null }[]
+      begin_screening_analysis_run: {
+        Args: {
+          p_actor_id: string
+          p_expected_run_id: string | null
+          p_kind: string
+          p_run_id: string
+          p_screening_id: string
+          p_source: string
+        }
+        Returns: {
+          ai_hands: Json | null
+          ai_model_version: string | null
+          analysis_error_at: string | null
+          analysis_error_code: string | null
+          analysis_error_http_status: number | null
+          analysis_thr_node: number | null
+          analysis_thr_wrist: number | null
+          created_at: string
+          executed_by: string | null
+          executor_name: string | null
+          finished_at: string | null
+          id: string
+          joint_results: Json
+          kind: string
+          left_image_url: string | null
+          ra_detected: boolean | null
+          raw_response: Json | null
+          right_image_url: string | null
+          run_number: number
+          screening_id: string
+          source: string | null
+          started_at: string | null
+          status: string
+          total_inflamed_joints: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "screening_analysis_runs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       complete_ra_screening_analysis: {
         Args: {
@@ -277,6 +421,18 @@ export type Database = {
           p_total_positive_joints: number
         }
         Returns: undefined
+      }
+      complete_screening_analysis_run: {
+        Args: {
+          p_ai_model_version: string
+          p_hands: Json
+          p_ra_detected: boolean
+          p_raw_response: Json
+          p_run_id: string
+          p_screening_id: string
+          p_total_positive_joints: number
+        }
+        Returns: boolean
       }
       complete_screening_analysis_with_thresholds: {
         Args: {
@@ -300,12 +456,30 @@ export type Database = {
         }
         Returns: undefined
       }
+      fail_screening_analysis_run: {
+        Args: {
+          p_error_code: string
+          p_http_status: number | null
+          p_run_id: string
+          p_screening_id: string
+        }
+        Returns: boolean
+      }
       get_user_clinic_id: { Args: never; Returns: string }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      ra_api_joint_name: { Args: { p_api_joint_name: string }; Returns: string }
+      recover_interrupted_screening: {
+        Args: {
+          p_actor_id: string
+          p_expected_updated_at: string
+          p_screening_id: string
+        }
+        Returns: boolean
+      }
       screening_clinic_id: {
-        Args: { "": Database["public"]["Tables"]["screenings"]["Row"] }
-        Returns: string | null
+        Args: { p_screening: Database["public"]["Tables"]["screenings"]["Row"] }
+        Returns: string
       }
     }
     Enums: {
@@ -325,12 +499,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -354,11 +528,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -379,11 +553,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -404,11 +578,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -421,11 +595,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

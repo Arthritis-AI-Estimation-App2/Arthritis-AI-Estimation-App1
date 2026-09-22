@@ -27,6 +27,7 @@
 
 ## 手画像と解析
 
+- 解析は`screening_analysis_runs`に実行ごとの条件・結果・失敗を保存する。開始・確定・失敗・中断復旧は実行ID付きRPCを使い、確定済み履歴を上書きしない。履歴の閲覧は有効な本部管理者のみ。撮影記録の完全削除では履歴も物理削除する。
 - Screeningの状態遷移（`uploading` → `analyzing` → `completed`／`failed`）を壊さない。解析失敗時は`failed`へ更新し、再解析できる状態を維持する。
 - 手画像は非公開Storageに保存する。画面参照（Signed URLを含む）は本部管理者のみ。スタッフは撮影時のアップロードと、アップロード失敗時の削除だけができる。管理者は認可済みのServer ActionからService Roleで撮影記録と手画像を完全物理削除できる。解析用Signed URLは、認可済みのServer ActionからService Roleで発行し、ブラウザには返さない。
 - アプリが生成・登録・削除する画像パスは`{userId}/{screeningId}/right_<timestamp>.jpg`または`left_<timestamp>.jpg`形式に限定する。ファイル名の形式はアプリ側で検証し、StorageのSQLには重複定義しない。
@@ -49,7 +50,7 @@
 - `web/supabase/migrations/20260822000000_initial_schema.sql` … ローカル（`npx supabase start` / `db reset`）用。`schema.sql` と同一にする。
 - `web/supabase/migration_vN_*.sql` … 既存ホストDB向けの差分。前の最終形から新しい `schema.sql` へ揃える。既存データは削除しない。
 
-現在の最終はv28。READMEの手順とずらさない。
+現在の最終はv29。READMEの手順とずらさない。
 
 DBを変えるときはこの順で行う。差分ファイルだけ書いて `schema.sql` を更新しない、ということをしない。
 

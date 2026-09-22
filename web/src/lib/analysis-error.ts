@@ -1,4 +1,5 @@
 export const ANALYSIS_ERROR_CODES = [
+  "analysis_interrupted",
   "missing_images",
   "signed_url_failed",
   "api_configuration_error",
@@ -24,6 +25,7 @@ export const ANALYSIS_ERROR_CODES = [
 export type AnalysisErrorCode = (typeof ANALYSIS_ERROR_CODES)[number];
 
 export const ANALYSIS_ERROR_LABELS: Record<AnalysisErrorCode, string> = {
+  analysis_interrupted: "解析の中断",
   missing_images: "解析対象の画像不足",
   signed_url_failed: "画像参照URLの発行失敗",
   api_configuration_error: "AI APIの設定不備",

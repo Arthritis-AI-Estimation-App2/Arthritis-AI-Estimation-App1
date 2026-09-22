@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import {
   SCREENING_STATUS_OPTIONS,
   adminScreeningExportHref,
+  adminAnalysisHistoryExportHref,
   adminScreeningListHref,
   formatScreeningId,
   normalizeAdminScreeningFilters,
@@ -266,12 +267,18 @@ export default async function AdminScreeningsPage({
               {total}件中 {firstResult}〜{lastResult}件を表示
             </p>
             {total > 0 && (
-              <a
-                href={adminScreeningExportHref(filters)}
-                className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-surface-hover"
-              >
-                CSV出力
-              </a>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={adminScreeningExportHref(filters)}
+                  className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-surface-hover"
+                >
+                  CSV出力
+                </a>
+                <a href={adminAnalysisHistoryExportHref(filters)}
+                  className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-surface-hover">
+                  解析履歴CSV
+                </a>
+              </div>
             )}
           </div>
 

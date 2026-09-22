@@ -450,7 +450,7 @@ export async function getScreeningDetail(screeningId: string) {
   const { data: screening, error: screeningError } = await supabase
     .from("screenings")
     .select(
-      "id, subject_id, created_by, status, status_updated_at, total_inflamed_joints, ra_detected, ai_hands, ai_model_version, analysis_thr_node, analysis_thr_wrist, analyzed_at, analysis_error_code, analysis_error_http_status, analysis_error_at, right_image_url, left_image_url, created_at, profiles:created_by(full_name, deleted_at, clinics(name)), subjects(clinics(name))"
+      "id, subject_id, created_by, status, status_updated_at, current_analysis_run_id, total_inflamed_joints, ra_detected, ai_hands, ai_model_version, analysis_thr_node, analysis_thr_wrist, analyzed_at, analysis_error_code, analysis_error_http_status, analysis_error_at, right_image_url, left_image_url, created_at, profiles:created_by(full_name, deleted_at, clinics(name)), subjects(clinics(name))"
     )
     .eq("id", screeningId)
     .maybeSingle();

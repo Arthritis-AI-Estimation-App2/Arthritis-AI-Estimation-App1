@@ -2,6 +2,7 @@ import { staffDisplayName } from "@/lib/staff-display-name";
 import { getSubjectsForScreeningCorrection } from "@/app/actions/subjects";
 import { getScreeningDetail } from "@/app/actions/screenings";
 import ScreeningResult from "@/components/ScreeningResult";
+import AnalysisHistory from "@/components/AnalysisHistory";
 import RetryAnalysisButton from "@/components/RetryAnalysisButton";
 import ProcessingStatusRefresh from "@/components/ProcessingStatusRefresh";
 import RecoverInterruptedScreeningButton from "@/components/RecoverInterruptedScreeningButton";
@@ -22,10 +23,13 @@ export const metadata = { title: "撮影記録の詳細" };
 
 export default async function AdminScreeningDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ historyPage?: string }>;
 }) {
   const { id } = await params;
+  const historyPage = Number((await searchParams).historyPage ?? 1);
   const [detail, subjects] = await Promise.all([
     getScreeningDetail(id),
     getSubjectsForScreeningCorrection(id),
@@ -83,7 +87,7 @@ export default async function AdminScreeningDetailPage({
               : "画像のアップロードが完了していないため、再解析できません。再撮影が必要です。"}
           </p>
           {canRetryAnalysis && (
-            <RetryAnalysisButton screeningId={screening.id} />
+            <RetryAnalysisButton key={screening.current_analysis_run_id ?? "no-run"} currentRunId={screening.current_analysis_run_id} screeningId={screening.id} />
           )}
         </div>
       )}
@@ -144,7 +148,7 @@ export default async function AdminScreeningDetailPage({
       />
 
       {screening.status === "completed" && canRetryAnalysis && (
-        <RetryAnalysisButton screeningId={screening.id} confirmOverwrite />
+        <RetryAnalysisButton key={screening.current_analysis_run_id ?? "no-run"} currentRunId={screening.current_analysis_run_id} screeningId={screening.id} confirmRetry />
       )}
 
       {screening.status === "completed" && (
@@ -195,6 +199,8 @@ export default async function AdminScreeningDetailPage({
           </details>
         </section>
       )}
+
+      <AnalysisHistory screening={screening} page={historyPage} />
 
       <DeleteScreeningForm screeningId={screening.id} />
     </div>
