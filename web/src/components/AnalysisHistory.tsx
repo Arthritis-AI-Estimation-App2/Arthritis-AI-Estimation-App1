@@ -20,13 +20,15 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
         </a>
       </div>
       <p className="text-xs text-muted-foreground">
-        各回の条件と結果を保存しています。記録番号は保存済み履歴の順番です。導入前に上書きされた結果は含みません。
+        各回の条件と結果を保存しています。記録番号は保存済み履歴の順番です。
       </p>
       {history.runs.length === 0 && <p className="text-sm text-muted-foreground">このページに解析履歴はありません。</p>}
-      {history.runs.map((run) => (
+      {history.runs.map((run) => {
+        const kindLabel = analysisRunKindLabel(run.kind);
+        return (
         <details key={run.id} className="rounded-lg border border-border p-3">
           <summary className="cursor-pointer text-sm text-foreground">
-            <span className="mr-2 font-semibold">記録{run.run_number}・{analysisRunKindLabel(run.kind)}</span>
+            <span className="mr-2 font-semibold">記録{run.run_number}{kindLabel && `・${kindLabel}`}</span>
             <StatusBadge status={run.status} />
             <span className="mt-2 block text-xs text-secondary-foreground">
               開始: {run.started_at ? formatJapanDateTime(run.started_at) : "未記録"}
@@ -68,7 +70,8 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
             </details>
           </div>
         </details>
-      ))}
+        );
+      })}
       {history.totalPages > 1 && (
         <nav aria-label="解析履歴のページ" className="flex gap-4 text-sm text-link">
           {history.page > 1 && <Link href={`?historyPage=${history.page - 1}#analysis-history`}>前のページ</Link>}

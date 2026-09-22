@@ -40,7 +40,7 @@ test("履歴CSVは各実行の閾値・実行者・日時・関節確率を81列
   assert.equal(values[21], "", "未検出関節を陰性としない");
 });
 
-test("失敗・解析中・導入前の記録も別行で残し、不明な値は空欄にする", () => {
+test("失敗・解析中・実行区分のない行も別行で残し、不明な値は空欄にする", () => {
   const empty = { ...row, executed_by: null, executor_name: null, started_at: null,
     finished_at: null, source: null, analysis_thr_node: null, analysis_thr_wrist: null,
     ai_model_version: null, ra_detected: null, total_inflamed_joints: null, joint_results: [],
@@ -50,7 +50,7 @@ test("失敗・解析中・導入前の記録も別行で残し、不明な値�
     { ...empty, id: "failed", status: "failed", analysis_error_code: "api_http_error", analysis_error_http_status: 503 },
     { ...empty, id: "running", status: "analyzing" },
   ]));
-  assert.equal(legacy[6], "導入前の記録");
+  assert.equal(legacy[6], "");
   assert.equal(legacy[1], "所属医院");
   assert.deepEqual(legacy.slice(7, 11), ["", "", "", ""]);
   assert.deepEqual(legacy.slice(13, 18), ["", "", "", "", ""]);

@@ -2,7 +2,7 @@ import type { Json } from "./supabase/database.types";
 import type { JointResult } from "./types";
 
 export function analysisRunKindLabel(kind: string) {
-  return ({ initial: "初回解析", retry: "再解析", legacy: "導入前の記録" } as Record<string, string>)[kind] ?? kind;
+  return ({ initial: "初回解析", retry: "再解析", legacy: "" } as Record<string, string>)[kind] ?? kind;
 }
 
 export function analysisRunSourceLabel(source: string | null) {
