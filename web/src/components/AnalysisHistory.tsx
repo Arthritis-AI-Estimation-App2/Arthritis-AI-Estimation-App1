@@ -61,11 +61,11 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
             )}
             {run.status === "analyzing" && <p className="text-sm text-muted-foreground">解析中です。</p>}
             <details className="text-xs text-secondary-foreground">
-              <summary className="cursor-pointer">AI応答原文（アプリの閾値適用前）</summary>
+              <summary className="cursor-pointer">AI画像解析 レスポンスデータ</summary>
               {run.raw_response ? <>
                 <div className="mt-2 flex justify-end"><CopyJsonButton json={JSON.stringify(run.raw_response, null, 2)} /></div>
                 <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-surface-muted p-3 text-foreground">{JSON.stringify(run.raw_response, null, 2)}</pre>
-              </> : <p className="mt-2">応答原文は保存されていません。</p>}
+              </> : <p className="mt-2">この解析のAPIレスポンスは保存されていません。</p>}
             </details>
           </div>
         </details>
