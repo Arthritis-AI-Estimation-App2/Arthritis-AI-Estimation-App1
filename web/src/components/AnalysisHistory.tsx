@@ -15,7 +15,10 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
     <section id="analysis-history" className="space-y-3 rounded-xl border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-semibold text-foreground">解析履歴（{history.total}件）</h2>
-        <a className="text-sm text-link hover:underline" href={`/admin/screenings/history-export?id=${screening.id}`}>
+        <a
+          className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-surface-hover"
+          href={`/admin/screenings/history-export?id=${screening.id}`}
+        >
           この撮影の履歴CSV
         </a>
       </div>
