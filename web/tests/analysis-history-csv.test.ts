@@ -10,7 +10,7 @@ const row: AnalysisHistoryCsvRow = {
   started_at: "2026-09-22T00:00:00Z", finished_at: "2026-09-22T00:00:05Z",
   status: "completed", source: "api", analysis_thr_node: 0.34396984924623114,
   analysis_thr_wrist: 0.4344221105527638, ai_model_version: "model-v1",
-  ra_detected: false, total_inflamed_joints: 0,
+  total_inflamed_joints: 0,
   joint_results: [{ id: "joint-1", screening_id: "screening-1", side: "left", joint_name: "wrist", is_inflamed: false, confidence_score: 0.2 }],
   analysis_error_code: null, analysis_error_http_status: null, analysis_error_at: null,
   screenings: { id: "screening-1", subject_id: "keio1", created_at: "2026-09-21T00:00:00Z",
@@ -22,29 +22,29 @@ function parseCsv(csv: string) {
     [...line.matchAll(/"((?:[^"]|"")*)"(?:,|$)/g)].map((m) => m[1].replaceAll('""', '"')));
 }
 
-test("履歴CSVは各実行の閾値・実行者・日時・関節確率を80列で出力する", () => {
+test("履歴CSVは各実行の閾値・実行者・日時・関節確率を79列で出力する", () => {
   const csv = buildAnalysisHistoryCsv([row]);
   assert.ok(csv.startsWith("\uFEFF"));
   assert.ok(csv.endsWith("\r\n"));
   const [headers, values] = parseCsv(csv);
-  assert.equal(headers.length, 80);
-  assert.deepEqual(headers.slice(13, 15), ["手関節以外の判定閾値（0〜1）", "手関節の判定閾値（0〜1）"]);
-  assert.equal(values.length, 80);
+  assert.equal(headers.length, 79);
+  assert.deepEqual(headers.slice(13, 16), ["手関節以外の判定閾値（0〜1）", "手関節の判定閾値（0〜1）", "陽性関節数"]);
+  assert.equal(values.length, 79);
   assert.equal(values[1], '病院,"A"');
   assert.equal(values[8], "'=TEST(\"name\")");
   assert.equal(values[9], "2026/09/22 09:00:00");
   assert.equal(values[13], "0.34396984924623114");
   assert.equal(values[14], "0.4344221105527638");
-  assert.equal(values[16], "0");
+  assert.equal(values[15], "0");
   assert.equal(values.at(-2), "炎症なし");
   assert.equal(values.at(-1), "0.2");
-  assert.equal(values[20], "", "未検出関節を陰性としない");
+  assert.equal(values[19], "", "未検出関節を陰性としない");
 });
 
 test("失敗・解析中・実行区分のない行も別行で残し、不明な値は空欄にする", () => {
   const empty = { ...row, executed_by: null, executor_name: null, started_at: null,
     finished_at: null, source: null, analysis_thr_node: null, analysis_thr_wrist: null,
-    ai_model_version: null, ra_detected: null, total_inflamed_joints: null, joint_results: [],
+    ai_model_version: null, total_inflamed_joints: null, joint_results: [],
     screenings: { ...row.screenings, subjects: null, profiles: { clinics: { name: "所属医院" } } } };
   const [, legacy, failed, running] = parseCsv(buildAnalysisHistoryCsv([
     { ...empty, id: "legacy", kind: "legacy" },
@@ -54,12 +54,12 @@ test("失敗・解析中・実行区分のない行も別行で残し、不明�
   assert.equal(legacy[6], "");
   assert.equal(legacy[1], "所属医院");
   assert.deepEqual(legacy.slice(7, 11), ["", "", "", ""]);
-  assert.deepEqual(legacy.slice(12, 17), ["", "", "", "", ""]);
+  assert.deepEqual(legacy.slice(12, 16), ["", "", "", ""]);
   assert.equal(failed[11], "解析失敗");
-  assert.equal(failed[17], "api_http_error");
-  assert.equal(failed[18], "503");
+  assert.equal(failed[16], "api_http_error");
+  assert.equal(failed[17], "503");
   assert.equal(running[11], "解析中");
-  assert.ok(failed.slice(20).every((cell) => cell === ""));
+  assert.ok(failed.slice(19).every((cell) => cell === ""));
 });
 
 test("履歴CSVリンクは一覧の全条件を引き継ぎ、ページ番号を除く", () => {

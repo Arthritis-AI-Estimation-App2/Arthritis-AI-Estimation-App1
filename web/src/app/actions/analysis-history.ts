@@ -51,7 +51,7 @@ export async function getAnalysisHistoryExportPage(
   let query = supabase.from("screening_analysis_runs").select(`
     id, screening_id, run_number, kind, executed_by, executor_name, started_at, finished_at,
     status, source, analysis_thr_node, analysis_thr_wrist, ai_model_version,
-    ra_detected, total_inflamed_joints, joint_results,
+    total_inflamed_joints, joint_results,
     analysis_error_code, analysis_error_http_status, analysis_error_at,
     screenings!screening_analysis_runs_screening_id_fkey!inner(
       id, subject_id, created_at, subjects(clinics(name)), profiles:created_by(clinics(name))
