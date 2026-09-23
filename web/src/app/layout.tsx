@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import StaleTabReload from "@/components/StaleTabReload";
 import VersionCheck from "@/components/VersionCheck";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body>
         {children}
         <VersionCheck />
+        <StaleTabReload />
       </body>
     </html>
   );
