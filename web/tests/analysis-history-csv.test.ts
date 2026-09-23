@@ -28,14 +28,20 @@ test("履歴CSVは各実行の閾値・実行者・日時・関節確率を79列
   assert.ok(csv.endsWith("\r\n"));
   const [headers, values] = parseCsv(csv);
   assert.equal(headers.length, 79);
-  assert.deepEqual(headers.slice(13, 16), ["手関節以外の判定閾値（0〜1）", "手関節の判定閾値（0〜1）", "陽性関節数"]);
+  assert.equal(headers[1], "医療機関");
+  assert.equal(headers[2], "被験者ID");
+  assert.equal(headers[8], "実行者");
+  assert.deepEqual(headers.slice(13, 19), [
+    "手関節以外の判定閾値（0〜1）", "手関節の判定閾値（0〜1）",
+    "エラーコード", "HTTPステータス", "エラー日時", "陽性関節数",
+  ]);
   assert.equal(values.length, 79);
   assert.equal(values[1], '病院,"A"');
   assert.equal(values[8], "'=TEST(\"name\")");
   assert.equal(values[9], "2026/09/22 09:00:00");
   assert.equal(values[13], "0.34396984924623114");
   assert.equal(values[14], "0.4344221105527638");
-  assert.equal(values[15], "0");
+  assert.equal(values[18], "0");
   assert.equal(values.at(-2), "炎症なし");
   assert.equal(values.at(-1), "0.2");
   assert.equal(values[19], "", "未検出関節を陰性としない");
@@ -54,10 +60,10 @@ test("失敗・解析中・実行区分のない行も別行で残し、不明�
   assert.equal(legacy[6], "");
   assert.equal(legacy[1], "所属医院");
   assert.deepEqual(legacy.slice(7, 11), ["", "", "", ""]);
-  assert.deepEqual(legacy.slice(12, 16), ["", "", "", ""]);
+  assert.deepEqual(legacy.slice(12, 19), ["", "", "", "", "", "", ""]);
   assert.equal(failed[11], "解析失敗");
-  assert.equal(failed[16], "api_http_error");
-  assert.equal(failed[17], "503");
+  assert.equal(failed[15], "api_http_error");
+  assert.equal(failed[16], "503");
   assert.equal(running[11], "解析中");
   assert.ok(failed.slice(19).every((cell) => cell === ""));
 });

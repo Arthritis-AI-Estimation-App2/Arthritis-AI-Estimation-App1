@@ -55,7 +55,7 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
   assert.deepEqual(row.slice(7, 10), ["model-v2", "0.34396984924623114", "0.4344221105527638"]);
   assert.equal(header[11], "右手 拇指IP 判定");
   assert.equal(row[11], "炎症あり");
-  assert.equal(header[70], "左手 手関節 信頼度 (0-1)");
+  assert.equal(header[70], "左手 手関節 炎症確率 (0-1)");
   assert.equal(row[70], "0.08");
   assert.ok(csv.endsWith("\r\n"));
 });
