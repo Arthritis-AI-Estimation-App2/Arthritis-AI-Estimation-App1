@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { getAnalysisHistoryExportPage } from "@/app/actions/analysis-history";
-import { buildAnalysisHistoryCsv } from "@/lib/analysis-history-csv";
+import { buildAnalysisHistoryCsv, compareAnalysisHistoryRows } from "@/lib/analysis-history-csv";
 import { normalizeAdminScreeningFilters } from "@/lib/admin-screening-filters";
 import type { NextRequest } from "next/server";
 
@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     if (rows.length !== first.total || new Set(rows.map((row) => row.id)).size !== first.total) {
       return failure("履歴をすべて取得できませんでした。再度出力してください。", 409);
     }
+    rows.sort(compareAnalysisHistoryRows);
     return new Response(buildAnalysisHistoryCsv(rows), { headers: {
       "Content-Type": "text/csv; charset=utf-8", "Cache-Control": "private, no-store",
       "Content-Disposition": `attachment; filename="analysis_history_${startedAt.replace(/[-:]/g, "").replace(/\..*/, "")}.csv"`,

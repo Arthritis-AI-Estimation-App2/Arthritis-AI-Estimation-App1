@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildAnalysisHistoryCsv, type AnalysisHistoryCsvRow } from "../src/lib/analysis-history-csv.ts";
+import { buildAnalysisHistoryCsv, compareAnalysisHistoryRows, type AnalysisHistoryCsvRow } from "../src/lib/analysis-history-csv.ts";
 import { analysisRunJoints } from "../src/lib/analysis-history.ts";
 import { adminAnalysisHistoryExportHref, normalizeAdminScreeningFilters } from "../src/lib/admin-screening-filters.ts";
 
@@ -68,6 +68,20 @@ test("失敗・解析中・実行区分のない行も別行で残し、不明�
   assert.equal(running[11], "解析中");
   assert.ok(failed.slice(19).every((cell) => cell === ""));
 });
+
+test("履歴CSVは一覧と同じく撮影日時の新しい順で、同一撮影は記録番号の降順", () => {
+  const older = historyRow("older", "00000000-0000-4000-8000-000000000002", "2026-09-01T00:00:00Z", 2);
+  const sameTimeLowId = historyRow("low", "00000000-0000-4000-8000-000000000001", "2026-09-02T00:00:00Z", 1);
+  const newerRun1 = historyRow("run-1", "00000000-0000-4000-8000-000000000009", "2026-09-02T00:00:00Z", 1);
+  const newerRun3 = historyRow("run-3", "00000000-0000-4000-8000-000000000009", "2026-09-02T00:00:00Z", 3);
+  const sorted = [older, newerRun1, sameTimeLowId, newerRun3].sort(compareAnalysisHistoryRows);
+  assert.deepEqual(sorted.map((item) => item.id), ["run-3", "run-1", "low", "older"]);
+});
+
+function historyRow(id: string, screeningId: string, createdAt: string, runNumber: number): AnalysisHistoryCsvRow {
+  return { ...row, id, screening_id: screeningId, run_number: runNumber,
+    screenings: { ...row.screenings, id: screeningId, created_at: createdAt } };
+}
 
 test("履歴CSVリンクは一覧の全条件を引き継ぎ、ページ番号を除く", () => {
   const filters = normalizeAdminScreeningFilters({ id: "12345678", from: "2026-09-01", status: "failed", subject: "keio1", page: "3" });

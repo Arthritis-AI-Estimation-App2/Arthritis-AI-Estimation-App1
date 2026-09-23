@@ -69,6 +69,7 @@ export async function getAnalysisHistoryExportPage(
   }
   if (safe.dateFrom) query = query.gte("screenings.created_at", startOfJapanDate(safe.dateFrom));
   if (safe.dateTo) query = query.lt("screenings.created_at", endOfJapanDateExclusive(safe.dateTo));
+  // ページ取得を安定させる順序。CSVの行順は取得後に一覧と同じ新しい順へ並べる。
   const { data, error, count } = await query.order("screening_id").order("run_number")
     .range((safePage - 1) * 500, safePage * 500 - 1);
   if (error) throwSupabaseError(error, "解析履歴CSVの取得");

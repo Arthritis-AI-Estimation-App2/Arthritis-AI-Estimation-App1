@@ -3,16 +3,19 @@ import test from "node:test";
 import { loadServerModule } from "./helpers/load-server-module.mjs";
 
 function fixture({ total = 501, changedCount = false, missingRow = false, duplicate = false,
-  user = { profile: { is_active: true, role: "admin" } } } = {}) {
+  user = { profile: { is_active: true, role: "admin" } }, runs, compare = () => 0 } = {}) {
   const calls = []; let exported;
   const { GET } = loadServerModule("src/app/admin/screenings/history-export/route.ts", {
     "@/lib/auth": { getCurrentUser: async () => user },
     "@/app/actions/analysis-history": { getAnalysisHistoryExportPage: async (filters, page, cutoff) => {
       calls.push({ filters, page, cutoff });
       return { total: page > 1 && changedCount ? total - 1 : total,
-        runs: Array.from({ length: Math.min(500, Math.max(0, total - (page - 1) * 500)) - (missingRow ? 1 : 0) }, (_, i) => ({ id: duplicate ? "duplicate" : `${page}-${i}` })) };
+        runs: runs ?? Array.from({ length: Math.min(500, Math.max(0, total - (page - 1) * 500)) - (missingRow ? 1 : 0) }, (_, i) => ({ id: duplicate ? "duplicate" : `${page}-${i}` })) };
     } },
-    "@/lib/analysis-history-csv": { buildAnalysisHistoryCsv: (rows) => { exported = rows; return "csv"; } },
+    "@/lib/analysis-history-csv": {
+      buildAnalysisHistoryCsv: (rows) => { exported = rows; return "csv"; },
+      compareAnalysisHistoryRows: compare,
+    },
   });
   return { run: () => GET({ nextUrl: new URL("http://localhost/admin/screenings/history-export?id=12345678&status=completed&page=10") }),
     calls, get exported() { return exported; } };
@@ -46,6 +49,22 @@ test("取得途中の件数変更・欠損・重複があれば不完全なCSV�
     assert.equal((await f.run()).status, 409);
     assert.equal(f.exported, undefined);
   }
+});
+
+test("履歴CSVは取得後に一覧と同じ新しい順へ並べてから出力する", async () => {
+  const runs = [
+    { id: "old", screening_id: "b", run_number: 2, screenings: { created_at: "2026-09-01T00:00:00Z" } },
+    { id: "new-1", screening_id: "a", run_number: 1, screenings: { created_at: "2026-09-02T00:00:00Z" } },
+    { id: "new-3", screening_id: "a", run_number: 3, screenings: { created_at: "2026-09-02T00:00:00Z" } },
+  ];
+  const f = fixture({ total: runs.length, runs, compare: (a, b) => {
+    const createdAt = Date.parse(b.screenings.created_at) - Date.parse(a.screenings.created_at);
+    if (createdAt !== 0) return createdAt;
+    if (a.screening_id !== b.screening_id) return a.screening_id < b.screening_id ? 1 : -1;
+    return b.run_number - a.run_number;
+  } });
+  assert.equal((await f.run()).status, 200);
+  assert.deepEqual(f.exported.map((row) => row.id), ["new-3", "new-1", "old"]);
 });
 
 test("未認証・無効アカウント・スタッフは履歴を取得しない", async () => {
