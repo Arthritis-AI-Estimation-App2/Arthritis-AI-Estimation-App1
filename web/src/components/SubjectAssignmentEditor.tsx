@@ -104,7 +104,7 @@ export default function SubjectAssignmentEditor({
           </div>
           {!editing && (
             <Button type="button" variant="secondary" size="sm" className="shrink-0 whitespace-nowrap" onClick={() => setEditing(true)}>
-              {currentSubjectId ? "修正・解除" : "紐付け"}
+              {currentSubjectId ? "修正" : "紐付け"}
             </Button>
           )}
         </div>
