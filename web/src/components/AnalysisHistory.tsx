@@ -38,7 +38,7 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
             <span className="mt-2 block text-xs text-secondary-foreground">
               解析日時: {run.finished_at ? formatJapanDateTime(run.finished_at) : "未記録"}
               {" ／ "}指関節: {formatThreshold(run.analysis_thr_node)}
-              {" ／ "}手首: {formatThreshold(run.analysis_thr_wrist)}
+              {" ／ "}手関節: {formatThreshold(run.analysis_thr_wrist)}
               {" ／ "}陽性関節数: {run.total_inflamed_joints ?? "未記録"}
             </span>
           </summary>
