@@ -16,7 +16,7 @@ export default function ScreeningThresholdForm({ thresholds }: { thresholds: Scr
           全医療機関共通の設定です。陽性確率が閾値以上の関節を陽性と判定します。
           保存後に開始する解析から適用され、既存の結果には影響しません。
         </p>
-        <Input id="thr_node" name="thr_node" label="手関節以外の判定閾値（0〜1）"
+        <Input id="thr_node" name="thr_node" label="指関節の判定閾値（0〜1）"
           type="number" min="0" max="1" step="any" required defaultValue={String(thresholds.thr_node)} />
         <Input id="thr_wrist" name="thr_wrist" label="手関節の判定閾値（0〜1）"
           type="number" min="0" max="1" step="any" required defaultValue={String(thresholds.thr_wrist)} />

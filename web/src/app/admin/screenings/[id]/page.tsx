@@ -168,7 +168,7 @@ export default async function AdminScreeningDetailPage({
             {canViewThresholds && (
               <>
                 <div className="contents">
-                  <dt className="text-muted-foreground">手関節以外の判定閾値</dt>
+                  <dt className="text-muted-foreground">指関節の判定閾値</dt>
                   <dd>{formatThreshold(screening.analysis_thr_node)}</dd>
                 </div>
                 <div className="contents">

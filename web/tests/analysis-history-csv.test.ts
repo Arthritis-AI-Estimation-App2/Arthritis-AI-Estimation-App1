@@ -33,7 +33,7 @@ test("履歴CSVは各実行の閾値・実行者・日時・関節確率を79列
   assert.equal(headers[8], "実行者");
   assert.deepEqual(headers.slice(9, 11), ["解析開始日時", "解析終了日時"]);
   assert.deepEqual(headers.slice(13, 19), [
-    "手関節以外の判定閾値（0〜1）", "手関節の判定閾値（0〜1）",
+    "指関節の判定閾値（0〜1）", "手関節の判定閾値（0〜1）",
     "エラーコード", "HTTPステータス", "エラー日時", "陽性関節数",
   ]);
   assert.equal(values.length, 79);

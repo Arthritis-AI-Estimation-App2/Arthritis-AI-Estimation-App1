@@ -24,7 +24,7 @@ export function buildAnalysisHistoryCsv(rows: AnalysisHistoryCsvRow[]) {
     "撮影ID", "医療機関", "被験者ID", "撮影日時",
     "実行ID", "記録番号", "実行区分", "実行者ID", "実行者",
     "解析開始日時", "解析終了日時", "解析ステータス", "AIモデルバージョン",
-    "手関節以外の判定閾値（0〜1）", "手関節の判定閾値（0〜1）",
+    "指関節の判定閾値（0〜1）", "手関節の判定閾値（0〜1）",
     "エラーコード", "HTTPステータス", "エラー日時", "陽性関節数", ...CSV_JOINT_HEADERS,
   ];
   const body = rows.map((r) => {
