@@ -39,7 +39,7 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
   assert.match(csv, /"山田 ""太郎"""/);
   assert.match(csv, /"解析完了","3","model-v2"/);
   assert.match(csv, /"2026\/09\/05 10:02:03"/);
-  assert.match(csv, /"右手 拇指IP \(thumbIP\) 判定"/);
+  assert.match(csv, /"右手 拇指IP 判定"/);
   assert.match(csv, /"炎症あり","0\.91"/);
   assert.match(csv, /"炎症なし","0\.08"/);
   const [header, row] = csv.slice(1).trimEnd().split("\r\n").map(
@@ -53,9 +53,9 @@ test("管理者向け解析結果をExcel互換のCSVに変換する", () => {
   assert.equal(row[6], "3");
   assert.deepEqual(header.slice(7, 10), ["AIモデルバージョン", "手関節以外の判定閾値（0〜1）", "手関節の判定閾値（0〜1）"]);
   assert.deepEqual(row.slice(7, 10), ["model-v2", "0.34396984924623114", "0.4344221105527638"]);
-  assert.equal(header[11], "右手 拇指IP (thumbIP) 判定");
+  assert.equal(header[11], "右手 拇指IP 判定");
   assert.equal(row[11], "炎症あり");
-  assert.equal(header[70], "左手 手関節 (wrist) 信頼度 (0-1)");
+  assert.equal(header[70], "左手 手関節 信頼度 (0-1)");
   assert.equal(row[70], "0.08");
   assert.ok(csv.endsWith("\r\n"));
 });

@@ -33,8 +33,8 @@ type AdminScreeningCsvSource = {
 
 export const CSV_JOINT_HEADERS = (["right", "left"] as const).flatMap((side) =>
   JOINT_NAMES.flatMap((jointName) => [
-    `${side === "right" ? "右手" : "左手"} ${JOINT_LABELS[jointName]} (${jointName}) 判定`,
-    `${side === "right" ? "右手" : "左手"} ${JOINT_LABELS[jointName]} (${jointName}) 信頼度 (0-1)`,
+    `${side === "right" ? "右手" : "左手"} ${JOINT_LABELS[jointName]} 判定`,
+    `${side === "right" ? "右手" : "左手"} ${JOINT_LABELS[jointName]} 信頼度 (0-1)`,
   ])
 );
 
