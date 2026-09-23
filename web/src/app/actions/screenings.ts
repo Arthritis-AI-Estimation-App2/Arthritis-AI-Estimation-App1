@@ -19,6 +19,11 @@ import {
 } from "@/lib/admin-screening-filters";
 import { isUnsatisfiableRange, pageRange, paginationMeta } from "@/lib/staff-pagination";
 import {
+  newerScreeningOrFilter,
+  olderScreeningOrFilter,
+  type AdjacentScreening,
+} from "@/lib/screening-neighbors";
+import {
   normalizeStaffScreeningFilters,
   type StaffScreeningFilters,
 } from "@/lib/staff-screening-filters";
@@ -511,5 +516,64 @@ export async function getScreeningDetail(screeningId: string) {
     rawAiApiResponse: canViewImages ? debugResponse.data?.raw_response ?? null : null,
     canRetryAnalysis,
     canViewThresholds: canViewAdminDetails,
+  };
+}
+
+function toAdjacentScreening(
+  row: { id: string; created_at: string; subject_id: string | null } | null
+): AdjacentScreening | null {
+  if (!row) return null;
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    subjectId: row.subject_id,
+  };
+}
+
+/**
+ * 閲覧できる撮影記録のうち、撮影日時の直前と直後を返す。
+ * 同じ撮影日時は id の順で並べ、一覧の新しい順と同じ基準にする。
+ */
+export async function getAdjacentScreenings(screeningId: string): Promise<{
+  previous: AdjacentScreening | null;
+  next: AdjacentScreening | null;
+}> {
+  const empty = { previous: null, next: null };
+  const current = await getCurrentUser();
+  if (!current || !isValidUuid(screeningId)) return empty;
+
+  const supabase = await createClient();
+  const { data: screening, error } = await supabase
+    .from("screenings")
+    .select("id, created_at")
+    .eq("id", screeningId)
+    .maybeSingle();
+  if (error) throwSupabaseError(error, "前後の撮影記録の基準取得");
+  if (!screening || !Number.isFinite(Date.parse(screening.created_at))) return empty;
+
+  const [previousResult, nextResult] = await Promise.all([
+    supabase
+      .from("screenings")
+      .select("id, created_at, subject_id")
+      .or(olderScreeningOrFilter(screening.id, screening.created_at))
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("screenings")
+      .select("id, created_at, subject_id")
+      .or(newerScreeningOrFilter(screening.id, screening.created_at))
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  if (previousResult.error) throwSupabaseError(previousResult.error, "前の撮影記録の取得");
+  if (nextResult.error) throwSupabaseError(nextResult.error, "次の撮影記録の取得");
+
+  return {
+    previous: toAdjacentScreening(previousResult.data),
+    next: toAdjacentScreening(nextResult.data),
   };
 }

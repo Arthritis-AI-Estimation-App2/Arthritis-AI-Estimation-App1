@@ -1,11 +1,12 @@
 import { getSubjectsForScreeningCorrection } from "@/app/actions/subjects";
-import { getScreeningDetail } from "@/app/actions/screenings";
+import { getAdjacentScreenings, getScreeningDetail } from "@/app/actions/screenings";
 import ScreeningResult from "@/components/ScreeningResult";
 import SubjectAssignmentEditor from "@/components/SubjectAssignmentEditor";
 import ProcessingStatusRefresh from "@/components/ProcessingStatusRefresh";
 import AnalysisWaitingPanel from "@/components/AnalysisWaitingPanel";
 import FailedScreeningNextStep from "@/components/FailedScreeningNextStep";
 import { isProcessingStatus, isStaleProcessing } from "@/lib/screening-staleness";
+import ScreeningTimeNav from "@/components/ScreeningTimeNav";
 import BackLink from "@/components/ui/BackLink";
 import { notFound } from "next/navigation";
 
@@ -17,9 +18,10 @@ export default async function ResultPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [detail, subjects] = await Promise.all([
+  const [detail, subjects, adjacent] = await Promise.all([
     getScreeningDetail(id),
     getSubjectsForScreeningCorrection(id),
+    getAdjacentScreenings(id),
   ]);
   if (!detail) notFound();
 
@@ -41,7 +43,15 @@ export default async function ResultPage({
     <div>
       {isProcessing && <ProcessingStatusRefresh />}
       <div className="mb-4">
-        <BackLink href={back.href}>{back.label}</BackLink>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <BackLink href={back.href}>{back.label}</BackLink>
+          <ScreeningTimeNav
+            previous={adjacent.previous}
+            next={adjacent.next}
+            hrefPrefix="/results"
+            className="ml-auto"
+          />
+        </div>
         <h1 className="mt-2 text-xl font-bold text-foreground">判定結果</h1>
       </div>
       <div className="mb-4">

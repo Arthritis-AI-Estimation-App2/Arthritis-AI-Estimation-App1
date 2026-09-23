@@ -1,6 +1,6 @@
 import { staffDisplayName } from "@/lib/staff-display-name";
 import { getSubjectsForScreeningCorrection } from "@/app/actions/subjects";
-import { getScreeningDetail } from "@/app/actions/screenings";
+import { getAdjacentScreenings, getScreeningDetail } from "@/app/actions/screenings";
 import ScreeningResult from "@/components/ScreeningResult";
 import AnalysisHistory from "@/components/AnalysisHistory";
 import RetryAnalysisButton from "@/components/RetryAnalysisButton";
@@ -17,6 +17,7 @@ import { formatFullScreeningId } from "@/lib/admin-screening-filters";
 import { analysisErrorLabel } from "@/lib/analysis-error";
 import { formatThreshold } from "@/lib/screening-thresholds";
 import { notFound } from "next/navigation";
+import ScreeningTimeNav from "@/components/ScreeningTimeNav";
 import BackLink from "@/components/ui/BackLink";
 
 export const metadata = { title: "撮影記録の詳細" };
@@ -30,9 +31,10 @@ export default async function AdminScreeningDetailPage({
 }) {
   const { id } = await params;
   const historyPage = Number((await searchParams).historyPage ?? 1);
-  const [detail, subjects] = await Promise.all([
+  const [detail, subjects, adjacent] = await Promise.all([
     getScreeningDetail(id),
     getSubjectsForScreeningCorrection(id),
+    getAdjacentScreenings(id),
   ]);
   if (!detail) notFound();
 
@@ -55,7 +57,15 @@ export default async function AdminScreeningDetailPage({
     <div className="space-y-6">
       {isProcessing && <ProcessingStatusRefresh />}
       <div>
-        <BackLink href="/admin/screenings">撮影記録一覧に戻る</BackLink>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <BackLink href="/admin/screenings">撮影記録一覧に戻る</BackLink>
+          <ScreeningTimeNav
+            previous={adjacent.previous}
+            next={adjacent.next}
+            hrefPrefix="/admin/screenings"
+            className="ml-auto"
+          />
+        </div>
         <div className="mt-2 flex items-center gap-2.5">
           <h1 className="text-xl font-bold text-foreground">撮影記録の詳細</h1>
           <StatusBadge status={screening.status} />
