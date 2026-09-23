@@ -14,7 +14,7 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
   return (
     <section id="analysis-history" className="space-y-3 rounded-xl border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold text-foreground">解析履歴（{history.total}件）</h2>
+        <h2 className="font-semibold text-foreground">解析履歴</h2>
         <a
           className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-surface-hover"
           href={`/admin/screenings/history-export?id=${screening.id}`}
@@ -24,16 +24,16 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
       </div>
       {history.total > 0 && (
         <p className="text-xs text-muted-foreground">
-          上に表示している最新の結果より前の解析です。記録番号は保存した順番です。
+          過去の解析結果です。記録番号は実行した順番です。
         </p>
       )}
-      {history.runs.length === 0 && <p className="text-sm text-muted-foreground">これより前の解析はありません。</p>}
+      {history.runs.length === 0 && <p className="text-sm text-muted-foreground">過去に解析した結果はありません。</p>}
       {history.runs.map((run) => {
         const kindLabel = analysisRunKindLabel(run.kind);
         return (
         <details key={run.id} className="rounded-lg border border-border p-3">
           <summary className="cursor-pointer text-sm text-foreground">
-            <span className="mr-2 font-semibold">記録{run.run_number}{kindLabel && `・${kindLabel}`}</span>
+            <span className="mr-2 font-semibold">記録{run.run_number}{kindLabel && `（${kindLabel}）`}</span>
             <StatusBadge status={run.status} />
             <span className="mt-2 block text-xs text-secondary-foreground">
               解析日時: {run.finished_at ? formatJapanDateTime(run.finished_at) : "未記録"}
