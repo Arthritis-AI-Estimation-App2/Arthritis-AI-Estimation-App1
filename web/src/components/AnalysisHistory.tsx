@@ -22,9 +22,11 @@ export default async function AnalysisHistory({ screening, page }: { screening: 
           この撮影の履歴CSV
         </a>
       </div>
-      <p className="text-xs text-muted-foreground">
-        上に表示している最新の結果より前の解析です。記録番号は保存した順番です。
-      </p>
+      {history.total > 0 && (
+        <p className="text-xs text-muted-foreground">
+          上に表示している最新の結果より前の解析です。記録番号は保存した順番です。
+        </p>
+      )}
       {history.runs.length === 0 && <p className="text-sm text-muted-foreground">これより前の解析はありません。</p>}
       {history.runs.map((run) => {
         const kindLabel = analysisRunKindLabel(run.kind);
