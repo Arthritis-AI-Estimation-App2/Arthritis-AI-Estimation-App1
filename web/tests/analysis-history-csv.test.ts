@@ -28,6 +28,7 @@ test("履歴CSVは各実行の閾値・実行者・日時・関節確率を80列
   assert.ok(csv.endsWith("\r\n"));
   const [headers, values] = parseCsv(csv);
   assert.equal(headers.length, 80);
+  assert.deepEqual(headers.slice(13, 15), ["手関節以外の判定閾値（0〜1）", "手関節の判定閾値（0〜1）"]);
   assert.equal(values.length, 80);
   assert.equal(values[1], '病院,"A"');
   assert.equal(values[8], "'=TEST(\"name\")");
