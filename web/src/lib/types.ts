@@ -23,12 +23,6 @@ export function roleLabel(role: string): string {
 export type ScreeningStatus = "uploading" | "analyzing" | "completed" | "failed";
 export type HandSide = "right" | "left";
 
-export interface JointPrediction {
-  joint_name: string;
-  is_inflamed: boolean;
-  confidence_score: number;
-}
-
 export interface AiJointResult {
   joint_id: number;
   joint_name: string;

@@ -13,7 +13,6 @@
   --color-secondary-foreground: 55 65 81;
   --color-muted-foreground: 107 114 128;
   --color-subtle-foreground: 156 163 175;
-  --color-inverse-foreground: 255 255 255;
   --color-border: 229 231 235;
   --color-border-strong: 209 213 219;
   --color-primary: 14 116 144;
@@ -22,7 +21,6 @@
   --color-primary-subtle: 236 254 255;
   --color-primary-subtle-foreground: 14 116 144;
   --color-link: 37 99 235;
-  --color-link-hover: 30 64 175;
   --color-focus: 8 145 178;
   --color-tooltip: 17 24 39;
   --color-tooltip-foreground: 255 255 255;
@@ -32,7 +30,6 @@
   --color-disabled-foreground: 107 114 128;
   --color-info: 219 234 254;
   --color-info-foreground: 29 78 216;
-  --color-info-border: 147 197 253;
   --color-info-solid: 30 64 175;
   --color-info-solid-hover: 30 58 138;
   --color-info-solid-foreground: 255 255 255;
@@ -42,7 +39,6 @@
   --color-warning: 254 249 195;
   --color-warning-foreground: 133 77 14;
   --color-warning-border: 253 224 71;
-  --color-warning-accent: 202 138 4;
   --color-danger: 254 226 226;
   --color-danger-foreground: 185 28 28;
   --color-danger-border: 252 165 165;
@@ -70,7 +66,6 @@
     --color-secondary-foreground: 209 213 219;
     --color-muted-foreground: 156 163 175;
     --color-subtle-foreground: 107 114 128;
-    --color-inverse-foreground: 255 255 255;
     --color-border: 55 65 81;
     --color-border-strong: 75 85 99;
     --color-primary: 34 211 238;
@@ -79,7 +74,6 @@
     --color-primary-subtle: 22 78 99;
     --color-primary-subtle-foreground: 165 243 252;
     --color-link: 96 165 250;
-    --color-link-hover: 147 197 253;
     --color-focus: 34 211 238;
     --color-tooltip: 3 7 18;
     --color-tooltip-foreground: 255 255 255;
@@ -89,7 +83,6 @@
     --color-disabled-foreground: 156 163 175;
     --color-info: 30 58 138;
     --color-info-foreground: 191 219 254;
-    --color-info-border: 30 64 175;
     --color-info-solid: 59 130 246;
     --color-info-solid-hover: 96 165 250;
     --color-info-solid-foreground: 15 23 42;
@@ -99,7 +92,6 @@
     --color-warning: 113 63 18;
     --color-warning-foreground: 254 240 138;
     --color-warning-border: 161 98 7;
-    --color-warning-accent: 250 204 21;
     --color-danger: 127 29 29;
     --color-danger-foreground: 254 202 202;
     --color-danger-border: 153 27 27;

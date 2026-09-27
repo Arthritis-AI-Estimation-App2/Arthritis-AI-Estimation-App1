@@ -19,7 +19,6 @@ const config: Config = {
         "secondary-foreground": "rgb(var(--color-secondary-foreground) / <alpha-value>)",
         "muted-foreground": "rgb(var(--color-muted-foreground) / <alpha-value>)",
         "subtle-foreground": "rgb(var(--color-subtle-foreground) / <alpha-value>)",
-        "inverse-foreground": "rgb(var(--color-inverse-foreground) / <alpha-value>)",
         border: {
           DEFAULT: "rgb(var(--color-border) / <alpha-value>)",
           strong: "rgb(var(--color-border-strong) / <alpha-value>)",
@@ -31,10 +30,7 @@ const config: Config = {
           subtle: "rgb(var(--color-primary-subtle) / <alpha-value>)",
           "subtle-foreground": "rgb(var(--color-primary-subtle-foreground) / <alpha-value>)",
         },
-        link: {
-          DEFAULT: "rgb(var(--color-link) / <alpha-value>)",
-          hover: "rgb(var(--color-link-hover) / <alpha-value>)",
-        },
+        link: "rgb(var(--color-link) / <alpha-value>)",
         focus: "rgb(var(--color-focus) / <alpha-value>)",
         tooltip: {
           DEFAULT: "rgb(var(--color-tooltip) / <alpha-value>)",
@@ -49,7 +45,6 @@ const config: Config = {
         info: {
           DEFAULT: "rgb(var(--color-info) / <alpha-value>)",
           foreground: "rgb(var(--color-info-foreground) / <alpha-value>)",
-          border: "rgb(var(--color-info-border) / <alpha-value>)",
           solid: "rgb(var(--color-info-solid) / <alpha-value>)",
           "solid-hover": "rgb(var(--color-info-solid-hover) / <alpha-value>)",
           "solid-foreground": "rgb(var(--color-info-solid-foreground) / <alpha-value>)",
@@ -63,7 +58,6 @@ const config: Config = {
           DEFAULT: "rgb(var(--color-warning) / <alpha-value>)",
           foreground: "rgb(var(--color-warning-foreground) / <alpha-value>)",
           border: "rgb(var(--color-warning-border) / <alpha-value>)",
-          accent: "rgb(var(--color-warning-accent) / <alpha-value>)",
         },
         danger: {
           DEFAULT: "rgb(var(--color-danger) / <alpha-value>)",
