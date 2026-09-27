@@ -8,6 +8,7 @@ import {
   createAnalysisFailureUpdate,
 } from "../src/lib/analysis-error.ts";
 
+// 推論APIへの送信内容とレスポンス・エラーの解釈、解析失敗時のログと更新値を検証する。
 const IMAGES = [
   { side: "left" as const, image_url: "https://storage.example/left" },
   { side: "right" as const, image_url: "https://storage.example/right" },
@@ -221,6 +222,7 @@ test("AI解析ログ: 1行JSONへ識別情報とエラー本文を含める", ()
 });
 
 test("AI解析失敗: 状態と最新エラー要約を同時に保存する更新値を作る", () => {
+  // 解析失敗時の更新値に、failed状態とエラーコード・発生日時が含まれることを確認する。
   const error = new AnalysisExecutionError("api_timeout", "timeout");
   assert.deepEqual(
     createAnalysisFailureUpdate(error, "2026-09-05T01:02:03.000Z"),

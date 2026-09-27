@@ -7,6 +7,8 @@ import {
   type TimedScreening,
 } from "../src/lib/screening-neighbors.ts";
 
+// 候補配列から「前の記録」「次の記録」を選ぶ規則と、DB検索条件の組み立てを単体で検証する。
+// 実際のServer Actionでの取得順序と施設間のアクセス制限はRLS統合テストで検証する。
 const CURRENT: TimedScreening = {
   id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   createdAt: "2026-09-23T08:00:00.000Z",

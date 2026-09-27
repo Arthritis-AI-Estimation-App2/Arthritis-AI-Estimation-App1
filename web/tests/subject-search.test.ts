@@ -7,6 +7,7 @@ import {
   subjectIdMatchesQuery,
 } from "../src/lib/subject-search.ts";
 
+// 被験者ID検索の入力正規化、LIKE用エスケープ、部分一致と一覧絞り込みの規則を検証する。
 test("検索語の空白と大文字小文字を正規化する", () => {
   assert.equal(normalizeSubjectQuery("  KEIO 47 "), "keio47");
   assert.equal(normalizeSubjectQuery(""), "");

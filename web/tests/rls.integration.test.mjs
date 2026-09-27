@@ -361,6 +361,46 @@ if (!enabled) {
         assert.equal(otherClinicJointRead.data, null);
       });
 
+      // 実際のgetAdjacentScreeningsを各ロールのCookieセッション相当のクライアントで呼び、
+      // 時刻・IDの並び順と、他院の記録を前後候補や起点として参照できないことを確認する。
+      await t.test("前後の記録は同時刻のID順で選び、他院の記録を飛ばす", async () => {
+        const idTail = crypto.randomUUID().slice(8);
+        const id = (prefix) => `${prefix}${idTail}`;
+        const pivot = Date.now() + 30 * 365 * 24 * 60 * 60 * 1000;
+        const beforeTime = new Date(pivot - 1).toISOString();
+        const sameTime = new Date(pivot).toISOString();
+        const afterTime = new Date(pivot + 1).toISOString();
+        const rows = [
+          { id: id("10000000"), created_by: staffAId, created_at: beforeTime },
+          { id: id("20000000"), created_by: staffAId, created_at: sameTime },
+          { id: id("30000000"), created_by: staffAId, created_at: sameTime },
+          { id: id("35000000"), created_by: staffBId, created_at: sameTime },
+          { id: id("40000000"), created_by: staffAId, created_at: sameTime },
+          { id: id("50000000"), created_by: staffAId, created_at: afterTime },
+        ];
+        const inserted = await adminApi.from("screenings").insert(rows).select("id");
+        assert.ifError(inserted.error);
+        createdScreeningIds.push(...inserted.data.map((row) => row.id));
+
+        const actionsFor = (client) => loadServerModule("src/app/actions/screenings.ts", {
+          "@/lib/supabase/server": { createClient: async () => client },
+          "@/lib/supabase/admin": { createAdminClient: () => adminApi },
+          "next/cache": { revalidatePath: () => {} },
+          "next/navigation": { redirect: () => {} },
+        });
+        const staffNeighbors = await actionsFor(staffA).getAdjacentScreenings(id("30000000"));
+        assert.equal(staffNeighbors.previous?.id, id("20000000"));
+        assert.equal(staffNeighbors.next?.id, id("40000000"));
+        assert.equal((await actionsFor(staffA).getAdjacentScreenings(id("20000000"))).previous?.id, id("10000000"));
+        assert.equal((await actionsFor(staffA).getAdjacentScreenings(id("40000000"))).next?.id, id("50000000"));
+
+        const adminNeighbors = await actionsFor(admin).getAdjacentScreenings(id("30000000"));
+        assert.equal(adminNeighbors.next?.id, id("35000000"));
+
+        const inaccessible = await actionsFor(staffB).getAdjacentScreenings(id("30000000"));
+        assert.deepEqual(inaccessible, { previous: null, next: null });
+      });
+
       await t.test("スタッフは撮影記録・解析結果をData APIで直接更新できない", async () => {
         const screeningId = createdScreeningIds[0];
 
