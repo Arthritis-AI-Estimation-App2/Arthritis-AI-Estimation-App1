@@ -17,8 +17,17 @@ type RawStaffScreeningFilters = {
 export function normalizeStaffScreeningFilters(
   raw: RawStaffScreeningFilters
 ): StaffScreeningFilters {
-  const { clinicId: _clinicId, ...filters } = normalizeAdminScreeningFilters(raw);
-  return filters;
+  const filters = normalizeAdminScreeningFilters(raw);
+  return {
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    status: filters.status,
+    subjectId: filters.subjectId,
+    screeningIdInput: filters.screeningIdInput,
+    screeningId: filters.screeningId,
+    screeningIdPrefix: filters.screeningIdPrefix,
+    page: filters.page,
+  };
 }
 
 export function staffScreeningListHref(
