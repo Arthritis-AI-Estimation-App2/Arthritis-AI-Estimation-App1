@@ -34,4 +34,5 @@ images:
 options:
   logging: CLOUD_LOGGING_ONLY
   diskSizeGb: 50
+  workerRelease: regular
   # machineType は指定しない。未指定は e2-standard-2 で、月 2,500 分の無料枠の対象。
