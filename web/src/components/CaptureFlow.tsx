@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "@/components/ui/Link";
 import { useRouter } from "next/navigation";
 import CameraCapture from "@/components/CameraCapture";
+import CapturePreparation from "@/components/CapturePreparation";
 import ImageQualityNotice from "@/components/ImageQualityNotice";
 import { checkImageQuality } from "@/lib/check-image-quality";
 import type { CapturedImage, CheckedCapture, ImageQuality } from "@/lib/image-quality";
@@ -190,6 +191,7 @@ export default function CaptureFlow({
   allowFileUpload?: boolean;
 }) {
   const router = useRouter();
+  const [preparationConfirmed, setPreparationConfirmed] = useState(false);
   const [step, setStep] = useState<CaptureStep>("left");
   const [rightCapture, setRightCapture] = useState<CheckedCapture | null>(null);
   const [leftCapture, setLeftCapture] = useState<CheckedCapture | null>(null);
@@ -271,6 +273,7 @@ export default function CaptureFlow({
   }, []);
 
   const discardDraft = useCallback(() => {
+    setPreparationConfirmed(false);
     cancelQuality();
     setCameraBusy(false);
     setCameraKey((key) => key + 1);
@@ -382,6 +385,11 @@ export default function CaptureFlow({
     hasRightImage: Boolean(rightImage),
     leftCapturedNotice: capturedNotice === "left",
   });
+
+  // 確認するまでカメラをマウントせず、権限要求も開始しない。
+  if (!preparationConfirmed) {
+    return <CapturePreparation onContinue={() => setPreparationConfirmed(true)} />;
+  }
 
   return (
     <div
