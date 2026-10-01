@@ -11,7 +11,7 @@ const precautions = [
 
 export default function CapturePreparation({ onContinue }: { onContinue: () => void }) {
   return (
-    <section aria-labelledby="capture-preparation-title" className="mx-auto w-full max-w-lg shrink-0 space-y-5 pb-4">
+    <section aria-labelledby="capture-preparation-title" className="mx-auto w-full max-w-lg shrink-0 space-y-5 pb-[calc(2rem_+_env(safe-area-inset-bottom,0px))]">
       <h1 id="capture-preparation-title" className="text-xl font-bold text-foreground">
         撮影前のご確認
       </h1>
@@ -41,11 +41,11 @@ export default function CapturePreparation({ onContinue }: { onContinue: () => v
         ))}
       </ul>
 
-      <div className="flex flex-col gap-2">
-        <Button type="button" className="w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background" onClick={onContinue}>
+      <div className="flex flex-col gap-3">
+        <Button type="button" className="min-h-14 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background" onClick={onContinue}>
           撮影へ進む
         </Button>
-        <Link href="/" className="rounded-lg px-4 py-2 text-center text-sm font-medium text-secondary-foreground hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+        <Link href="/" className="flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-center text-sm font-medium text-secondary-foreground hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
           戻る
         </Link>
       </div>
