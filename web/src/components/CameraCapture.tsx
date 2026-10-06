@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, type ChangeEvent } from "react";
 import Button from "@/components/ui/Button";
 import { cameraCrop } from "@/lib/camera-crop";
+import { useCamera } from "@/hooks/use-camera";
 import { debugImageGuide, guideInSavedImage, type CapturedImage, type QualityGuide } from "@/lib/image-quality";
 import { CAPTURE_HAND_HEIGHT, CAPTURE_HAND_WIDTH, CAPTURE_HAND_OUTLINE } from "@/lib/capture-hand-guide";
 import {
@@ -22,6 +23,9 @@ interface CameraCaptureProps {
   instruction?: string;
   className?: string;
   disabled?: boolean;
+  /** 左右の撮影間で引き継ぐライト設定。実際の点灯状態とは別に保持する。 */
+  initialTorchOn?: boolean;
+  onTorchPreferenceChange?: (on: boolean) => void;
   /** デバッグ用。カメラの代わりに手元のJPEGを無変換で使えるようにする */
   allowFileUpload?: boolean;
 }
@@ -71,70 +75,37 @@ export default function CameraCapture({
   instruction,
   className = "",
   disabled = false,
+  initialTorchOn = false,
+  onTorchPreferenceChange,
   allowFileUpload = false,
 }: CameraCaptureProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const guideRef = useRef<SVGRectElement>(null);
   const captureBusyRef = useRef(false);
   const captureGeneration = useRef(0);
-  const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
   const [flash, setFlash] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const [cameraAttempt, setCameraAttempt] = useState(0);
   const flashTimerRef = useRef<number | null>(null);
+  const {
+    videoRef, error, ready, torch, retry, reportError, markReady, markNotReady,
+    canCapture, toggleTorch: toggleCameraTorch,
+  } = useCamera({ disabled, initialTorchOn, onTorchPreferenceChange });
 
   useEffect(() => () => { captureGeneration.current++; }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    let attemptStream: MediaStream | null = null;
-
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment", width: { ideal: 1920 } },
-          audio: false,
-        });
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        attemptStream = stream;
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch {
-        if (!cancelled) {
-          setError("カメラにアクセスできません。設定からカメラのアクセスを許可してください。");
-        }
-      }
-    }
-
-    startCamera();
-    return () => {
-      cancelled = true;
-      attemptStream?.getTracks().forEach((t) => t.stop());
-      if (streamRef.current === attemptStream) streamRef.current = null;
-      if (flashTimerRef.current != null) window.clearTimeout(flashTimerRef.current);
-    };
-  }, [cameraAttempt]);
+  useEffect(() => () => {
+    if (flashTimerRef.current != null) window.clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = null;
+    setFlash(false);
+  }, [ready]);
 
   const retryCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    setReady(false);
-    setError(null);
     setFileError(null);
-    setCameraAttempt((attempt) => attempt + 1);
-  }, []);
+    retry();
+  }, [retry]);
 
   const handleCapture = useCallback(async () => {
-    if (!videoRef.current || captureBusyRef.current || disabled) return;
+    if (!videoRef.current || !canCapture() || captureBusyRef.current || disabled) return;
     captureBusyRef.current = true;
     const generation = ++captureGeneration.current;
     onBusyChange(true);
@@ -148,7 +119,7 @@ export default function CameraCapture({
       if (generation === captureGeneration.current) onCapture(capture);
     } catch {
       if (generation !== captureGeneration.current) return;
-      setError("撮影に失敗しました。もう一度お試しください。");
+      reportError("撮影に失敗しました。もう一度お試しください。");
     } finally {
       if (generation === captureGeneration.current) {
         captureBusyRef.current = false;
@@ -156,7 +127,12 @@ export default function CameraCapture({
         onBusyChange(false);
       }
     }
-  }, [onCapture, onBusyChange, disabled, mirror, guideRotation]);
+  }, [onCapture, onBusyChange, disabled, mirror, guideRotation, videoRef, canCapture, reportError]);
+
+  const toggleTorch = useCallback(() => {
+    if (captureBusyRef.current || disabled) return;
+    void toggleCameraTorch();
+  }, [disabled, toggleCameraTorch]);
 
   /** デバッグ用。解析結果を手元と突き合わせられるよう、選んだJPEGを変換せずそのまま渡す。 */
   const handleFileChange = useCallback(
@@ -258,8 +234,9 @@ export default function CameraCapture({
         autoPlay
         playsInline
         muted
-        onLoadedData={() => setReady(true)}
-        onEmptied={() => setReady(false)}
+        onLoadedData={markReady}
+        onPlaying={markReady}
+        onEmptied={markNotReady}
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
       {/* SVGを全幅に広げ、輪郭の横幅をカメラ領域の約90%にする。高さが足りない場合は縮小する。 */}
@@ -302,29 +279,49 @@ export default function CameraCapture({
           </svg>
         </div>
       </div>
-      {flash && (
+      {flash && ready && !disabled && (
         <div className="pointer-events-none absolute inset-0 z-10 bg-white/80" aria-hidden="true" />
       )}
-      {fileErrorMessage && (
-        <div className="absolute bottom-24 left-0 right-0 z-10 mx-auto max-w-sm px-3">
+      {(fileErrorMessage || torch.error) && (
+        <div className="absolute bottom-[max(8rem,calc(env(safe-area-inset-bottom)+7rem))] left-0 right-0 z-10 mx-auto max-w-sm space-y-2 px-3">
           {fileErrorMessage}
+          {torch.error && (
+            <p role="alert" className="rounded-lg bg-black/80 px-3 py-2 text-center text-xs text-white">
+              {torch.error}
+            </p>
+          )}
         </div>
       )}
       <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-0 right-0 z-10 grid grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-2 px-2">
-        {allowFileUpload && (
-          <button
-            type="button"
-            onClick={openFilePicker}
-            disabled={capturing || disabled}
-            aria-label={`${handLabel}の画像をファイルから選択`}
-            className="col-start-1 row-start-1 justify-self-start rounded-full border border-white/70 bg-black/60 px-2 py-2 text-xs font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
-          >
-            画像を選択
-          </button>
-        )}
+        <div className="col-start-1 row-start-1 flex flex-col items-start gap-2">
+          {torch.supported && (
+            <button
+              type="button"
+              onClick={toggleTorch}
+              disabled={!ready || capturing || disabled || torch.pending}
+              aria-label="ライト"
+              aria-pressed={torch.on}
+              aria-busy={torch.pending}
+              className={`min-h-11 rounded-full border border-white/70 px-3 py-2 text-xs font-medium transition disabled:opacity-40 ${torch.on ? "bg-white text-black hover:bg-white/90" : "bg-black/60 text-white hover:bg-black/80"}`}
+            >
+              ライト {torch.on ? "ON" : "OFF"}
+            </button>
+          )}
+          {allowFileUpload && (
+            <button
+              type="button"
+              onClick={openFilePicker}
+              disabled={capturing || disabled}
+              aria-label={`${handLabel}の画像をファイルから選択`}
+              className="rounded-full border border-white/70 bg-black/60 px-2 py-2 text-xs font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
+            >
+              画像を選択
+            </button>
+          )}
+        </div>
         <button
           onClick={handleCapture}
-          disabled={!ready || capturing || disabled}
+          disabled={!ready || capturing || disabled || torch.pending}
           aria-label={`${handLabel}を撮影`}
           className="col-start-2 row-start-1 h-16 w-16 rounded-full border-4 border-white bg-white/30 transition hover:bg-white/50 disabled:opacity-40"
         />
@@ -336,7 +333,7 @@ export default function CameraCapture({
           }}
           disabled={capturing || disabled}
           aria-label={`ガイドを180度回転（現在は手首が${guideRotation === 180 ? "上" : "下"}）`}
-          className="col-start-3 row-start-1 justify-self-end rounded-full border border-white/70 bg-black/60 px-2 py-2 text-xs font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
+          className="col-start-3 row-start-1 min-h-11 justify-self-end rounded-full border border-white/70 bg-black/60 px-3 py-2 text-xs font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
         >
           ガイドを回転
         </button>

@@ -201,6 +201,7 @@ export default function CaptureFlow({
   const [cameraBusy, setCameraBusy] = useState(false);
   const [cameraKey, setCameraKey] = useState(0);
   const [guideRotation, setGuideRotation] = useState<0 | 180>(180);
+  const [preferredTorchOn, setPreferredTorchOn] = useState(false);
   const qualityTask = useRef<AbortController | null>(null);
   const pendingRef = useRef<CheckedCapture | null>(null);
   const submitting = useRef(false);
@@ -222,12 +223,14 @@ export default function CaptureFlow({
       if (step === "left") {
         setLeftCapture(capture);
         if (rightImage) {
+          setPreferredTorchOn(false);
           setStep("confirm");
         } else {
           setCapturedNotice("left");
         }
       } else if (step === "right") {
         setRightCapture(capture);
+        setPreferredTorchOn(false);
         setStep("confirm");
       }
     },
@@ -268,11 +271,13 @@ export default function CaptureFlow({
   }, [capturedNotice]);
 
   const retakeHand = useCallback((hand: "right" | "left") => {
+    setPreferredTorchOn(false);
     setError(null);
     setStep(hand);
   }, []);
 
   const discardDraft = useCallback(() => {
+    setPreferredTorchOn(false);
     setPreparationConfirmed(false);
     cancelQuality();
     setCameraBusy(false);
@@ -375,6 +380,7 @@ export default function CaptureFlow({
   const isShooting = step === "right" || step === "left";
   const isRetaking = isShooting && Boolean(rightImage && leftImage);
   const returnToConfirm = useCallback(() => {
+    setPreferredTorchOn(false);
     cancelQuality();
     setStep("confirm");
   }, [cancelQuality]);
@@ -457,6 +463,8 @@ export default function CaptureFlow({
                   : undefined
               }
               disabled={capturedNotice != null || pending != null}
+              initialTorchOn={preferredTorchOn}
+              onTorchPreferenceChange={setPreferredTorchOn}
               onBusyChange={setCameraBusy}
               allowFileUpload={allowFileUpload}
               onCapture={handleCapture}
